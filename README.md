@@ -30,20 +30,23 @@ hash(投票id+ユーザーid)を投票用IPNSのキー名として、KeyPairを�
 全ユーザーのKeyPairに対応する投票用IPNSアドレスをリスト化します。  
 マネージャー公開鍵&秘密鍵を生成します。  
 
+```
 type VotingInfo struct{  
-votingID string   
-manPubKey rsa.PublicKey  
-begin string  
-end string  
-votingType string  
-candidates map[string]Candidate  
-votingIPNSAddrs []string  
+  votingID        string   
+  manPubKey       rsa.PublicKey  
+  begin           string  
+  end             string  
+  votingType      string  
+  candidates      map[string]Candidate  
+  votingIPNSAddrs []string  
 }  
 type Candidate struct{  
-url string  
-group string  
-groupURL string  
+  url      string  
+  group    string  
+  groupURL string  
 }  
+```
+
 としてVotingInfoをIPFSにaddし、そのpathを公表します。  
 
 ## Voting
