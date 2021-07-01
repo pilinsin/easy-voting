@@ -1,34 +1,40 @@
 # EasyVoting
-IPFSとGUIライブラリを使用したオンライン投票アプリです。  
+This is an Online Voting App based on IPFS.  
+Blockchain is not used.  
 
 
 # Usage
-管理者(マネージャー)と投票者(ユーザー)が存在します。
-## Registration Setup
-<マネージャー>  
-まずオンライン投票を利用するユーザーの登録が必要です。  
-アプリ上で入力した情報をサーバーに送信して登録するので、  
-使用するサーバーのアドレスを入力しIPFSにadd、そのpathを公表します。  
-
+There are an Election Manager (Manager) and Voters (User).  
 ## Online Voter Registration
-<ユーザー>  
-RSA鍵生成を行い、秘密鍵はローカルに保存します。  
-公開鍵をIPFSにaddし、任意のIPNSkeyでpublishします。  
-本人確認用に個人情報を入力し、ハッシュ化します。
-個人情報ハッシュとメールアドレスとpublishしたIPNSのアドレスをサーバーに送信して登録します。  
+<User>  
+Generate a RSA key pair.  
+The private key is stored locally.  
+The public key is added to IPFS, and then publish its CID with arbitrary key.  
+Register an email address and the IPNS address for a Manager's server.  
+
 
 ## Voting Setup
-<マネージャー>  
-投票idを生成します。  
-サーバーからメールアドレスと登録用IPNSアドレスのリストを取得します。  
+<Manager>  
+Generate a votingID.  
+Obtain the list of email addresses and registration IPNS addresses from the server.  
+Obtain the user public key from the registration IPNS addresses.  
 
-登録用IPNSアドレスからユーザー公開鍵を取得します。  
-ユーザーidを生成します。  
-hash(投票id+ユーザーid)を投票用IPNSのキー名として、KeyPairを生成します。    
-ユーザーidとKeyPairをユーザー公開鍵で暗号化してメールします。  
+For each user:  
+Generate an userID.
+Generate a KeyPair.
 
-全ユーザーのKeyPairに対応する投票用IPNSアドレスをリスト化します。  
-マネージャー公開鍵&秘密鍵を生成します。  
+```
+KeyPair := util.Hash(votingID + userID)
+``` 
+
+Encode the userID and the KeyPair with the user public key.  
+Send an email include the encoded userID and KeyPair to the user.  
+  
+
+Calculate voting IPNS addresses corresponding to the KeyPairs.  
+Generate a manager's RSA key pair.  
+
+Add VotingInfo to IPFS and announce its CID.  
 
 ```
 type VotingInfo struct{  
@@ -47,40 +53,45 @@ type Candidate struct{
 }  
 ```
 
-としてVotingInfoをIPFSにaddし、そのpathを公表します。  
-
 ## Voting
-<ユーザー>  
-VotingInfoのpathを入力してデータを取得します。  
-メールから暗号化ユーザーidと暗号化KeyPairを取得します。  
-ローカルに保存しておいたユーザー秘密鍵でユーザーidとKeyPairを取得します。  
-KeyPairを入力し対応する投票用IPNSのアドレスを求め、投票用IPNSアドレスリストと比較してログイン認証を行います。  
-投票方式が反映された投票フォームから投票内容を生成します。  
-ユーザーidを入力してユーザーidをキー、投票内容を値とする投票データを生成します。  
-投票データをマネージャー公開鍵で暗号化し、IPFSにaddしてKeyPairを用いて投票用IPNSにpublishします。  
+<User> 
+Obtain VotingInfo.  
+Obtain the encoded userID and KeyPair from the email.   
+Decode the userID and KeyPair with the user private key.  
+
+Calculate a voting IPNS address corresponding to the KeyPair.  
+Verify the address with the voting IPNS addresses.    
+
+Reflect the votingType on a voting form.  
+Generate a voting data.
+
+```
+votingData := map[string]Vote{userID: vote}
+```
+
+Encode the voting data with the manager's public key.    
+Add the encoded voting data to IPFS and publish to the voting IPNS.  
 
 ## Counting Setup
-<マネージャー>  
-投票終了時刻経過後に処理を行います。  
-VotingInfoを取得します。  
-投票用IPNSアドレスリストから暗号化投票データを収集します。  
-マネージャー秘密鍵で投票データを取得します。  
-全ユーザーの投票データを纏めてリスト化します。  
-投票データリストをIPFSにaddし、そのpathを公表します。  
+<Manager>  
+Obtain VotingInfo.  
+Collect the encoded voting data from the voting IPNS addresses.  
+Decode them with the manager's private key.  
+Add the whole voting data to IPFS and announce its CID.   
    
 ## Counting
-<ユーザー>  
-投票データリストを取得します。  
-自身のユーザーidから投票内容を確認します。  
-投票データリストを集計して投票結果を取得します。  
+<User>  
+Obtain the whole voting data.  
+Check own voting data.  
+Tally them.  
 
 # Voting Type
-・単記投票  
-・連記投票  
-・認定投票  
-・範囲投票  
-・累積投票  
-・選好投票  
+•Single  
+•Block  
+•Approval  
+•Range  
+•Cumulative  
+•Preference  
 
 
 # TODO
