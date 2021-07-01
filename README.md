@@ -12,7 +12,6 @@ The private key is stored locally.
 The public key is added to IPFS, and then publish its CID with arbitrary key.  
 Register an email address and the IPNS address for a Manager's server.  
 
-
 ## Voting Setup
 <Manager>  
 Generate a votingID.  
