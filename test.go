@@ -3,14 +3,12 @@ package main
 import (
 	"fmt"
 
+	"EasyVoting/ipfs"
 	"EasyVoting/util"
 	"EasyVoting/util/rsa"
-	"EasyVoting/ipfs"
-	sv "EasyVoting/voting/single"
 	"EasyVoting/voting"
-
+	sv "EasyVoting/voting/single"
 )
-
 
 //sudo sysctl -w net.core.rmem_max=2500000
 func main() {
@@ -21,13 +19,13 @@ func main() {
 	Ipfs2 := ipfs.New(ctx2, ".ipfs2")
 
 	cfg := voting.InitConfig{
-		Is: Ipfs,
+		Is:        Ipfs,
 		ValidTime: "240h",
-		VotingID: util.GenUniqueID(30,30),
-		UserID: util.GenUniqueID(30,6),
-		Begin: "2021-6-1  00:00am",
-		End: "2021-8-13 11:59pm",
-		NCands: 3,
+		VotingID:  util.GenUniqueID(30, 30),
+		UserID:    util.GenUniqueID(30, 6),
+		Begin:     "2021-6-1  00:00am",
+		End:       "2021-8-13 11:59pm",
+		NCands:    3,
 	}
 	sVoting := sv.New(&cfg, nil)
 	v := voting.VoteInt{"A": 0, "B": 1, "C": 0}
@@ -36,17 +34,17 @@ func main() {
 	fmt.Println(res)
 
 	cfg2 := voting.InitConfig{
-		Is: Ipfs2,
+		Is:        Ipfs2,
 		ValidTime: "nil",
-		VotingID: "nil",
-		UserID: "nil",
-		Begin: "nil",
-		End: "nil",
-		NCands: 0,
+		VotingID:  "nil",
+		UserID:    "nil",
+		Begin:     "nil",
+		End:       "nil",
+		NCands:    0,
 	}
 	sVoting2 := sv.New(&cfg2, nil)
 	fmt.Println(sVoting2.Get(res, rsaKeyPair.Private()))
-	
+
 	sk := ipfs.KeyFileGenerate()
 	fmt.Println(sk)
 	resolved := Ipfs.FileAdd([]byte("=^.^= meow meow"), true)
@@ -55,14 +53,12 @@ func main() {
 	fmt.Println(ipnsEntry.Name())
 	ipnsEntry = Ipfs.NamePublishWithKeyFile(resolved, "240h", sk, "test-test-test")
 	fmt.Println(ipnsEntry.Name())
-	fmt	.Println(Ipfs.NameGet(sk))
+	fmt.Println(Ipfs.NameGet(sk))
 
 	pth := Ipfs2.NameResolve(ipnsEntry.Name())
 	fmt.Println(pth.String())
-	
-	f := Ipfs2.FileGet(pth)
-    fmt.Println(string(f))
-        
 
-    
+	f := Ipfs2.FileGet(pth)
+	fmt.Println(string(f))
+
 }
