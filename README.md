@@ -4,7 +4,7 @@ Blockchain is not used.<br>
 
 
 # Usage
-There are an Election Manager (Manager) and Voters (User).<br>
+<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/system_process.png"><br>
 ## Online Voter Registration
 (User)<br>
 Generate a RSA key pair.<br>
