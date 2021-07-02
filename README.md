@@ -15,22 +15,28 @@ Register an email address and the IPNS address for a Manager's server.<br>
 ## Voting Setup
 (Manager)<br>
 Generate a votingID.<br>
-Obtain the list of email addresses and registration IPNS addresses from the server.<br> 
-Obtain the user public key from the registration IPNS addresses.<br>
-<br>
-For each user:<br>
-Generate an userID.<br>
-Generate a KeyPair.<br>
 
 ```
-KeyPair := util.Hash(votingID + userID)
-``` 
+votingID := util.GenUniqueID(30,30)
+```
 
-Encode the userID and the KeyPair with the user public key.<br>
-Send an email include the encoded userID and KeyPair to the user.<br>
+Obtain the list of email addresses and registration IPNS addresses from the server.<br> 
+
+For each user, process the following.<br>
+1. Obtain the user public key from the registration IPNS address.<br>
+2. Generate an userID.<br>
+3. Generate a KeyFile.<br>
+
+```
+userID := util.GenUniqueID(30,6)
+KeyFile := ipfs.KeyFileGenerate()
+```
+
+4. Encode the userID and the KeyFile with the user public key.<br>
+5. Send an email include the encoded userID and KeyFile to the user.<br>
 <br>
 
-Calculate voting IPNS addresses corresponding to the KeyPairs.<br>
+Calculate voting IPNS addresses corresponding to the KeyFiles.<br>
 Generate a manager's RSA key pair.<br>
 <br>
 Add VotingInfo to IPFS and announce its CID.<br>
@@ -55,10 +61,10 @@ type Candidate struct{
 ## Voting
 (User)<br>
 Obtain VotingInfo.<br>
-Obtain the encoded userID and KeyPair from the email.<br>
-Decode the userID and KeyPair with the user private key.<br>
+Obtain the encoded userID and KeyFile from the email.<br>
+Decode the userID and KeyFile with the user private key.<br>
 
-Calculate a voting IPNS address corresponding to the KeyPair.<br>
+Calculate a voting IPNS address corresponding to the KeyFile.<br>
 Verify the address with the voting IPNS addresses.<br>
 
 Reflect the votingType on a voting form.<br>
@@ -88,18 +94,21 @@ Check own voting data.<br>
 Tally them.<br>
 
 # Voting Type
-•Single  
-•Block  
-•Approval  
-•Range  
-•Cumulative  
-•Preference  
+This supports the following types:  
+[Single](https://en.wikipedia.org/wiki/Single_transferable_vote)  
+[Block](https://en.wikipedia.org/wiki/Multiple_non-transferable_vote)  
+[Approval](https://en.wikipedia.org/wiki/Approval_voting)  
+[Range](https://en.wikipedia.org/wiki/Score_voting)  
+[Cumulative](https://en.wikipedia.org/wiki/Cumulative_voting)  
+[Preference](https://en.wikipedia.org/wiki/Ranked_voting)  
 
 
 # TODO
+Registration process
 Counting process
 GUI part
 
 # Support
+
 
 ETH Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
