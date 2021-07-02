@@ -97,5 +97,9 @@ Tally them.<br>
 
 
 # TODO
+Counting process
+GUI part
 
+# Support
 
+ETH Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
