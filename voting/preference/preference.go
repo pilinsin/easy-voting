@@ -1,22 +1,20 @@
 package preferencevoting
 
-import(
-	"sort"
-	"errors"
+import (
 	crsa "crypto/rsa"
+	"errors"
+	"sort"
 
-	"EasyVoting/voting"
 	"EasyVoting/util"
-
+	"EasyVoting/voting"
 )
 
-
-
-type PreferenceVoting struct{
+type PreferenceVoting struct {
 	voting.Voting
 }
-func New(cfg *voting.InitConfig, huidListAddrs []string) *PreferenceVoting{
-	if ok := voting.VerifyUserID(cfg.Is, cfg.UserID, huidListAddrs); !ok{
+
+func New(cfg *voting.InitConfig, huidListAddrs []string) *PreferenceVoting {
+	if ok := voting.VerifyUserID(cfg.Is, cfg.UserID, huidListAddrs); !ok {
 		util.CheckError(errors.New("Invalid userID"))
 		return nil
 	}
@@ -26,32 +24,32 @@ func New(cfg *voting.InitConfig, huidListAddrs []string) *PreferenceVoting{
 	return pv
 }
 
-func (pv *PreferenceVoting) IsValidData(vi voting.VoteInt) bool{
-	if !pv.NumCandsMatch(len(vi)){
+func (pv *PreferenceVoting) IsValidData(vi voting.VoteInt) bool {
+	if !pv.NumCandsMatch(len(vi)) {
 		return false
 	}
 
 	var ps []int
-	for _, vote := range vi{
+	for _, vote := range vi {
 		ps = append(ps, vote)
 	}
 	sort.Ints(ps)
 
-	for i, v := range ps{
-		if i != v{
+	for i, v := range ps {
+		if i != v {
 			return false
 		}
 	}
-	
+
 	return true
 }
 
-func (pv *PreferenceVoting) Type() string{
+func (pv *PreferenceVoting) Type() string {
 	return "preferencevoting"
 }
 
-func (pv * PreferenceVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string{
-	if pv.WithinTime() && pv.IsValidData(data){
+func (pv *PreferenceVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
+	if pv.WithinTime() && pv.IsValidData(data) {
 		mvi := data.Marshal()
 		return pv.BaseVote(mvi, pubKey)
 	}
@@ -61,11 +59,11 @@ func (pv * PreferenceVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) st
 
 }
 
-func (pv *PreferenceVoting)Get(ipnsName string, priKey crsa.PrivateKey) voting.VoteInt{
+func (pv *PreferenceVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VoteInt {
 	mvi := pv.BaseGet(ipnsName, priKey)
 	return voting.UnmarshalVoteInt(mvi)
 }
 
-func (pv *PreferenceVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey){
-	;
+func (pv *PreferenceVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {
+
 }

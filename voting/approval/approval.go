@@ -1,24 +1,20 @@
 package approvalvoting
 
-import(
-	"errors"
+import (
 	crsa "crypto/rsa"
+	"errors"
 
-	"EasyVoting/voting"
 	"EasyVoting/util"
-
-
-
+	"EasyVoting/voting"
 )
 
-
-
-type ApprovalVoting struct{
+type ApprovalVoting struct {
 	voting.Voting
 	nCands int
 }
-func New(cfg *voting.InitConfig, huidListAddrs []string) *ApprovalVoting{
-	if ok := voting.VerifyUserID(cfg.Is, cfg.UserID, huidListAddrs); !ok{
+
+func New(cfg *voting.InitConfig, huidListAddrs []string) *ApprovalVoting {
+	if ok := voting.VerifyUserID(cfg.Is, cfg.UserID, huidListAddrs); !ok {
 		util.CheckError(errors.New("Invalid userID"))
 		return nil
 	}
@@ -28,17 +24,17 @@ func New(cfg *voting.InitConfig, huidListAddrs []string) *ApprovalVoting{
 	return av
 }
 
-func (av *ApprovalVoting) IsValidData(vb voting.VoteBool) bool{
+func (av *ApprovalVoting) IsValidData(vb voting.VoteBool) bool {
 	return av.NumCandsMatch(len(vb))
 }
 
-func (av *ApprovalVoting) Type() string{
+func (av *ApprovalVoting) Type() string {
 	return "approvalvoting"
 }
 
-func (av * ApprovalVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string{
+func (av *ApprovalVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
 	vb := data.Cast2Bool()
-	if av.WithinTime() && av.IsValidData(vb){
+	if av.WithinTime() && av.IsValidData(vb) {
 		mvb := vb.Marshal()
 		return av.BaseVote(mvb, pubKey)
 	}
@@ -48,11 +44,11 @@ func (av * ApprovalVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) stri
 
 }
 
-func (av *ApprovalVoting)Get(ipnsName string, priKey crsa.PrivateKey) voting.VoteBool{
+func (av *ApprovalVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VoteBool {
 	mvb := av.BaseGet(ipnsName, priKey)
 	return voting.UnmarshalVoteBool(mvb)
 }
 
-func (av *ApprovalVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey){
-	;
+func (av *ApprovalVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {
+
 }

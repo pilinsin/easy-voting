@@ -1,23 +1,21 @@
 package cumulativevoting
 
-import(
-	"errors"
+import (
 	crsa "crypto/rsa"
+	"errors"
 
-	"EasyVoting/voting"
 	"EasyVoting/util"
-
+	"EasyVoting/voting"
 )
 
-
-
-type CumulativeVoting struct{
+type CumulativeVoting struct {
 	voting.Voting
-	min int
+	min   int
 	total int
 }
-func New(cfg *voting.InitConfig, huidListAddrs []string, min int, total int) *CumulativeVoting{
-	if ok := voting.VerifyUserID(cfg.Is, cfg.UserID, huidListAddrs); !ok{
+
+func New(cfg *voting.InitConfig, huidListAddrs []string, min int, total int) *CumulativeVoting {
+	if ok := voting.VerifyUserID(cfg.Is, cfg.UserID, huidListAddrs); !ok {
 		util.CheckError(errors.New("Invalid userID"))
 		return nil
 	}
@@ -27,14 +25,14 @@ func New(cfg *voting.InitConfig, huidListAddrs []string, min int, total int) *Cu
 	return cv
 }
 
-func (cv *CumulativeVoting) IsValidData(vi voting.VoteInt) bool{
-	if !cv.NumCandsMatch(len(vi)){
+func (cv *CumulativeVoting) IsValidData(vi voting.VoteInt) bool {
+	if !cv.NumCandsMatch(len(vi)) {
 		return false
 	}
 
 	tl := 0
-	for _, vote := range vi{
-		if vote < cv.min{
+	for _, vote := range vi {
+		if vote < cv.min {
 			return false
 		}
 		tl += vote
@@ -42,12 +40,12 @@ func (cv *CumulativeVoting) IsValidData(vi voting.VoteInt) bool{
 	return tl <= cv.total
 }
 
-func (cv *CumulativeVoting) Type() string{
+func (cv *CumulativeVoting) Type() string {
 	return "cumulativevoting"
 }
 
-func (cv * CumulativeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string{
-	if cv.WithinTime() && cv.IsValidData(data){
+func (cv *CumulativeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
+	if cv.WithinTime() && cv.IsValidData(data) {
 		mvi := data.Marshal()
 		return cv.BaseVote(mvi, pubKey)
 	}
@@ -57,11 +55,11 @@ func (cv * CumulativeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) st
 
 }
 
-func (cv *CumulativeVoting)Get(ipnsName string, priKey crsa.PrivateKey) voting.VoteInt{
+func (cv *CumulativeVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VoteInt {
 	mvi := cv.BaseGet(ipnsName, priKey)
 	return voting.UnmarshalVoteInt(mvi)
 }
 
-func (cv *CumulativeVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey){
-	;
+func (cv *CumulativeVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {
+
 }
