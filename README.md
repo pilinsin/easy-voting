@@ -74,7 +74,6 @@ Generate a voting data.<br>
 votingData := map[string]int{userID: num}
 //or  
 //votingData := map[string]bool{userID: flag}  
-
 ```
 
 Encode the voting data with the manager's public key.<br> 
@@ -104,9 +103,9 @@ This supports the following types:
 
 
 # TODO
-Registration process
-Counting process
-GUI part
+Registration process  
+Counting process  
+GUI part  
 
 # Support
 
