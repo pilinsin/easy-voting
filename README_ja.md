@@ -1,34 +1,43 @@
 # EasyVoting
 IPFSとGUIライブラリを使用したオンライン投票アプリです。  
-
+ブロックチェーンは使用しません。
 
 # Usage
 管理者(マネージャー)と投票者(ユーザー)が存在します。
-## Registration Setup
-<マネージャー>  
-まずオンライン投票を利用するユーザーの登録が必要です。  
-アプリ上で入力した情報をサーバーに送信して登録するので、  
-使用するサーバーのアドレスを入力しIPFSにadd、そのpathを公表します。  
-
 ## Online Voter Registration
 <ユーザー>  
 RSA鍵生成を行い、秘密鍵はローカルに保存します。  
-公開鍵をIPFSにaddし、任意のIPNSkeyでpublishします。  
-本人確認用に個人情報を入力し、ハッシュ化します。
-個人情報ハッシュとメールアドレスとpublishしたIPNSのアドレスをサーバーに送信して登録します。  
+公開鍵をIPFSにaddし、任意のIPNSキーでpublishします。  
+メールアドレスとpublishしたIPNSのアドレスをサーバーに登録します。  
 
 ## Voting Setup
 <マネージャー>  
 投票idを生成します。  
+
+```
+votingID := util.GenUniqueID(30,30)
+```
+
 サーバーからメールアドレスと登録用IPNSアドレスのリストを取得します。  
 
-登録用IPNSアドレスからユーザー公開鍵を取得します。  
-ユーザーidを生成します。  
-hash(投票id+ユーザーid)を投票用IPNSのキー名として、KeyPairを生成します。    
-ユーザーidとKeyPairをユーザー公開鍵で暗号化してメールします。  
+各ユーザーに対して以下の処理を行います。  
+1. 登録用IPNSアドレスからユーザー公開鍵を取得  
+2. ユーザーidの生成  
+3. KeyFileの生成  
+
+```
+userID := util.GenUniqueID(30,6)
+KeyFile := ipfs.KeyFileGenerate()
+```
+
+4. ユーザーidとKeyFileをユーザー公開鍵で暗号化  
+5. 暗号化したユーザーidとKeyFileをユーザーにメールで送信  
+  
 
 全ユーザーのKeyPairに対応する投票用IPNSアドレスをリスト化します。  
 マネージャー公開鍵&秘密鍵を生成します。  
+
+VotingInfoを生成してIPFSにaddし、そのCIDを公表します。  
 
 ```
 type VotingInfo struct{  
@@ -47,41 +56,59 @@ type Candidate struct{
 }  
 ```
 
-としてVotingInfoをIPFSにaddし、そのpathを公表します。  
 
 ## Voting
 <ユーザー>  
-VotingInfoのpathを入力してデータを取得します。  
-メールから暗号化ユーザーidと暗号化KeyPairを取得します。  
-ローカルに保存しておいたユーザー秘密鍵でユーザーidとKeyPairを取得します。  
-KeyPairを入力し対応する投票用IPNSのアドレスを求め、投票用IPNSアドレスリストと比較してログイン認証を行います。  
-投票方式が反映された投票フォームから投票内容を生成します。  
-ユーザーidを入力してユーザーidをキー、投票内容を値とする投票データを生成します。  
-投票データをマネージャー公開鍵で暗号化し、IPFSにaddしてKeyPairを用いて投票用IPNSにpublishします。  
+VotingInfoを取得します。  
+メールから暗号化ユーザーidと暗号化KeyFileを取得します。  
+ローカルに保存しておいたユーザー秘密鍵でユーザーidとKeyFileを取得します。  
+KeyFileを入力し対応する投票用IPNSのアドレスを求めます。  
+そのアドレスを投票用IPNSアドレスリストと比較してログイン認証を行います。  
+投票方式を投票フォームに反映させます。  
+投票データを生成します。  
+
+```
+votingData := map[string]int{userID: num}
+//or  
+//votingData := map[string]bool{userID: flag}  
+```
+
+投票データをマネージャー公開鍵で暗号化します。  
+IPFSにaddしてKeyFileを用いて投票用IPNSにpublishします。  
 
 ## Counting Setup
 <マネージャー>  
-投票終了時刻経過後に処理を行います。  
 VotingInfoを取得します。  
 投票用IPNSアドレスリストから暗号化投票データを収集します。  
 マネージャー秘密鍵で投票データを取得します。  
-全ユーザーの投票データを纏めてリスト化します。  
-投票データリストをIPFSにaddし、そのpathを公表します。  
+投票データ全体をIPFSにaddし、そのCIDを公表します。  
    
 ## Counting
 <ユーザー>  
-投票データリストを取得します。  
+投票データ全体を取得します。  
 自身のユーザーidから投票内容を確認します。  
 投票データリストを集計して投票結果を取得します。  
 
 # Voting Type
-・単記投票  
-・連記投票  
-・認定投票  
-・範囲投票  
-・累積投票  
-・選好投票  
+以下の投票方式に対応  
+・[単記投票](https://ja.wikipedia.org/wiki/%E5%8D%98%E8%A8%98%E7%A7%BB%E8%AD%B2%E5%BC%8F%E6%8A%95%E7%A5%A8)  
+・[連記投票](https://ja.wikipedia.org/wiki/%E9%80%A3%E8%A8%98%E6%8A%95%E7%A5%A8)  
+・[認定投票](https://ja.wikipedia.org/wiki/%E8%AA%8D%E5%AE%9A%E6%8A%95%E7%A5%A8)  
+・[範囲投票](https://ja.wikipedia.org/wiki/%E6%8E%A1%E7%82%B9%E6%8A%95%E7%A5%A8)  
+・[累積投票](https://ja.wikipedia.org/wiki/%E7%B4%AF%E7%A9%8D%E6%8A%95%E7%A5%A8)  
+・[選好投票](https://ja.wikipedia.org/wiki/%E9%81%B8%E5%A5%BD%E6%8A%95%E7%A5%A8)  
 
 
 # TODO
+・登録処理  
+・集計処理  
+・GUI  
 
+# Support
+どの組織にも属さず個人で開発しています。  
+投票という制度をより身近で容易かつ公正なものにするため、  
+無料でリリースする予定です。  
+開発の継続のため、皆様のご支援が必要です。  
+どうかよろしくお願いいたします。
+
+ETH Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
