@@ -3,15 +3,15 @@ IPFSとGUIライブラリを使用したオンライン投票アプリです。
 ブロックチェーンは使用しません。
 
 # Usage
-管理者(マネージャー)と投票者(ユーザー)が存在します。
+<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/system_process.png"><br>
 ## Online Voter Registration
-<ユーザー>  
+(ユーザー)  
 RSA鍵生成を行い、秘密鍵はローカルに保存します。  
 公開鍵をIPFSにaddし、任意のIPNSキーでpublishします。  
 メールアドレスとpublishしたIPNSのアドレスをサーバーに登録します。  
 
 ## Voting Setup
-<マネージャー>  
+(マネージャー)  
 投票idを生成します。  
 
 ```
@@ -58,7 +58,7 @@ type Candidate struct{
 
 
 ## Voting
-<ユーザー>  
+(ユーザー)  
 VotingInfoを取得します。  
 メールから暗号化ユーザーidと暗号化KeyFileを取得します。  
 ローカルに保存しておいたユーザー秘密鍵でユーザーidとKeyFileを取得します。  
@@ -77,14 +77,14 @@ votingData := map[string]int{userID: num}
 IPFSにaddしてKeyFileを用いて投票用IPNSにpublishします。  
 
 ## Counting Setup
-<マネージャー>  
+(マネージャー)  
 VotingInfoを取得します。  
 投票用IPNSアドレスリストから暗号化投票データを収集します。  
 マネージャー秘密鍵で投票データを取得します。  
 投票データ全体をIPFSにaddし、そのCIDを公表します。  
    
 ## Counting
-<ユーザー>  
+(ユーザー)  
 投票データ全体を取得します。  
 自身のユーザーidから投票内容を確認します。  
 投票データリストを集計して投票結果を取得します。  
