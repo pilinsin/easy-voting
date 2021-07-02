@@ -1,39 +1,39 @@
 # EasyVoting
-This is an Online Voting App based on IPFS.  
-Blockchain is not used.  
+This is an Online Voting App based on IPFS.<br>
+Blockchain is not used.<br>
 
 
 # Usage
-There are an Election Manager (Manager) and Voters (User).  
+There are an Election Manager (Manager) and Voters (User).<br>
 ## Online Voter Registration
-<User>  
-Generate a RSA key pair.  
-The private key is stored locally.  
-The public key is added to IPFS, and then publish its CID with arbitrary key.  
-Register an email address and the IPNS address for a Manager's server.  
+(User)<br>
+Generate a RSA key pair.<br>
+The private key is stored locally.<br>
+The public key is added to IPFS, and then publish its CID with arbitrary key.<br>
+Register an email address and the IPNS address for a Manager's server.<br>
 
 ## Voting Setup
-<Manager>  
-Generate a votingID.  
-Obtain the list of email addresses and registration IPNS addresses from the server.  
-Obtain the user public key from the registration IPNS addresses.  
-
-For each user:  
-Generate an userID.
-Generate a KeyPair.
+(Manager)<br>
+Generate a votingID.<br>
+Obtain the list of email addresses and registration IPNS addresses from the server.<br> 
+Obtain the user public key from the registration IPNS addresses.<br>
+<br>
+For each user:<br>
+Generate an userID.<br>
+Generate a KeyPair.<br>
 
 ```
 KeyPair := util.Hash(votingID + userID)
 ``` 
 
-Encode the userID and the KeyPair with the user public key.  
-Send an email include the encoded userID and KeyPair to the user.  
-  
+Encode the userID and the KeyPair with the user public key.<br>
+Send an email include the encoded userID and KeyPair to the user.<br>
+<br>
 
-Calculate voting IPNS addresses corresponding to the KeyPairs.  
-Generate a manager's RSA key pair.  
-
-Add VotingInfo to IPFS and announce its CID.  
+Calculate voting IPNS addresses corresponding to the KeyPairs.<br>
+Generate a manager's RSA key pair.<br>
+<br>
+Add VotingInfo to IPFS and announce its CID.<br>
 
 ```
 type VotingInfo struct{  
@@ -53,36 +53,39 @@ type Candidate struct{
 ```
 
 ## Voting
-<User> 
-Obtain VotingInfo.  
-Obtain the encoded userID and KeyPair from the email.   
-Decode the userID and KeyPair with the user private key.  
+(User)<br>
+Obtain VotingInfo.<br>
+Obtain the encoded userID and KeyPair from the email.<br>
+Decode the userID and KeyPair with the user private key.<br>
 
-Calculate a voting IPNS address corresponding to the KeyPair.  
-Verify the address with the voting IPNS addresses.    
+Calculate a voting IPNS address corresponding to the KeyPair.<br>
+Verify the address with the voting IPNS addresses.<br>
 
-Reflect the votingType on a voting form.  
-Generate a voting data.
+Reflect the votingType on a voting form.<br>
+Generate a voting data.<br>
 
 ```
-votingData := map[string]Vote{userID: vote}
+votingData := map[string]int{userID: num}
+//or  
+//votingData := map[string]bool{userID: flag}  
+
 ```
 
-Encode the voting data with the manager's public key.    
-Add the encoded voting data to IPFS and publish to the voting IPNS.  
+Encode the voting data with the manager's public key.<br> 
+Add the encoded voting data to IPFS and publish to the voting IPNS.<br>
 
 ## Counting Setup
-<Manager>  
-Obtain VotingInfo.  
-Collect the encoded voting data from the voting IPNS addresses.  
-Decode them with the manager's private key.  
-Add the whole voting data to IPFS and announce its CID.   
+(Manager)<br>
+Obtain VotingInfo.<br>
+Collect the encoded voting data from the voting IPNS addresses.<br>
+Decode them with the manager's private key.<br>
+Add the whole voting data to IPFS and announce its CID.<br>
    
 ## Counting
-<User>  
-Obtain the whole voting data.  
-Check own voting data.  
-Tally them.  
+(User)<br>
+Obtain the whole voting data.<br>
+Check own voting data.<br>
+Tally them.<br>
 
 # Voting Type
 •Single  
