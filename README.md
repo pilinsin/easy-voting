@@ -2,6 +2,9 @@
 This is an Online Voting App based on IPFS.<br>
 Blockchain is not used.<br>
 
+# Requirement
+[go-ipfs](https://github.com/ipfs/go-ipfs)  
+gui
 
 # Usage
 <img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/system_process.png"><br>
