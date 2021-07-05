@@ -2,6 +2,10 @@
 IPFSとGUIライブラリを使用したオンライン投票アプリです。  
 ブロックチェーンは使用しません。
 
+# Requirement
+[go-ipfs](https://github.com/ipfs/go-ipfs)  
+gui
+
 # Usage
 <img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/system_process.png"><br>
 ## Online Voter Registration
