@@ -9,13 +9,15 @@ gui
 # Usage
 <img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/system_process.png"><br>
 ## Online Voter Registration
+<img alt="registration" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
+
 (ユーザー)  
 RSA鍵生成を行い、秘密鍵はローカルに保存します。  
 公開鍵をIPFSにaddし、任意のIPNSキーでpublishします。  
 メールアドレスとpublishしたIPNSのアドレスをサーバーに登録します。  
 
 ## Voting Setup
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
+<img alt="voting_setup" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting_setup.png"><br>
 
 (マネージャー)  
 
@@ -64,7 +66,7 @@ type Candidate struct{
 
 
 ## Voting
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
+<img alt="voting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
 
 (ユーザー)  
 VotingInfoを取得します。  
@@ -87,7 +89,7 @@ votingData := map[string]VoteInt{userID: vote}
 IPFSにaddしてKeyFileを用いて投票用IPNSにpublishします。  
 
 ## Counting Setup
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting_setup.png"><br>
+<img alt="counting_setup" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting_setup.png"><br>
 
 (マネージャー)  
 VotingInfoを取得します。  
@@ -96,7 +98,7 @@ VotingInfoを取得します。
 投票データ全体をIPFSにaddし、そのCIDを公表します。  
    
 ## Counting
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting.png"><br>
+<img alt="counting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting.png"><br>
 
 (ユーザー)  
 投票データ全体を取得します。  
