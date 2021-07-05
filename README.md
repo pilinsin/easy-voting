@@ -4,8 +4,9 @@ Blockchain is not used.<br>
 
 
 # Usage
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/system_process.png"><br>
+<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/system_process.png"><br>
 ## Online Voter Registration
+<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
 (User)<br>
 Generate a RSA key pair.<br>
 The private key is stored locally.<br>
@@ -13,12 +14,9 @@ The public key is added to IPFS, and then publish its CID with arbitrary key.<br
 Register an email address and the IPNS address for a Manager's server.<br>
 
 ## Voting Setup
-(Manager)<br>
-Generate a votingID.<br>
+<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting_setup.png"><br>
 
-```
-votingID := util.GenUniqueID(30,30)
-```
+(Manager)<br>
 
 Obtain the list of email addresses and registration IPNS addresses from the server.<br> 
 
@@ -27,7 +25,7 @@ For each user, process the following.<br>
 2. Generate an userID.<br>
 3. Generate a KeyFile.<br>
 
-```
+```Go
 userID := util.GenUniqueID(30,6)
 KeyFile := ipfs.KeyFileGenerate()
 ```
@@ -38,10 +36,15 @@ KeyFile := ipfs.KeyFileGenerate()
 
 Calculate voting IPNS addresses corresponding to the KeyFiles.<br>
 Generate a manager's RSA key pair.<br>
+Generate a votingID.<br>
+
+```Go
+votingID := util.GenUniqueID(30,30)
+```
 <br>
 Add VotingInfo to IPFS and announce its CID.<br>
 
-```
+```Go
 type VotingInfo struct{  
   votingID        string   
   manPubKey       rsa.PublicKey  
@@ -59,6 +62,8 @@ type Candidate struct{
 ```
 
 ## Voting
+<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
+
 (User)<br>
 Obtain VotingInfo.<br>
 Obtain the encoded userID and KeyFile from the email.<br>
@@ -70,23 +75,30 @@ Verify the address with the voting IPNS addresses.<br>
 Reflect the votingType on a voting form.<br>
 Generate a voting data.<br>
 
-```
-votingData := map[string]int{userID: num}
+```Go
+type VoteInt map[string]int
+votingData := map[string]int{userID: vote}
 //or  
-//votingData := map[string]bool{userID: flag}  
+//type VoteBool map[string]bool
+//votingData := map[string]bool{userID: vote}  
 ```
 
 Encode the voting data with the manager's public key.<br> 
 Add the encoded voting data to IPFS and publish to the voting IPNS.<br>
 
 ## Counting Setup
+<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting_setup.png"><br>
+
 (Manager)<br>
 Obtain VotingInfo.<br>
 Collect the encoded voting data from the voting IPNS addresses.<br>
 Decode them with the manager's private key.<br>
+Concatenate them.<br>
 Add the whole voting data to IPFS and announce its CID.<br>
    
 ## Counting
+<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting.png"><br>
+
 (User)<br>
 Obtain the whole voting data.<br>
 Check own voting data.<br>
