@@ -9,7 +9,7 @@ gui
 # Usage
 <img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/system_process.png"><br>
 ## Online Voter Registration
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
+<img alt="registration" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
 (User)<br>
 Generate a RSA key pair.<br>
 The private key is stored locally.<br>
@@ -17,7 +17,7 @@ The public key is added to IPFS, and then publish its CID with arbitrary key.<br
 Register an email address and the IPNS address for a Manager's server.<br>
 
 ## Voting Setup
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting_setup.png"><br>
+<img alt="voting_setup" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting_setup.png"><br>
 
 (Manager)<br>
 
@@ -65,7 +65,7 @@ type Candidate struct{
 ```
 
 ## Voting
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
+<img alt="voting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
 
 (User)<br>
 Obtain VotingInfo.<br>
@@ -90,7 +90,7 @@ Encode the voting data with the manager's public key.<br>
 Add the encoded voting data to IPFS and publish to the voting IPNS.<br>
 
 ## Counting Setup
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting_setup.png"><br>
+<img alt="counting_setup" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting_setup.png"><br>
 
 (Manager)<br>
 Obtain VotingInfo.<br>
@@ -100,7 +100,7 @@ Concatenate them.<br>
 Add the whole voting data to IPFS and announce its CID.<br>
    
 ## Counting
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting.png"><br>
+<img alt="counting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting.png"><br>
 
 (User)<br>
 Obtain the whole voting data.<br>
