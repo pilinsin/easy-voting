@@ -2,6 +2,13 @@
 This is an Online Voting App based on IPFS.<br>
 Blockchain is not used.<br>
 
+## Feature
+* Anonymity  
+* Re-voting  
+* Check of own voting data  
+* Counting
+
+
 # Requirement
 [go-ipfs](https://github.com/ipfs/go-ipfs)  
 gui
@@ -109,19 +116,19 @@ Tally them.<br>
 
 # Voting Type
 This supports the following types:  
-[Single](https://en.wikipedia.org/wiki/Single_transferable_vote)  
-[Block](https://en.wikipedia.org/wiki/Multiple_non-transferable_vote)  
-[Approval](https://en.wikipedia.org/wiki/Approval_voting)  
-[Range](https://en.wikipedia.org/wiki/Score_voting)  
-[Cumulative](https://en.wikipedia.org/wiki/Cumulative_voting)  
-[Preference](https://en.wikipedia.org/wiki/Ranked_voting)  
+* [Single](https://en.wikipedia.org/wiki/Single_transferable_vote)  
+* [Block](https://en.wikipedia.org/wiki/Multiple_non-transferable_vote)  
+* [Approval](https://en.wikipedia.org/wiki/Approval_voting)  
+* [Range](https://en.wikipedia.org/wiki/Score_voting)  
+* [Cumulative](https://en.wikipedia.org/wiki/Cumulative_voting)  
+* [Preference](https://en.wikipedia.org/wiki/Ranked_voting)  
 
 
 # TODO
-Registration process  
-Counting process  
-GUI part  
-Acceleration of IPNS processes 
+* Registration process  
+* Counting process  
+* GUI   
+* Acceleration of IPNS processes 
 
 # Support
 I develop it in freelance.<br>
