@@ -125,7 +125,7 @@ Acceleration of IPNS processes
 
 # Support
 I develop it in freelance.<br>
-I am going to release it free to make the system called voting more common, and easy and fair.<br>
+I am going to release it free to make voting more common, and easy and fair.<br>
 Your support lets development continue.<br>
 
 ETH Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
