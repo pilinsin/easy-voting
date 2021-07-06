@@ -80,10 +80,10 @@ Generate a voting data.<br>
 
 ```Go
 type VoteInt map[string]int
-votingData := map[string]int{userID: vote}
+votingData := map[string]VoteInt{userID: vote}
 //or  
 //type VoteBool map[string]bool
-//votingData := map[string]bool{userID: vote}  
+//votingData := map[string]VoteBool{userID: vote}  
 ```
 
 Encode the voting data with the manager's public key.<br> 
