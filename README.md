@@ -84,12 +84,20 @@ Verify the address with the voting IPNS addresses.<br>
 
 Reflect the votingType on a voting form.<br>
 Generate a voting data.<br>
+Generate a common key.<br>
+Encode the voting data with the key.<br>
 
 ```Go
-type VoteInt map[string]int
+type VoteInt struct{
+  data map[string]int
+  enc []byte
+}
 votingData := map[string]VoteInt{userID: vote}
 //or  
-//type VoteBool map[string]bool
+//type VoteBool struct{
+//  data map[string]bool
+//  enc []byte
+//}
 //votingData := map[string]VoteBool{userID: vote}  
 ```
 
