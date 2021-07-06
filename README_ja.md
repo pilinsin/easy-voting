@@ -82,7 +82,7 @@ type VoteInt map[string]int
 votingData := map[string]VoteInt{userID: vote}
 //or  
 //type VoteBool map[string]bool
-//votingData := map[string]bool{userID: vote}  
+//votingData := map[string]VoteBool{userID: vote}  
 ```
 
 投票データをマネージャー公開鍵で暗号化します。  
