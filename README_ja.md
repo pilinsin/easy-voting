@@ -82,13 +82,21 @@ VotingInfoを取得します。
 KeyFileを入力し対応する投票用IPNSのアドレスを求めます。  
 そのアドレスを投票用IPNSアドレスリストと比較してログイン認証を行います。  
 投票方式を投票フォームに反映させます。  
-投票データを生成します。  
+投票データを生成します。    
+共通鍵を生成し、投票データを暗号化します。  
+元の投票データと暗号文を一纏めにした投票データを生成します。  
 
 ```Go
-type VoteInt map[string]int
+type VoteInt struct{
+  data map[string]int
+  enc []byte
+}
 votingData := map[string]VoteInt{userID: vote}
 //or  
-//type VoteBool map[string]bool
+//type VoteBool struct{
+//  data map[string]bool
+//  enc []byte
+//}
 //votingData := map[string]VoteBool{userID: vote}  
 ```
 
