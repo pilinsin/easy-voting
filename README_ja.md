@@ -2,6 +2,13 @@
 IPFSとGUIライブラリを使用したオンライン投票アプリです。  
 ブロックチェーンは使用しません。
 
+## Features
+* 匿名投票
+* 投票のやり直し
+* 自身の投票の確認
+* 投票結果の集計
+
+
 # Requirement
 [go-ipfs](https://github.com/ipfs/go-ipfs)  
 gui
@@ -107,19 +114,19 @@ VotingInfoを取得します。
 
 # Voting Type
 以下の投票方式に対応  
-・[単記投票](https://ja.wikipedia.org/wiki/%E5%8D%98%E8%A8%98%E7%A7%BB%E8%AD%B2%E5%BC%8F%E6%8A%95%E7%A5%A8)  
-・[連記投票](https://ja.wikipedia.org/wiki/%E9%80%A3%E8%A8%98%E6%8A%95%E7%A5%A8)  
-・[認定投票](https://ja.wikipedia.org/wiki/%E8%AA%8D%E5%AE%9A%E6%8A%95%E7%A5%A8)  
-・[範囲投票](https://ja.wikipedia.org/wiki/%E6%8E%A1%E7%82%B9%E6%8A%95%E7%A5%A8)  
-・[累積投票](https://ja.wikipedia.org/wiki/%E7%B4%AF%E7%A9%8D%E6%8A%95%E7%A5%A8)  
-・[選好投票](https://ja.wikipedia.org/wiki/%E9%81%B8%E5%A5%BD%E6%8A%95%E7%A5%A8)  
+* [単記投票](https://ja.wikipedia.org/wiki/%E5%8D%98%E8%A8%98%E7%A7%BB%E8%AD%B2%E5%BC%8F%E6%8A%95%E7%A5%A8)  
+* [連記投票](https://ja.wikipedia.org/wiki/%E9%80%A3%E8%A8%98%E6%8A%95%E7%A5%A8)  
+* [認定投票](https://ja.wikipedia.org/wiki/%E8%AA%8D%E5%AE%9A%E6%8A%95%E7%A5%A8)  
+* [範囲投票](https://ja.wikipedia.org/wiki/%E6%8E%A1%E7%82%B9%E6%8A%95%E7%A5%A8)  
+* [累積投票](https://ja.wikipedia.org/wiki/%E7%B4%AF%E7%A9%8D%E6%8A%95%E7%A5%A8)  
+* [選好投票](https://ja.wikipedia.org/wiki/%E9%81%B8%E5%A5%BD%E6%8A%95%E7%A5%A8)  
 
 
 # TODO
-・登録処理  
-・集計処理  
-・GUI  
-・IPNSを使用する処理の高速化
+* 登録処理  
+* 集計処理  
+* GUI  
+* IPNSを使用する処理の高速化
 
 # Support
 どの組織にも属さずフリーランスで開発しています。  
@@ -127,4 +134,4 @@ VotingInfoを取得します。
 開発の継続のため、皆様のご支援が必要です。  
 どうかよろしくお願いいたします。
 
-ETH Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
+ETH Address:  0x81f5877EFC75906230849205ce11387C119bd9d8
