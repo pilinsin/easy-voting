@@ -121,6 +121,7 @@ This supports the following types:
 Registration process  
 Counting process  
 GUI part  
+Acceleration of IPNS processes 
 
 # Support
 I develop it in freelance.<br>
