@@ -62,7 +62,8 @@ type VotingInfo struct{
   end             string  
   votingType      string  
   candidates      map[string]Candidate  
-  votingIPNSAddrs []string  
+  votingIPNSAddrs map[string]string
+  verifyKeys      map[string]rsa.PublicKey  
 }  
 type Candidate struct{  
   url      string  
@@ -88,17 +89,12 @@ Generate a common key.<br>
 Encode the voting data with the key.<br>
 
 ```Go
-type VoteInt struct{
-  data map[string]int
+type VoteInt map[string]int
+type VotingData struct{
+  data VoteInt
   enc []byte
 }
-votingData := map[string]VoteInt{userID: vote}
-//or  
-//type VoteBool struct{
-//  data map[string]bool
-//  enc []byte
-//}
-//votingData := map[string]VoteBool{userID: vote}  
+votingData := voting.GenVotingData(voteInt)
 ```
 
 Encode the voting data with the manager's public key.<br> 
