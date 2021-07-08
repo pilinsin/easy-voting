@@ -5,7 +5,7 @@ IPFSとGUIライブラリを使用したオンライン投票アプリです。
 ## Features
 * 匿名投票
 * 投票のやり直し
-* 自身の投票の確認
+* 投票結果の検証
 * 投票結果の集計
 
 
@@ -62,8 +62,8 @@ type VotingInfo struct{
   end             string  
   votingType      string  
   candidates      map[string]Candidate  
-  votingIPNSAddrs []string  
-}  
+  votingIPNSAddrs map[string]rsa.PublicKey 
+}
 type Candidate struct{  
   url      string  
   group    string  
@@ -87,17 +87,12 @@ KeyFileを入力し対応する投票用IPNSのアドレスを求めます。
 元の投票データと暗号文を一纏めにした投票データを生成します。  
 
 ```Go
-type VoteInt struct{
-  data map[string]int
+type VoteInt map[string]int
+type VotingData struct{
+  data VoteInt
   enc []byte
 }
-votingData := map[string]VoteInt{userID: vote}
-//or  
-//type VoteBool struct{
-//  data map[string]bool
-//  enc []byte
-//}
-//votingData := map[string]VoteBool{userID: vote}  
+votingData := voting.GenVotingData(voteInt)
 ```
 
 投票データをマネージャー公開鍵で暗号化します。  
