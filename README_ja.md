@@ -37,7 +37,7 @@ RSA鍵生成を行い、秘密鍵はローカルに保存します。
 
 ```Go
 userID := util.GenUniqueID(30,6)
-KeyFile := ipfs.KeyFileGenerate()
+KeyFile := ipfs.GenKeyFile()
 ```
 
 4. ユーザーidとKeyFileをユーザー公開鍵で暗号化  
