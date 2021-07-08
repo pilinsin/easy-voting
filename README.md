@@ -37,7 +37,7 @@ For each user, process the following.<br>
 
 ```Go
 userID := util.GenUniqueID(30,6)
-KeyFile := ipfs.KeyFileGenerate()
+KeyFile := ipfs.GenKeyFile()
 ```
 
 4. Encode the userID and the KeyFile with the user public key.<br>
