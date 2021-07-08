@@ -14,9 +14,9 @@ type RangeVoting struct {
 	max int
 }
 
-func New(cfg *voting.InitConfig, huidListAddrs []string, min int, max int) *RangeVoting {
-	if ok := voting.VerifyUserID(cfg.Is, cfg.UserID, huidListAddrs); !ok {
-		util.CheckError(errors.New("Invalid userID"))
+func New(cfg *voting.InitConfig, ipnsAddrs []string, min int, max int) *RangeVoting {
+	if ok := voting.VerifyUserID(cfg.KeyFile, ipnsAddrs); !ok {
+		util.CheckError(errors.New("Invalid KeyFile"))
 		return nil
 	}
 
@@ -45,8 +45,9 @@ func (rv *RangeVoting) Type() string {
 
 func (rv *RangeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
 	if rv.WithinTime() && rv.IsValidData(data) {
-		mvi := data.Marshal()
-		return rv.BaseVote(mvi, pubKey)
+		vd := rv.GenVotingData(data)
+		mvd := vd.Marshal()
+		return rv.BaseVote(mvd, pubKey)
 	}
 
 	util.CheckError(errors.New("Invalid Data"))
@@ -54,9 +55,9 @@ func (rv *RangeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
 
 }
 
-func (rv *RangeVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VoteInt {
-	mvi := rv.BaseGet(ipnsName, priKey)
-	return voting.UnmarshalVoteInt(mvi)
+func (rv *RangeVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VotingData {
+	mvd := rv.BaseGet(ipnsName, priKey)
+	return voting.UnmarshalVotingData(mvd)
 }
 
 func (rv *RangeVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {

@@ -13,9 +13,9 @@ type ApprovalVoting struct {
 	nCands int
 }
 
-func New(cfg *voting.InitConfig, huidListAddrs []string) *ApprovalVoting {
-	if ok := voting.VerifyUserID(cfg.Is, cfg.UserID, huidListAddrs); !ok {
-		util.CheckError(errors.New("Invalid userID"))
+func New(cfg *voting.InitConfig, ipnsAddrs []string) *ApprovalVoting {
+	if ok := voting.VerifyUserID(cfg.KeyFile, ipnsAddrs); !ok {
+		util.CheckError(errors.New("Invalid KeyFile"))
 		return nil
 	}
 
@@ -24,8 +24,8 @@ func New(cfg *voting.InitConfig, huidListAddrs []string) *ApprovalVoting {
 	return av
 }
 
-func (av *ApprovalVoting) IsValidData(vb voting.VoteBool) bool {
-	return av.NumCandsMatch(len(vb))
+func (av *ApprovalVoting) IsValidData(vi voting.VoteInt) bool {
+	return av.NumCandsMatch(len(vi))
 }
 
 func (av *ApprovalVoting) Type() string {
@@ -33,10 +33,10 @@ func (av *ApprovalVoting) Type() string {
 }
 
 func (av *ApprovalVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
-	vb := data.Cast2Bool()
-	if av.WithinTime() && av.IsValidData(vb) {
-		mvb := vb.Marshal()
-		return av.BaseVote(mvb, pubKey)
+	if av.WithinTime() && av.IsValidData(data) {
+		vd := av.GenVotingData(data)
+		mvd := vd.Marshal()
+		return av.BaseVote(mvd, pubKey)
 	}
 
 	util.CheckError(errors.New("Invalid Data"))
@@ -44,9 +44,9 @@ func (av *ApprovalVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) strin
 
 }
 
-func (av *ApprovalVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VoteBool {
-	mvb := av.BaseGet(ipnsName, priKey)
-	return voting.UnmarshalVoteBool(mvb)
+func (av *ApprovalVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VotingData {
+	mvd := av.BaseGet(ipnsName, priKey)
+	return voting.UnmarshalVotingData(mvd)
 }
 
 func (av *ApprovalVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {

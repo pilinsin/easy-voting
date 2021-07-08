@@ -67,7 +67,7 @@ func (ipfs *IPFS) FileAdd(data []byte, pn bool) path.Resolved {
 func (ipfs *IPFS) FileGet(pth path.Path) []byte {
 	f, err := ipfs.ipfsApi.Unixfs().Get(ipfs.ctx, pth)
 	util.CheckError(err)
-	return []byte(IpfsFileNode2Str(f))
+	return IpfsFileNode2Bytes(f)
 }
 
 func (ipfs *IPFS) hasKey(kw string) bool {
@@ -99,7 +99,7 @@ func (ipfs *IPFS) keySet(kw string) {
 	}
 }
 
-func (ipfs *IPFS) NameGet(kFile p2pcrypt.PrivKey) string {
+func NameGet(kFile p2pcrypt.PrivKey) string {
 	pid, err := peer.IDFromPrivateKey(kFile)
 	util.CheckError(err)
 	name := iface.FormatKeyID(pid)

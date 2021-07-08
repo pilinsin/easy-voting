@@ -13,9 +13,9 @@ type PreferenceVoting struct {
 	voting.Voting
 }
 
-func New(cfg *voting.InitConfig, huidListAddrs []string) *PreferenceVoting {
-	if ok := voting.VerifyUserID(cfg.Is, cfg.UserID, huidListAddrs); !ok {
-		util.CheckError(errors.New("Invalid userID"))
+func New(cfg *voting.InitConfig, ipnsAddrs []string) *PreferenceVoting {
+	if ok := voting.VerifyUserID(cfg.KeyFile, ipnsAddrs); !ok {
+		util.CheckError(errors.New("Invalid KeyFile"))
 		return nil
 	}
 
@@ -50,8 +50,9 @@ func (pv *PreferenceVoting) Type() string {
 
 func (pv *PreferenceVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
 	if pv.WithinTime() && pv.IsValidData(data) {
-		mvi := data.Marshal()
-		return pv.BaseVote(mvi, pubKey)
+		vd := pv.GenVotingData(data)
+		mvd := vd.Marshal()
+		return pv.BaseVote(mvd, pubKey)
 	}
 
 	util.CheckError(errors.New("Invalid Data"))
@@ -59,9 +60,9 @@ func (pv *PreferenceVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) str
 
 }
 
-func (pv *PreferenceVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VoteInt {
-	mvi := pv.BaseGet(ipnsName, priKey)
-	return voting.UnmarshalVoteInt(mvi)
+func (pv *PreferenceVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VotingData {
+	mvd := pv.BaseGet(ipnsName, priKey)
+	return voting.UnmarshalVotingData(mvd)
 }
 
 func (pv *PreferenceVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {

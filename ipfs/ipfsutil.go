@@ -6,25 +6,23 @@ import (
 	"os"
 
 	files "github.com/ipfs/go-ipfs-files"
-	options "github.com/ipfs/interface-go-ipfs-core/options"
 	p2pcrypt "github.com/libp2p/go-libp2p-core/crypto"
-	pb "github.com/libp2p/go-libp2p-core/crypto/pb"
 
 	"EasyVoting/util"
 )
 
-func Str2IpfsFile(str string) files.File {
-	return files.NewBytesFile([]byte(str))
+func Bytes2IpfsFile(b []byte) files.File {
+	return files.NewBytesFile(b)
 }
 
-func IpfsFileNode2Str(node files.Node) string {
+func IpfsFileNode2Bytes(node files.Node) []byte {
 	switch node := node.(type) {
 	case files.File:
-		return util.Reader2Str(node)
+		return util.Reader2Bytes(node)
 	default:
 		err := errors.New("node (type: files.Node) does not have files.File type!")
 		util.CheckError(err)
-		return ""
+		return nil
 	}
 }
 func FilePath2IpfsFile(filePath string) files.File {
@@ -44,21 +42,20 @@ func DirPath2IpfsFileNode(dirPath string) files.Node {
 	return f
 }
 
-func KeyFileGenerate() p2pcrypt.PrivKey {
-	priv, _, err := p2pcrypt.GenerateKeyPairWithReader(p2pcrypt.RSA, options.DefaultRSALen, rand.Reader)
+func GenKeyFile() p2pcrypt.PrivKey {
+	priv, _, err := p2pcrypt.GenerateRSAKeyPair(2048, rand.Reader)
 	util.CheckError(err)
 	return priv
 }
 
 func MarshalKeyFile(kFile p2pcrypt.PrivKey) []byte {
-	b, err := p2pcrypt.MarshalPrivateKey(kFile)
+	kb, err := kFile.Bytes()
 	util.CheckError(err)
-	return b
+	return kb
 }
 
-func UnMarshalKeyFile(b []byte) p2pcrypt.PrivKey {
-	unmarshal := p2pcrypt.PrivKeyUnmarshallers[pb.KeyType_RSA]
-	kFile, err := unmarshal(b)
+func UnmarshalKeyFile(b []byte) p2pcrypt.PrivKey {
+	kFile, err := p2pcrypt.UnmarshalPrivateKey(b)
 	util.CheckError(err)
 
 	return kFile

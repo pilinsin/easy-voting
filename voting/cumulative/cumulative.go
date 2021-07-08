@@ -14,9 +14,9 @@ type CumulativeVoting struct {
 	total int
 }
 
-func New(cfg *voting.InitConfig, huidListAddrs []string, min int, total int) *CumulativeVoting {
-	if ok := voting.VerifyUserID(cfg.Is, cfg.UserID, huidListAddrs); !ok {
-		util.CheckError(errors.New("Invalid userID"))
+func New(cfg *voting.InitConfig, ipnsAddrs []string, min int, total int) *CumulativeVoting {
+	if ok := voting.VerifyUserID(cfg.KeyFile, ipnsAddrs); !ok {
+		util.CheckError(errors.New("Invalid KeyFile"))
 		return nil
 	}
 
@@ -46,8 +46,9 @@ func (cv *CumulativeVoting) Type() string {
 
 func (cv *CumulativeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
 	if cv.WithinTime() && cv.IsValidData(data) {
-		mvi := data.Marshal()
-		return cv.BaseVote(mvi, pubKey)
+		vd := cv.GenVotingData(data)
+		mvd := vd.Marshal()
+		return cv.BaseVote(mvd, pubKey)
 	}
 
 	util.CheckError(errors.New("Invalid Data"))
@@ -55,11 +56,11 @@ func (cv *CumulativeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) str
 
 }
 
-func (cv *CumulativeVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VoteInt {
-	mvi := cv.BaseGet(ipnsName, priKey)
-	return voting.UnmarshalVoteInt(mvi)
+func (cv *CumulativeVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VotingData {
+	mvd := cv.BaseGet(ipnsName, priKey)
+	return voting.UnmarshalVotingData(mvd)
 }
 
-func (cv *CumulativeVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {
+func (cv *CumulativeVoting) Count(nameList map[string]struct{}, priKey crsa.PrivateKey) {
 
 }

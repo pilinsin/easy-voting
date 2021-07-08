@@ -18,6 +18,7 @@ func main() {
 	ctx2 := util.NewContext()
 	Ipfs2 := ipfs.New(ctx2, ".ipfs2")
 
+	signKeyPair := rsa.GenKeyPair(1024)
 	cfg := voting.InitConfig{
 		Is:        Ipfs,
 		ValidTime: "240h",
@@ -26,6 +27,8 @@ func main() {
 		Begin:     "2021-6-1  00:00am",
 		End:       "2021-8-13 11:59pm",
 		NCands:    3,
+		KeyFile:   ipfs.GenKeyFile(),
+		SignKey:   signKeyPair.Private(),
 	}
 	sVoting := sv.New(&cfg, nil)
 	v := voting.VoteInt{"A": 0, "B": 1, "C": 0}
@@ -43,22 +46,27 @@ func main() {
 		NCands:    0,
 	}
 	sVoting2 := sv.New(&cfg2, nil)
-	fmt.Println(sVoting2.Get(res, rsaKeyPair.Private()))
+	vd := sVoting2.Get(res, rsaKeyPair.Private())
+	fmt.Println(vd)
 
-	sk := ipfs.KeyFileGenerate()
-	fmt.Println(sk)
-	resolved := Ipfs.FileAdd([]byte("=^.^= meow meow"), true)
-	fmt.Println(resolved.String())
-	ipnsEntry := Ipfs.NamePublishWithKeyFile(resolved, "240h", sk, "test-test-test")
-	fmt.Println(ipnsEntry.Name())
-	ipnsEntry = Ipfs.NamePublishWithKeyFile(resolved, "240h", sk, "test-test-test")
-	fmt.Println(ipnsEntry.Name())
-	fmt.Println(Ipfs.NameGet(sk))
+	bk := ipfs.MarshalKeyFile(cfg.KeyFile)
+	kf2 := ipfs.UnmarshalKeyFile(bk)
+	fmt.Println(kf2.Equals(cfg.KeyFile))
+	/*
+		sk := ipfs.GenKeyFile()
+		fmt.Println(sk)
+		resolved := Ipfs.FileAdd([]byte("=^.^= meow meow"), true)
+		fmt.Println(resolved.String())
+		ipnsEntry := Ipfs.NamePublishWithKeyFile(resolved, "240h", sk, "test-test-test")
+		fmt.Println(ipnsEntry.Name())
+		ipnsEntry = Ipfs.NamePublishWithKeyFile(resolved, "240h", sk, "test-test-test")
+		fmt.Println(ipnsEntry.Name())
+		fmt.Println(Ipfs.NameGet(sk))
 
-	pth := Ipfs2.NameResolve(ipnsEntry.Name())
-	fmt.Println(pth.String())
+		pth := Ipfs2.NameResolve(ipnsEntry.Name())
+		fmt.Println(pth.String())
 
-	f := Ipfs2.FileGet(pth)
-	fmt.Println(string(f))
-
+		f := Ipfs2.FileGet(pth)
+		fmt.Println(string(f))
+	*/
 }
