@@ -27,30 +27,46 @@ Register an email address and the IPNS address for a Manager's server.<br>
 <img alt="voting_setup" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting_setup.png"><br>
 
 (Manager)<br>
+Generate a votingID.<br>
+Make voting IPNS address map and verification key map.<br>
+```Go
+votingID := util.GenUniqueID(30,30)
+
+var votingIPNSAddrs map[string]string
+var verfKeys        map[string]rsa.PublicKey
+```
 
 Obtain the list of email addresses and registration IPNS addresses from the server.<br> 
 
 For each user, process the following.<br>
 1. Obtain the user public key from the registration IPNS address.<br>
 2. Generate an userID.<br>
-3. Generate a KeyFile.<br>
+3. Generate a keyFile.<br>
 
 ```Go
 userID := util.GenUniqueID(30,6)
-KeyFile := ipfs.GenKeyFile()
+keyFile := ipfs.GenKeyFile()
 ```
-
-4. Encode the userID and the KeyFile with the user public key.<br>
-5. Send an email include the encoded userID and KeyFile to the user.<br>
-<br>
-
-Calculate voting IPNS addresses corresponding to the KeyFiles.<br>
-Generate a manager's RSA key pair.<br>
-Generate a votingID.<br>
+4. Generate RSA signKey and verfKey.<br>
+5. Encode the userID, keyFile and signKey with the user public key.<br>
+6. Send an email include the encoded userID, keyFile and signKey to the user.<br>
+7. Calculate voting IPNS address corresponding to the keyFile.<br>
+8. Calculate a hash.<br>
 
 ```Go
-votingID := util.GenUniqueID(30,30)
+hash := util.Hash(userID, votingID)
 ```
+
+9. Append the IPNS address to the voting IPNS address map
+10. Append the verification key to the key map.<br>
+
+```Go
+votingIPNSAddrs[hash] = addr
+verfKeys[hash] = verfKey
+```
+
+<br>
+Generate a manager's RSA key pair.<br>
 <br>
 Add VotingInfo to IPFS and announce its CID.<br>
 
@@ -63,7 +79,7 @@ type VotingInfo struct{
   votingType      string  
   candidates      map[string]Candidate  
   votingIPNSAddrs map[string]string
-  verifyKeys      map[string]rsa.PublicKey  
+  verfKeys        map[string]rsa.PublicKey  
 }  
 type Candidate struct{  
   url      string  
@@ -77,16 +93,14 @@ type Candidate struct{
 
 (User)<br>
 Obtain VotingInfo.<br>
-Obtain the encoded userID and KeyFile from the email.<br>
-Decode the userID and KeyFile with the user private key.<br>
+Obtain the encoded userID, keyFile and signKey from the email.<br>
+Decode the userID, keyFile and signKey with the user private key.<br>
 
-Calculate a voting IPNS address corresponding to the KeyFile.<br>
+Calculate a voting IPNS address corresponding to the keyFile.<br>
 Verify the address with the voting IPNS addresses.<br>
 
 Reflect the votingType on a voting form.<br>
-Generate a voting data.<br>
-Generate a common key.<br>
-Encode the voting data with the key.<br>
+Generate a voting data with a signature.<br>
 
 ```Go
 type VoteInt map[string]int
@@ -105,17 +119,28 @@ Add the encoded voting data to IPFS and publish to the voting IPNS.<br>
 
 (Manager)<br>
 Obtain VotingInfo.<br>
-Collect the encoded voting data from the voting IPNS addresses.<br>
+Collect the encoded voting data from the voting IPNS address map.<br>
 Decode them with the manager's private key.<br>
 Concatenate them.<br>
-Add the whole voting data to IPFS and announce its CID.<br>
+```Go
+var votingDataMap map[string]VotingData
+for k, v := range votingIPNSAddrs{
+  encVotingData := Get(v)
+  mvd := rsa.Decrypt(encVotingData, manPriKey)
+  votingData := voting.UnmarshalVotingData(mvd)
+  votingDataMap[k] = votingData
+}
+```
+
+Add the votingDataMap to IPFS and announce its CID.<br>
    
 ## Counting
 <img alt="counting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting.png"><br>
 
 (User)<br>
-Obtain the whole voting data.<br>
-Check own voting data.<br>
+Obtain the verfKeys from VotingInfo.<br>
+Obtain the votingDataMap.<br>
+Using the verfKeys and votingDataMap, check arbitrary voting data.<br>
 Tally them.<br>
 
 # Voting Type
