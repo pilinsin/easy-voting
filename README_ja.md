@@ -27,31 +27,39 @@ RSA鍵生成を行い、秘密鍵はローカルに保存します。
 <img alt="voting_setup" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting_setup.png"><br>
 
 (マネージャー)  
-
-サーバーからメールアドレスと登録用IPNSアドレスのリストを取得します。  
-
-各ユーザーに対して以下の処理を行います。  
-1. 登録用IPNSアドレスからユーザー公開鍵を取得  
-2. ユーザーidの生成  
-3. KeyFileの生成  
-
-```Go
-userID := util.GenUniqueID(30,6)
-KeyFile := ipfs.GenKeyFile()
-```
-
-4. ユーザーidとKeyFileをユーザー公開鍵で暗号化  
-5. 暗号化したユーザーidとKeyFileをユーザーにメールで送信  
-  
-
-全ユーザーのKeyPairに対応する投票用IPNSアドレスをリスト化します。  
-マネージャー公開鍵&秘密鍵を生成します。  
 投票idを生成します。  
 
 ```Go
 votingID := util.GenUniqueID(30,30)
 ```
 
+サーバーからメールアドレスと登録用IPNSアドレスのリストを取得します。  
+
+各ユーザーに対して以下の処理を行います。  
+1. 登録用IPNSアドレスからユーザー公開鍵を取得  
+2. ユーザーidの生成  
+3. keyFileの生成  
+
+```Go
+userID := util.GenUniqueID(30,6)
+keyFile := ipfs.GenKeyFile()
+```
+
+4. RSA鍵生成で署名鍵と検証鍵を生成  
+5. ユーザーidとkeyFileと署名鍵をユーザー公開鍵で暗号化  
+6. 暗号化したユーザーidとkeyFileと署名鍵をユーザーにメールで送信  
+7. keyFileに対応する投票用IPNSアドレスを求める
+8. 投票idとユーザーidのハッシュ値を得る
+
+```Go
+hash := util.Hash(userID, votingID)
+```
+
+9. ハッシュ値をキー、投票用IPNSアドレスを値とするマップを得る
+10. ハッシュ値をキー、検証鍵を値とするマップを得る
+
+ 
+マネージャー公開鍵&秘密鍵を生成します。  
 VotingInfoを生成してIPFSにaddし、そのCIDを公表します。  
 
 ```Go
@@ -62,7 +70,8 @@ type VotingInfo struct{
   end             string  
   votingType      string  
   candidates      map[string]Candidate  
-  votingIPNSAddrs map[string]rsa.PublicKey 
+  votingIPNSAddrs map[string]string
+  verfKeys        map[string]rsa.PublicKey 
 }
 type Candidate struct{  
   url      string  
@@ -77,14 +86,12 @@ type Candidate struct{
 
 (ユーザー)  
 VotingInfoを取得します。  
-メールから暗号化ユーザーidと暗号化KeyFileを取得します。  
-ローカルに保存しておいたユーザー秘密鍵でユーザーidとKeyFileを取得します。  
-KeyFileを入力し対応する投票用IPNSのアドレスを求めます。  
-そのアドレスを投票用IPNSアドレスリストと比較してログイン認証を行います。  
+メールから暗号化ユーザーidと暗号化keyFileと暗号化署名鍵を取得します。  
+ローカルに保存しておいたユーザー秘密鍵でユーザーidとkeyFileと署名鍵を取得します。  
+keyFileを入力し対応する投票用IPNSのアドレスを求めます。  
+そのアドレスを投票用IPNSアドレスマップと比較してログイン認証を行います。  
 投票方式を投票フォームに反映させます。  
-投票データを生成します。    
-共通鍵を生成し、投票データを暗号化します。  
-元の投票データと暗号文を一纏めにした投票データを生成します。  
+署名鍵で署名を付与した投票データを生成します。   
 
 ```Go
 type VoteInt map[string]int
@@ -96,24 +103,26 @@ votingData := voting.GenVotingData(voteInt)
 ```
 
 投票データをマネージャー公開鍵で暗号化します。  
-IPFSにaddしてKeyFileを用いて投票用IPNSにpublishします。  
+IPFSにaddしてkeyFileを用いて投票用IPNSにpublishします。  
 
 ## Counting Setup
 <img alt="counting_setup" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting_setup.png"><br>
 
 (マネージャー)  
 VotingInfoを取得します。  
-投票用IPNSアドレスリストから暗号化投票データを収集します。  
+投票用IPNSアドレスマップから暗号化投票データを収集します。  
 マネージャー秘密鍵で投票データを取得します。  
-投票データ全体をIPFSにaddし、そのCIDを公表します。  
+IPNSアドレスマップのキーを用いて投票データを値とするマップを生成します。
+投票データマップをIPFSにaddし、そのCIDを公表します。  
    
 ## Counting
 <img alt="counting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting.png"><br>
 
 (ユーザー)  
-投票データ全体を取得します。  
-自身のユーザーidから投票内容を確認します。  
-投票データリストを集計して投票結果を取得します。  
+投票データマップを取得します。  
+VotingInfoから検証鍵マップを取得します。  
+投票データマップと検証鍵マップから任意の投票データを検証します。  
+投票データを集計して投票結果を取得します。  
 
 # Voting Type
 以下の投票方式に対応  
