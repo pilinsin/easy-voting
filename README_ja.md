@@ -28,9 +28,13 @@ RSA鍵生成を行い、秘密鍵はローカルに保存します。
 
 (マネージャー)  
 投票idを生成します。  
+投票用IPNSアドレスマップを生成します。  
+検証鍵マップを生成します。  
 
 ```Go
 votingID := util.GenUniqueID(30,30)
+var votingIPNSAddrs map[string]string
+var verfKeys        map[string]rsa.PublicKey
 ```
 
 サーバーからメールアドレスと登録用IPNSアドレスのリストを取得します。  
@@ -55,9 +59,13 @@ keyFile := ipfs.GenKeyFile()
 hash := util.Hash(userID, votingID)
 ```
 
-9. ハッシュ値をキー、投票用IPNSアドレスを値とするマップを得る
-10. ハッシュ値をキー、検証鍵を値とするマップを得る
+9. ハッシュ値をキー、投票用IPNSアドレスを値としてマップに追加する  
+10. ハッシュ値をキー、検証鍵を値としてマップに追加する  
 
+```Go
+votingIPNSAddrs[hash] = addr
+verfKeys[hash] = verfKey
+```
  
 マネージャー公開鍵&秘密鍵を生成します。  
 VotingInfoを生成してIPFSにaddし、そのCIDを公表します。  
@@ -113,6 +121,17 @@ VotingInfoを取得します。
 投票用IPNSアドレスマップから暗号化投票データを収集します。  
 マネージャー秘密鍵で投票データを取得します。  
 IPNSアドレスマップのキーを用いて投票データを値とするマップを生成します。
+
+```Go
+var votingDataMap map[string]VotingData
+for k, v := range votingIPNSAddrs{
+  encVotingData := Get(v)
+  mvd := rsa.Decrypt(encVotingData, manPriKey)
+  votingData := voting.UnmarshalVotingData(mvd)
+  votingDataMap[k] = votingData
+}
+```
+
 投票データマップをIPFSにaddし、そのCIDを公表します。  
    
 ## Counting
