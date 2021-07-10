@@ -4,8 +4,8 @@ Blockchain is not used.<br>
 
 ## Feature
 * Anonymity  
-* Re-voting  
-* Confirmation of every voting data  
+* Revote  
+* Confirmation of every voting data by anyone  
 * Counting by anyone
 
 
