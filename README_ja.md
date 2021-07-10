@@ -13,7 +13,7 @@ IPFSとGUIライブラリを使用したオンライン投票アプリです。
 [go-ipfs](https://github.com/ipfs/go-ipfs)  
 gui
 
-# Usage
+# Process Flow
 <img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/system_process.png"><br>
 ## Online Voter Registration
 <img alt="registration" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
