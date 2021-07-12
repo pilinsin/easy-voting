@@ -143,6 +143,45 @@ Obtain the votingDataMap.<br>
 Using the verfKeys and votingDataMap, check arbitrary voting data.<br>
 Tally them.<br>
 
+
+# Usage
+## Registration
+(User)  
+Input an arbitrary IPNS key, and then get a registration IPNS Address.<br>
+Register the address and an email address for a Manager's server.<br>
+
+## Voting Setup
+(Manager)  
+Obtain the list of email addresses and registration IPNS addresses from the server.<br> 
+Input the following informations from forms of the app:
+* Beginning time for voting
+* End time for voting
+* Voting type
+* Candidate informations 
+
+A CID of a VotingInfo is output, so announce it.<br>
+
+## Voting
+(User)  
+Input the CID of VotingInfo.<br>
+Receive an email include encoded userID, keyFile and signKey.<br>
+Input them.<br>
+Vote from a form.<br>
+
+## Counting Setup
+(Manager)  
+Input the CID of VotingInfo.<br>
+A CID of a VotingDataMap is output, so announce it.<br>
+
+## Counting
+(User)  
+Input the CID of VotingInfo.<br>
+Input the CID of VotingDataMap.<br>
+If you want to verify your own vote, input your encoded userID.<br>
+The verification result is output.<br>
+The voting result is output.<br>
+ 
+
 # Voting Type
 This supports the following types:  
 * [Single](https://en.wikipedia.org/wiki/Single_transferable_vote)  
