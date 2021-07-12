@@ -178,30 +178,5 @@ VotingInfoのCIDを入力します。
 VotingInfoのCIDを入力します。  
 投票データマップのCIDを入力します。  
 自身の投票データを確認したい場合は暗号化ユーザーidを入力します。  
+投票データの検証結果が出力されます。  
 最終的な投票結果が出力されます。  
-暗号化ユーザーidを入力した場合は自身の投票データも表示されます。
-
-
-# Voting Type
-以下の投票方式に対応  
-* [単記投票](https://ja.wikipedia.org/wiki/%E5%8D%98%E8%A8%98%E7%A7%BB%E8%AD%B2%E5%BC%8F%E6%8A%95%E7%A5%A8)  
-* [連記投票](https://ja.wikipedia.org/wiki/%E9%80%A3%E8%A8%98%E6%8A%95%E7%A5%A8)  
-* [認定投票](https://ja.wikipedia.org/wiki/%E8%AA%8D%E5%AE%9A%E6%8A%95%E7%A5%A8)  
-* [範囲投票](https://ja.wikipedia.org/wiki/%E6%8E%A1%E7%82%B9%E6%8A%95%E7%A5%A8)  
-* [累積投票](https://ja.wikipedia.org/wiki/%E7%B4%AF%E7%A9%8D%E6%8A%95%E7%A5%A8)  
-* [選好投票](https://ja.wikipedia.org/wiki/%E9%81%B8%E5%A5%BD%E6%8A%95%E7%A5%A8)  
-
-
-# TODO
-* 登録処理  
-* 集計処理  
-* GUI  
-* IPNSを使用する処理の高速化
-
-# Support
-どの組織にも属さずフリーランスで開発しています。  
-投票という制度をより身近で容易かつ公正なものにするため、無料でリリースする予定です。  
-開発の継続のため、皆様のご支援が必要です。  
-どうかよろしくお願いいたします。
-
-ETH Address:  0x81f5877EFC75906230849205ce11387C119bd9d8
