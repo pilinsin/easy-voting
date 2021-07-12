@@ -153,7 +153,7 @@ Register the address and an email address for a Manager's server.<br>
 ## Voting Setup
 (Manager)  
 Obtain the list of email addresses and registration IPNS addresses from the server.<br> 
-Input the following informations from forms of the app:
+Input the following informations from a form of the app:
 * Beginning time for voting
 * End time for voting
 * Voting type
