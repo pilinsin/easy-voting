@@ -1,7 +1,8 @@
 # EasyVoting
-IPFSとGUIライブラリを使用したオンライン投票アプリです。  
+[IPFS](https://ipfs.io/)とGUIライブラリを使用したオンライン投票アプリです。  
 ブロックチェーンは使用しません。
 
+[日本語版IPFS解説サイト](https://ipfs-book.decentralized-web.jp/)
 ## Features
 * 匿名投票
 * 投票期間内ならば何度でも投票可能
