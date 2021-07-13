@@ -1,5 +1,5 @@
 # EasyVoting
-This is an Online Voting App based on IPFS.<br>
+This is an Online Voting App based on [IPFS](https://ipfs.io/).<br>
 Blockchain is not used.<br>
 
 ## Feature
