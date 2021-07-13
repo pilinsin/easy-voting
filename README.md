@@ -3,7 +3,7 @@ This is an Online Voting App based on [IPFS](https://ipfs.io/).<br>
 Blockchain is not used.<br>
 
 ## Feature
-* Anonymity  
+* Anonymous voting  
 * Revote  
 * Confirmation of every voting data by anyone  
 * Counting by anyone
