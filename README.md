@@ -67,6 +67,7 @@ verfKeys[hash] = verfKey
 
 <br>
 Generate a manager's RSA key pair.<br>
+The private key is stored locally.<br>
 <br>
 Add VotingInfo to IPFS and announce its CID.<br>
 
