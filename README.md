@@ -33,7 +33,7 @@ Make voting IPNS address map and verification key map.<br>
 votingID := util.GenUniqueID(30,30)
 
 var votingIPNSAddrs map[string]string
-var verfKeys        map[string]rsa.PublicKey
+var verfKeys        map[string]ed25519.VerfKey
 ```
 
 Obtain the list of email addresses and registration IPNS addresses from the server.<br> 
@@ -47,7 +47,7 @@ For each user, process the following.<br>
 userID := util.GenUniqueID(30,6)
 keyFile := ipfs.GenKeyFile()
 ```
-4. Generate RSA signKey and verfKey.<br>
+4. Generate ED25519 signKey and verfKey.<br>
 5. Encode the userID, keyFile and signKey with the user public key.<br>
 6. Send an email include the encoded userID, keyFile and signKey to the user.<br>
 7. Calculate voting IPNS address corresponding to the keyFile.<br>
@@ -80,7 +80,7 @@ type VotingInfo struct{
   votingType      string  
   candidates      map[string]Candidate  
   votingIPNSAddrs map[string]string
-  verfKeys        map[string]rsa.PublicKey  
+  verfKeys        map[string]ed25519.VerfKey  
 }  
 type Candidate struct{  
   url      string  
