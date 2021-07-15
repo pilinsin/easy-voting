@@ -35,7 +35,7 @@ RSA鍵生成を行い、秘密鍵はローカルに保存します。
 ```Go
 votingID := util.GenUniqueID(30,30)
 var votingIPNSAddrs map[string]string
-var verfKeys        map[string]rsa.PublicKey
+var verfKeys        map[string]ed25519.VerfKey
 ```
 
 サーバーからメールアドレスと登録用IPNSアドレスのリストを取得します。  
@@ -50,7 +50,7 @@ userID := util.GenUniqueID(30,6)
 keyFile := ipfs.GenKeyFile()
 ```
 
-4. RSA鍵生成で署名鍵と検証鍵を生成  
+4. ED25519鍵生成で署名鍵と検証鍵を生成  
 5. ユーザーidとkeyFileと署名鍵をユーザー公開鍵で暗号化  
 6. 暗号化したユーザーidとkeyFileと署名鍵をユーザーにメールで送信  
 7. keyFileに対応する投票用IPNSアドレスを求める
@@ -80,7 +80,7 @@ type VotingInfo struct{
   votingType      string  
   candidates      map[string]Candidate  
   votingIPNSAddrs map[string]string
-  verfKeys        map[string]rsa.PublicKey 
+  verfKeys        map[string]ed25519.VerfKey 
 }
 type Candidate struct{  
   url      string  
