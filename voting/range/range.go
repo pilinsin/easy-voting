@@ -1,10 +1,10 @@
 package rangevoting
 
 import (
-	crsa "crypto/rsa"
 	"errors"
 
 	"EasyVoting/util"
+	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
 
@@ -43,11 +43,11 @@ func (rv *RangeVoting) Type() string {
 	return "rangevoting"
 }
 
-func (rv *RangeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
+func (rv *RangeVoting) Vote(data voting.VoteInt) string {
 	if rv.WithinTime() && rv.IsValidData(data) {
 		vd := rv.GenVotingData(data)
 		mvd := vd.Marshal()
-		return rv.BaseVote(mvd, pubKey)
+		return rv.BaseVote(mvd)
 	}
 
 	util.CheckError(errors.New("Invalid Data"))
@@ -55,11 +55,11 @@ func (rv *RangeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
 
 }
 
-func (rv *RangeVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VotingData {
+func (rv *RangeVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
 	mvd := rv.BaseGet(ipnsName, priKey)
 	return voting.UnmarshalVotingData(mvd)
 }
 
-func (rv *RangeVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {
+func (rv *RangeVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
 
 }

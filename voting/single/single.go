@@ -1,11 +1,10 @@
 package singlevoting
 
 import (
-	crsa "crypto/rsa"
 	"errors"
-	"fmt"
 
 	"EasyVoting/util"
+	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
 
@@ -42,23 +41,22 @@ func (sv *SingleVoting) Type() string {
 	return "singlevoting"
 }
 
-func (sv *SingleVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
+func (sv *SingleVoting) Vote(data voting.VoteInt) string {
 	if sv.WithinTime() && sv.IsValidData(data) {
 		vd := sv.GenVotingData(data)
-		fmt.Println(vd)
 		mvd := vd.Marshal()
-		return sv.BaseVote(mvd, pubKey)
+		return sv.BaseVote(mvd)
 	}
 
 	util.CheckError(errors.New("Invalid Data"))
 	return ""
 }
 
-func (sv *SingleVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VotingData {
+func (sv *SingleVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
 	mvd := sv.BaseGet(ipnsName, priKey)
 	return voting.UnmarshalVotingData(mvd)
 }
 
-func (sv *SingleVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {
+func (sv *SingleVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
 
 }

@@ -1,10 +1,10 @@
 package approvalvoting
 
 import (
-	crsa "crypto/rsa"
 	"errors"
 
 	"EasyVoting/util"
+	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
 
@@ -32,11 +32,11 @@ func (av *ApprovalVoting) Type() string {
 	return "approvalvoting"
 }
 
-func (av *ApprovalVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
+func (av *ApprovalVoting) Vote(data voting.VoteInt) string {
 	if av.WithinTime() && av.IsValidData(data) {
 		vd := av.GenVotingData(data)
 		mvd := vd.Marshal()
-		return av.BaseVote(mvd, pubKey)
+		return av.BaseVote(mvd)
 	}
 
 	util.CheckError(errors.New("Invalid Data"))
@@ -44,11 +44,11 @@ func (av *ApprovalVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) strin
 
 }
 
-func (av *ApprovalVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VotingData {
+func (av *ApprovalVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
 	mvd := av.BaseGet(ipnsName, priKey)
 	return voting.UnmarshalVotingData(mvd)
 }
 
-func (av *ApprovalVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {
+func (av *ApprovalVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
 
 }

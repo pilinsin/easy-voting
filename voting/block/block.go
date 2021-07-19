@@ -1,10 +1,10 @@
 package blockvoting
 
 import (
-	crsa "crypto/rsa"
 	"errors"
 
 	"EasyVoting/util"
+	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
 
@@ -42,22 +42,22 @@ func (bv *BlockVoting) Type() string {
 	return "blockvoting"
 }
 
-func (bv *BlockVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
+func (bv *BlockVoting) Vote(data voting.VoteInt) string {
 	if bv.WithinTime() && bv.IsValidData(data) {
 		vd := bv.GenVotingData(data)
 		mvd := vd.Marshal()
-		return bv.BaseVote(mvd, pubKey)
+		return bv.BaseVote(mvd)
 	}
 
 	util.CheckError(errors.New("Invalid Data"))
 	return ""
 }
 
-func (bv *BlockVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VotingData {
+func (bv *BlockVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
 	mvd := bv.BaseGet(ipnsName, priKey)
 	return voting.UnmarshalVotingData(mvd)
 }
 
-func (bv *BlockVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {
+func (bv *BlockVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
 
 }

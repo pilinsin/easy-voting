@@ -1,11 +1,10 @@
 package preferencevoting
 
 import (
-	crsa "crypto/rsa"
 	"errors"
-	"sort"
 
 	"EasyVoting/util"
+	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
 
@@ -48,11 +47,11 @@ func (pv *PreferenceVoting) Type() string {
 	return "preferencevoting"
 }
 
-func (pv *PreferenceVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
+func (pv *PreferenceVoting) Vote(data voting.VoteInt) string {
 	if pv.WithinTime() && pv.IsValidData(data) {
 		vd := pv.GenVotingData(data)
 		mvd := vd.Marshal()
-		return pv.BaseVote(mvd, pubKey)
+		return pv.BaseVote(mvd)
 	}
 
 	util.CheckError(errors.New("Invalid Data"))
@@ -60,11 +59,11 @@ func (pv *PreferenceVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) str
 
 }
 
-func (pv *PreferenceVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VotingData {
+func (pv *PreferenceVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
 	mvd := pv.BaseGet(ipnsName, priKey)
 	return voting.UnmarshalVotingData(mvd)
 }
 
-func (pv *PreferenceVoting) Count(nameList map[string]struct{}, proKey crsa.PrivateKey) {
+func (pv *PreferenceVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
 
 }

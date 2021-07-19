@@ -2,6 +2,7 @@ package ipfs
 
 import (
 	"context"
+	"io"
 	"io/ioutil"
 	"time"
 
@@ -17,7 +18,6 @@ import (
 	iface "github.com/ipfs/interface-go-ipfs-core"
 	options "github.com/ipfs/interface-go-ipfs-core/options"
 	path "github.com/ipfs/interface-go-ipfs-core/path"
-	p2pcrypt "github.com/libp2p/go-libp2p-core/crypto"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 
 	"EasyVoting/util"
@@ -39,6 +39,7 @@ func New(ctx context.Context, repoStr string) *IPFS {
 	exOpts := map[string]bool{
 		"discovery": true,
 		"dht":       true,
+		"pubsub":    true,
 	}
 	buildCfg := core.BuildCfg{
 		Online:    true,
@@ -82,12 +83,12 @@ func (ipfs *IPFS) hasKey(kw string) bool {
 	return isExsitKey
 }
 
-func (ipfs *IPFS) keyFileSet(kFile p2pcrypt.PrivKey, kw string) {
+func (ipfs *IPFS) keyFileSet(kFile KeyFile, kw string) {
 	if ipfs.hasKey(kw) {
 		err := ipfs.kStore.Delete(kw)
 		util.CheckError(err)
 	}
-	err := ipfs.kStore.Put(kw, kFile)
+	err := ipfs.kStore.Put(kw, kFile.keyFile)
 	util.CheckError(err)
 
 }
@@ -99,15 +100,15 @@ func (ipfs *IPFS) keySet(kw string) {
 	}
 }
 
-func NameGet(kFile p2pcrypt.PrivKey) string {
-	pid, err := peer.IDFromPrivateKey(kFile)
+func NameGet(kFile KeyFile) string {
+	pid, err := peer.IDFromPrivateKey(kFile.keyFile)
 	util.CheckError(err)
 	name := iface.FormatKeyID(pid)
 
 	return name
 }
 
-func (ipfs *IPFS) NamePublishWithKeyFile(pth path.Path, vt string, kFile p2pcrypt.PrivKey, kw string) iface.IpnsEntry {
+func (ipfs *IPFS) NamePublishWithKeyFile(pth path.Path, vt string, kFile KeyFile, kw string) iface.IpnsEntry {
 	t, err := time.ParseDuration(vt)
 	util.CheckError(err)
 
@@ -133,4 +134,22 @@ func (ipfs *IPFS) NameResolve(name string) path.Path {
 	pth, err := ipfs.ipfsApi.Name().Resolve(ipfs.ctx, name)
 	util.CheckError(err)
 	return pth
+}
+
+func (ipfs *IPFS) PubsubPublish(topic string, data []byte) {
+	err := ipfs.ipfsApi.PubSub().Publish(ipfs.ctx, topic, data)
+	util.CheckError(err)
+}
+func (ipfs *IPFS) PubsubSubscribe(topic string) []byte {
+	sub, err := ipfs.ipfsApi.PubSub().Subscribe(ipfs.ctx, topic, options.PubSub.Discover(true))
+	util.CheckError(err)
+	defer sub.Close()
+
+	msg, err := sub.Next(ipfs.ctx)
+	if err == io.EOF || err == context.Canceled {
+		return nil
+	}
+	util.CheckError(err)
+
+	return msg.Data()
 }

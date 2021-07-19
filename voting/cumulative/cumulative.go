@@ -1,10 +1,10 @@
 package cumulativevoting
 
 import (
-	crsa "crypto/rsa"
 	"errors"
 
 	"EasyVoting/util"
+	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
 
@@ -44,11 +44,11 @@ func (cv *CumulativeVoting) Type() string {
 	return "cumulativevoting"
 }
 
-func (cv *CumulativeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) string {
+func (cv *CumulativeVoting) Vote(data voting.VoteInt) string {
 	if cv.WithinTime() && cv.IsValidData(data) {
 		vd := cv.GenVotingData(data)
 		mvd := vd.Marshal()
-		return cv.BaseVote(mvd, pubKey)
+		return cv.BaseVote(mvd)
 	}
 
 	util.CheckError(errors.New("Invalid Data"))
@@ -56,11 +56,11 @@ func (cv *CumulativeVoting) Vote(data voting.VoteInt, pubKey crsa.PublicKey) str
 
 }
 
-func (cv *CumulativeVoting) Get(ipnsName string, priKey crsa.PrivateKey) voting.VotingData {
+func (cv *CumulativeVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
 	mvd := cv.BaseGet(ipnsName, priKey)
 	return voting.UnmarshalVotingData(mvd)
 }
 
-func (cv *CumulativeVoting) Count(nameList map[string]struct{}, priKey crsa.PrivateKey) {
+func (cv *CumulativeVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
 
 }

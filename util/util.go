@@ -25,6 +25,28 @@ func StrPtr(s string) *string {
 	return &s
 }
 
+func ConstTimeBytesEqual(b1, b2 []byte) bool {
+	len1 := len(b1)
+	len2 := len(b2)
+
+	var bLong []byte
+	var bShort []byte
+	if len1 < len2 {
+		bLong = b2
+		bShort = b1
+	} else {
+		bLong = b1
+		bShort = b2
+	}
+
+	res := len1 == len2
+	for idx := range bShort {
+		res = bShort[idx] == bLong[idx] && res
+	}
+
+	return res
+}
+
 func Bytes2Reader(b []byte) io.Reader {
 	return bytes.NewBuffer(b)
 }

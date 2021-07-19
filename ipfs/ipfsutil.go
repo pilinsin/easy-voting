@@ -42,21 +42,29 @@ func DirPath2IpfsFileNode(dirPath string) files.Node {
 	return f
 }
 
-func GenKeyFile() p2pcrypt.PrivKey {
-	priv, _, err := p2pcrypt.GenerateRSAKeyPair(2048, rand.Reader)
-	util.CheckError(err)
-	return priv
+type KeyFile struct {
+	keyFile p2pcrypt.PrivKey
 }
 
-func MarshalKeyFile(kFile p2pcrypt.PrivKey) []byte {
-	kb, err := kFile.Bytes()
+func GenKeyFile() KeyFile {
+	priv, _, err := p2pcrypt.GenerateEd25519Key(rand.Reader)
+	util.CheckError(err)
+	return KeyFile{priv}
+}
+
+func (kf KeyFile) Equals(kf2 KeyFile) bool {
+	return kf.keyFile.Equals(kf2.keyFile)
+}
+
+func (kf KeyFile) Marshal() []byte {
+	kb, err := kf.keyFile.Bytes()
 	util.CheckError(err)
 	return kb
 }
 
-func UnmarshalKeyFile(b []byte) p2pcrypt.PrivKey {
+func UnmarshalKeyFile(b []byte) KeyFile {
 	kFile, err := p2pcrypt.UnmarshalPrivateKey(b)
 	util.CheckError(err)
 
-	return kFile
+	return KeyFile{kFile}
 }

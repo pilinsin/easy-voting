@@ -4,15 +4,13 @@ import (
 	"encoding/json"
 	"time"
 
-	crsa "crypto/rsa"
-	p2pcrypt "github.com/libp2p/go-libp2p-core/crypto"
-
 	"EasyVoting/ipfs"
 	"EasyVoting/util"
-	"EasyVoting/util/rsa"
+	"EasyVoting/util/ecies"
+	"EasyVoting/util/ed25519"
 )
 
-func VerifyUserID(kFile p2pcrypt.PrivKey, ipnsAddrs []string) bool {
+func VerifyUserID(kFile ipfs.KeyFile, ipnsAddrs []string) bool {
 	ipnsAddr := ipfs.NameGet(kFile)
 	for _, addr := range ipnsAddrs {
 		if ipnsAddr == addr {
@@ -30,8 +28,8 @@ type Voting struct {
 	BaseVoting
 	begin   string
 	end     string
-	keyFile p2pcrypt.PrivKey
-	signKey crsa.PrivateKey
+	keyFile ipfs.KeyFile
+	signKey ed25519.SignKey
 }
 
 type InitConfig struct {
@@ -42,12 +40,13 @@ type InitConfig struct {
 	Begin     string
 	End       string
 	NCands    int
-	KeyFile   p2pcrypt.PrivKey
-	SignKey   crsa.PrivateKey
+	PubKey    ecies.PubKey
+	KeyFile   ipfs.KeyFile
+	SignKey   ed25519.SignKey
 }
 
 func (v *Voting) Init(cfg *InitConfig) {
-	v.BaseInit(cfg.Is, cfg.ValidTime, generateIPNSKey(cfg.UserID, cfg.VotingID), cfg.NCands)
+	v.BaseInit(cfg.Is, cfg.ValidTime, generateIPNSKey(cfg.UserID, cfg.VotingID), cfg.NCands, cfg.PubKey)
 	v.begin = cfg.Begin
 	v.end = cfg.End
 	v.keyFile = cfg.KeyFile
@@ -66,15 +65,15 @@ func (v *Voting) WithinTime() bool {
 	return (now.Equal(bTime) || now.After(bTime)) && now.Before(eTime)
 }
 
-func (v *Voting) BaseVote(data []byte, pubKey crsa.PublicKey) string {
-	encData := rsa.Encrypt(data, pubKey)
+func (v *Voting) BaseVote(data []byte) string {
+	encData := v.pubKey.Encrypt(data)
 	resolved := v.iPFS.FileAdd(encData, true)
 	ipnsEntry := v.iPFS.NamePublishWithKeyFile(resolved, v.validTime, v.keyFile, v.key)
 	return ipnsEntry.Name()
 }
 
 func (v *Voting) GenVotingData(data VoteInt) *VotingData {
-	sign := rsa.Sign(data.Marshal(), v.signKey)
+	sign := v.signKey.Sign(data.Marshal())
 	vd := &VotingData{data, sign}
 	return vd
 }
@@ -84,7 +83,11 @@ type VotingData struct {
 	Sign []byte
 }
 
-func (vd *VotingData) Marshal() []byte {
+func (vd *VotingData) Verify(verfKey ed25519.VerfKey) bool {
+	return verfKey.Verify(vd.Data.Marshal(), vd.Sign)
+}
+
+func (vd VotingData) Marshal() []byte {
 	mvd, err := json.Marshal(vd)
 	util.CheckError(err)
 	return mvd
