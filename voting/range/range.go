@@ -1,9 +1,6 @@
 package rangevoting
 
 import (
-	"errors"
-
-	"EasyVoting/util"
 	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
@@ -55,11 +52,14 @@ func (rv *RangeVoting) Vote(data voting.VoteInt) string {
 
 }
 
-func (rv *RangeVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
-	mvd := rv.BaseGet(ipnsName, priKey)
-	return voting.UnmarshalVotingData(mvd)
-}
+func (rv *RangeVoting) Count(votes *voting.VoteMap, manPriKey ecies.PriKey) map[string](voting.VoteInt) {
+	var votingMap map[string](voting.VoteInt)
+	for h, v := range votes.Votes {
+		data := voting.UnmarshalVoteInt(manPriKey.Decrypt(v.Data))
+		if rv.IsValidData(data) {
+			votingMap[h] = data
+		}
+	}
 
-func (rv *RangeVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
-
+	return votingMap
 }

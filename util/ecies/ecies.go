@@ -1,84 +1,69 @@
 package ecies
 
 import (
-	"encoding/json"
-
-	"github.com/itrabbit/ecc"
+	eciesgo "github.com/ecies/go"
 
 	"EasyVoting/util"
 )
 
 type PubKey struct {
-	pubKey ecc.PublicKey
+	pubKey *eciesgo.PublicKey
 }
 
 type PriKey struct {
-	priKey ecc.PrivateKey
+	priKey *eciesgo.PrivateKey
 }
 
 type KeyPair struct {
-	pubKey PubKey
-	priKey PriKey
+	pubKey *PubKey
+	priKey *PriKey
 }
 
 func GenKeyPair() *KeyPair {
-	pri, err := ecc.GenerateKey()
+	pri, err := eciesgo.GenerateKey()
 	util.CheckError(err)
 
-	kp := &KeyPair{PubKey{pri.PublicKey}, PriKey{*pri}}
+	kp := &KeyPair{&PubKey{pri.PublicKey}, &PriKey{pri}}
 	return kp
 }
-func (kp *KeyPair) Public() PubKey {
+func (kp *KeyPair) Public() *PubKey {
 	return kp.pubKey
 }
-func (kp *KeyPair) Private() PriKey {
+func (kp *KeyPair) Private() *PriKey {
 	return kp.priKey
 }
 
-func (key PubKey) Encrypt(message []byte) []byte {
-	enc, err := ecc.Encrypt(&key.pubKey, message)
+func (key *PubKey) Encrypt(message []byte) []byte {
+	enc, err := eciesgo.Encrypt(key.pubKey, message)
 	util.CheckError(err)
 	return enc
 }
-func (key PriKey) Decrypt(enc []byte) []byte {
-	msg, err := ecc.Decrypt(&key.priKey, enc)
+func (key *PriKey) Decrypt(enc []byte) []byte {
+	msg, err := eciesgo.Decrypt(key.priKey, enc)
 	util.CheckError(err)
 	return msg
 }
 
-func (key PubKey) Equals(key2 PubKey) bool {
+func (key *PubKey) Equals(key2 *PubKey) bool {
 	return util.ConstTimeBytesEqual(key.Marshal(), key2.Marshal())
 }
-func (key PriKey) Equals(key2 PriKey) bool {
+func (key *PriKey) Equals(key2 *PriKey) bool {
 	return util.ConstTimeBytesEqual(key.Marshal(), key2.Marshal())
 }
 
-func (key PubKey) Marshal() []byte {
-	b, err := json.Marshal(key.pubKey.String())
-	util.CheckError(err)
-	return b
+func (key *PubKey) Marshal() []byte {
+	return key.pubKey.Bytes(true)
 }
-func UnmarshalPublic(b []byte) PubKey {
-	var pubstr string
-	err := json.Unmarshal(b, &pubstr)
+func UnmarshalPublic(b []byte) *PubKey {
+	pub, err := eciesgo.NewPublicKeyFromBytes(b)
 	util.CheckError(err)
-
-	pub, err := ecc.PublicKeyFromString(pubstr)
-	util.CheckError(err)
-	return PubKey{*pub}
+	return &PubKey{pub}
 }
 
-func (key PriKey) Marshal() []byte {
-	b, err := json.Marshal(key.priKey.String())
-	util.CheckError(err)
-	return b
+func (key *PriKey) Marshal() []byte {
+	return key.priKey.Bytes()
 }
-func UnmarshalPrivate(b []byte) PriKey {
-	var pristr string
-	err := json.Unmarshal(b, &pristr)
-	util.CheckError(err)
-
-	pri, err := ecc.KeyFromString(pristr)
-	util.CheckError(err)
-	return PriKey{*pri}
+func UnmarshalPrivate(b []byte) *PriKey {
+	pri := eciesgo.NewPrivateKeyFromBytes(b)
+	return &PriKey{pri}
 }

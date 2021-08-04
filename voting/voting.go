@@ -2,6 +2,7 @@ package voting
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"EasyVoting/ipfs"
@@ -20,36 +21,41 @@ func VerifyUserID(kFile ipfs.KeyFile, ipnsAddrs []string) bool {
 	return false
 }
 
-func generateIPNSKey(userID string, votingID string) string {
+func GenerateKeyHash(userID string, votingID string) string {
 	return util.Bytes64EncodeStr(util.Hash([]byte(userID), []byte(votingID)))
 }
 
 type Voting struct {
-	BaseVoting
+	iPFS    *ipfs.IPFS
+	topic   string
+	key     string
 	begin   string
 	end     string
-	keyFile ipfs.KeyFile
-	signKey ed25519.SignKey
+	nCands  int
+	pubKey  *ecies.PubKey
+	signKey *ed25519.SignKey
 }
 
 type InitConfig struct {
-	Is        *ipfs.IPFS
-	ValidTime string
-	VotingID  string
-	UserID    string
-	Begin     string
-	End       string
-	NCands    int
-	PubKey    ecies.PubKey
-	KeyFile   ipfs.KeyFile
-	SignKey   ed25519.SignKey
+	Is       *ipfs.IPFS
+	Topic    string
+	VotingID string
+	UserID   string
+	Begin    string
+	End      string
+	NCands   int
+	PubKey   *ecies.PubKey
+	SignKey  *ed25519.SignKey
 }
 
 func (v *Voting) Init(cfg *InitConfig) {
-	v.BaseInit(cfg.Is, cfg.ValidTime, generateIPNSKey(cfg.UserID, cfg.VotingID), cfg.NCands, cfg.PubKey)
+	v.iPFS = cfg.Is
+	v.topic = cfg.Topic
+	v.key = GenerateKeyHash(cfg.UserID, cfg.VotingID)
 	v.begin = cfg.Begin
 	v.end = cfg.End
-	v.keyFile = cfg.KeyFile
+	v.nCands = cfg.NCands
+	v.pubKey = cfg.PubKey
 	v.signKey = cfg.SignKey
 }
 
@@ -65,26 +71,103 @@ func (v *Voting) WithinTime() bool {
 	return (now.Equal(bTime) || now.After(bTime)) && now.Before(eTime)
 }
 
-func (v *Voting) BaseVote(data []byte) string {
-	encData := v.pubKey.Encrypt(data)
-	resolved := v.iPFS.FileAdd(encData, true)
-	ipnsEntry := v.iPFS.NamePublishWithKeyFile(resolved, v.validTime, v.keyFile, v.key)
-	return ipnsEntry.Name()
+func (v *Voting) NumCandsMatch(num int) bool {
+	return num == v.nCands
 }
 
-func (v *Voting) GenVotingData(data VoteInt) *VotingData {
-	sign := v.signKey.Sign(data.Marshal())
-	vd := &VotingData{data, sign}
-	return vd
+func (v *Voting) BaseVote(data []byte) {
+	v.iPFS.PubsubPublish(data)
+}
+
+type VoteMap struct {
+	Counts int
+	Votes  map[string]Vote
+}
+
+func (vm *VoteMap) Append(vote Vote) {
+	vm.Counts++
+	vm.Votes[vote.Hash] = vote
+}
+func (vm *VoteMap) Copy(vm2 *VoteMap) {
+	vm.Counts = vm2.Counts
+	vm.Votes = vm2.Votes
+}
+func (v *Voting) Get(vts *VoteMap, usrVerfKeyMap map[string](ed25519.VerfKey), manVerfKey ed25519.VerfKey) *VoteMap {
+	var votes *VoteMap
+	if vts != nil {
+		fmt.Println("vts is nil")
+		votes.Copy(vts)
+	}
+
+	sub := v.iPFS.PubsubSubscribe(v.topic)
+	defer sub.Close()
+	subCount := 0
+	for {
+		msg, err := v.iPFS.SubNext(sub)
+		fmt.Println(err != nil)
+		//if err == io.EOF || err == context.Canceled {
+		if err != nil {
+			util.CheckError(err)
+			return votes
+		}
+		if subCount < votes.Counts {
+			subCount++
+			continue
+		}
+
+		data := msg.Data()
+		if IsVoteEnd(data, manVerfKey) {
+			return votes
+		}
+
+		vd, err := UnmarshalVotingData(data)
+		if err != nil {
+			if _, ok := usrVerfKeyMap[vd.Vote.Hash]; ok {
+				if vd.Verify(usrVerfKeyMap[vd.Vote.Hash]) {
+					votes.Append(vd.Vote)
+				}
+			}
+		}
+
+	}
+}
+
+const voteEnd = "voting end"
+
+type VoteEnd struct {
+	Text string
+	Sign []byte
+}
+
+func (v *Voting) MarshalVoteEnd() []byte {
+	sign := v.signKey.Sign([]byte(voteEnd))
+	ve := VoteEnd{voteEnd, sign}
+	mve, err := json.Marshal(ve)
+	util.CheckError(err)
+	return mve
+}
+func IsVoteEnd(mve []byte, verfKey ed25519.VerfKey) bool {
+	var ve VoteEnd
+	err := json.Unmarshal(mve, &ve)
+	if err != nil {
+		return false
+	}
+	return verfKey.Verify([]byte(voteEnd), ve.Sign)
+}
+
+func (v *Voting) GenVotingData(data VoteInt) VotingData {
+	vt := Vote{v.key, v.pubKey.Encrypt(data.Marshal())}
+	sign := v.signKey.Sign(vt.Marshal())
+	return VotingData{vt, sign}
 }
 
 type VotingData struct {
-	Data VoteInt
+	Vote Vote
 	Sign []byte
 }
 
 func (vd *VotingData) Verify(verfKey ed25519.VerfKey) bool {
-	return verfKey.Verify(vd.Data.Marshal(), vd.Sign)
+	return verfKey.Verify(vd.Vote.Marshal(), vd.Sign)
 }
 
 func (vd VotingData) Marshal() []byte {
@@ -92,11 +175,29 @@ func (vd VotingData) Marshal() []byte {
 	util.CheckError(err)
 	return mvd
 }
-func UnmarshalVotingData(mvd []byte) VotingData {
+func UnmarshalVotingData(mvd []byte) (VotingData, error) {
 	var vd VotingData
 	err := json.Unmarshal(mvd, &vd)
+	return vd, err
+}
+
+type Vote struct {
+	Hash string
+	Data []byte
+}
+
+func (vt Vote) Marshal() []byte {
+	mvt, err := json.Marshal(vt)
 	util.CheckError(err)
-	return vd
+	return mvt
+}
+
+//TODO: exclude null data
+func UnmarshalVote(mvt []byte) Vote {
+	var vt Vote
+	err := json.Unmarshal(mvt, &vt)
+	util.CheckError(err)
+	return vt
 }
 
 type VoteInt map[string]int

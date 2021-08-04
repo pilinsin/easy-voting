@@ -5,16 +5,25 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"golang.org/x/crypto/argon2"
 	"io"
 	"log"
 	"math"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func CheckError(err error) {
 	if err != nil {
 		log.Panic(err)
 	}
+}
+func RaiseError(a ...interface{}) {
+	err := errors.New(fmt.Sprintln(a...))
+	log.Panic(err)
 }
 
 func BoolPtr(b bool) *bool {
@@ -69,8 +78,16 @@ func Bytes64DecodeStr(str string) []byte {
 }
 
 func NewContext() context.Context {
-	ctx, _ := context.WithCancel(context.Background())
-	return ctx
+	return context.Background()
+}
+func CancelContext() (context.Context, context.CancelFunc) {
+	return context.WithCancel(context.Background())
+}
+func SignalContext() (context.Context, context.CancelFunc) {
+	return signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+}
+func WithSignal(ctx context.Context) (context.Context, context.CancelFunc) {
+	return signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 }
 
 func Hash(txt []byte, salt []byte) []byte {

@@ -1,9 +1,6 @@
 package blockvoting
 
 import (
-	"errors"
-
-	"EasyVoting/util"
 	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
@@ -53,11 +50,14 @@ func (bv *BlockVoting) Vote(data voting.VoteInt) string {
 	return ""
 }
 
-func (bv *BlockVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
-	mvd := bv.BaseGet(ipnsName, priKey)
-	return voting.UnmarshalVotingData(mvd)
-}
+func (bv *BlockVoting) Count(votes *voting.VoteMap, manPriKey ecies.PriKey) map[string](voting.VoteInt) {
+	var votingMap map[string](voting.VoteInt)
+	for h, v := range votes.Votes {
+		data := voting.UnmarshalVoteInt(manPriKey.Decrypt(v.Data))
+		if bv.IsValidData(data) {
+			votingMap[h] = data
+		}
+	}
 
-func (bv *BlockVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
-
+	return votingMap
 }

@@ -1,9 +1,6 @@
 package singlevoting
 
 import (
-	"errors"
-
-	"EasyVoting/util"
 	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
@@ -41,22 +38,22 @@ func (sv *SingleVoting) Type() string {
 	return "singlevoting"
 }
 
-func (sv *SingleVoting) Vote(data voting.VoteInt) string {
+func (sv *SingleVoting) Vote(data voting.VoteInt) {
 	if sv.WithinTime() && sv.IsValidData(data) {
 		vd := sv.GenVotingData(data)
 		mvd := vd.Marshal()
-		return sv.BaseVote(mvd)
+		sv.BaseVote(mvd)
+	}
+}
+
+func (sv *SingleVoting) Count(votes *voting.VoteMap, manPriKey ecies.PriKey) map[string](voting.VoteInt) {
+	var votingMap map[string](voting.VoteInt)
+	for h, v := range votes.Votes {
+		data := voting.UnmarshalVoteInt(manPriKey.Decrypt(v.Data))
+		if sv.IsValidData(data) {
+			votingMap[h] = data
+		}
 	}
 
-	util.CheckError(errors.New("Invalid Data"))
-	return ""
-}
-
-func (sv *SingleVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
-	mvd := sv.BaseGet(ipnsName, priKey)
-	return voting.UnmarshalVotingData(mvd)
-}
-
-func (sv *SingleVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
-
+	return votingMap
 }

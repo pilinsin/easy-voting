@@ -1,9 +1,6 @@
 package preferencevoting
 
 import (
-	"errors"
-
-	"EasyVoting/util"
 	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
@@ -59,11 +56,14 @@ func (pv *PreferenceVoting) Vote(data voting.VoteInt) string {
 
 }
 
-func (pv *PreferenceVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
-	mvd := pv.BaseGet(ipnsName, priKey)
-	return voting.UnmarshalVotingData(mvd)
-}
+func (pv *PreferenceVoting) Count(votes *voting.VoteMap, manPriKey ecies.PriKey) map[string](voting.VoteInt) {
+	var votingMap map[string](voting.VoteInt)
+	for h, v := range votes.Votes {
+		data := voting.UnmarshalVoteInt(manPriKey.Decrypt(v.Data))
+		if pv.IsValidData(data) {
+			votingMap[h] = data
+		}
+	}
 
-func (pv *PreferenceVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
-
+	return votingMap
 }

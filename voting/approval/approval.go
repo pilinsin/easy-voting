@@ -1,9 +1,6 @@
 package approvalvoting
 
 import (
-	"errors"
-
-	"EasyVoting/util"
 	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
@@ -44,11 +41,15 @@ func (av *ApprovalVoting) Vote(data voting.VoteInt) string {
 
 }
 
-func (av *ApprovalVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
-	mvd := av.BaseGet(ipnsName, priKey)
-	return voting.UnmarshalVotingData(mvd)
-}
 
-func (av *ApprovalVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
+func (av *ApprovalVoting) Count(votes *voting.VoteMap, manPriKey ecies.PriKey), manVerfKey ed25519.VerfKey, manPriKey ecies.PriKey) map[string](voting.VoteInt) {
+	var votingMap map[string](voting.VoteInt)
+	for h, v := range votes.Votes{
+		data := voting.UnmarshalVoteInt(manPriKey.Decrypt(v.Data))
+		if av.IsValidData(data){
+			votingMap[h] = data
+		}
+	}
 
+	return votingMap
 }

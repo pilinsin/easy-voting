@@ -1,9 +1,6 @@
 package cumulativevoting
 
 import (
-	"errors"
-
-	"EasyVoting/util"
 	"EasyVoting/util/ecies"
 	"EasyVoting/voting"
 )
@@ -56,11 +53,14 @@ func (cv *CumulativeVoting) Vote(data voting.VoteInt) string {
 
 }
 
-func (cv *CumulativeVoting) Get(ipnsName string, priKey ecies.PriKey) voting.VotingData {
-	mvd := cv.BaseGet(ipnsName, priKey)
-	return voting.UnmarshalVotingData(mvd)
-}
+func (cv *CumulativeVoting) Count(votes *voting.VoteMap, manPriKey ecies.PriKey) map[string](voting.VoteInt) {
+	var votingMap map[string](voting.VoteInt)
+	for h, v := range votes.Votes {
+		data := voting.UnmarshalVoteInt(manPriKey.Decrypt(v.Data))
+		if cv.IsValidData(data) {
+			votingMap[h] = data
+		}
+	}
 
-func (cv *CumulativeVoting) Count(nameList map[string]struct{}, priKey ecies.PriKey) {
-
+	return votingMap
 }
