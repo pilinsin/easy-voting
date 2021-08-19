@@ -2,27 +2,22 @@ package ipfs
 
 import (
 	"context"
-	"time"
-	//"fmt"
+	"fmt"
 	"io/ioutil"
-	"sync"
+	"time"
 
 	dstore "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
-	//fstore "github.com/ipfs/go-filestore"
 	config "github.com/ipfs/go-ipfs-config"
 	files "github.com/ipfs/go-ipfs-files"
 	kstore "github.com/ipfs/go-ipfs-keystore"
 	core "github.com/ipfs/go-ipfs/core"
 	coreapi "github.com/ipfs/go-ipfs/core/coreapi"
-	//libp2p "github.com/ipfs/go-ipfs/core/node/libp2p"
 	repo "github.com/ipfs/go-ipfs/repo"
-	//fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
 	iface "github.com/ipfs/interface-go-ipfs-core"
 	options "github.com/ipfs/interface-go-ipfs-core/options"
 	path "github.com/ipfs/interface-go-ipfs-core/path"
 	peer "github.com/libp2p/go-libp2p-core/peer"
-	multiaddr "github.com/multiformats/go-multiaddr"
 
 	"EasyVoting/ipfs/pubsub"
 	"EasyVoting/util"
@@ -35,77 +30,38 @@ type IPFS struct {
 	ps      *pubsub.PubSub
 }
 
-func New(ctx context.Context, repoStr string, topic string) *IPFS {
+func New(ctx context.Context, repoStr string) *IPFS {
 	repoPath := repoStr
-	//repoPath, err := ioutil.TempDir("", repoStr)
-	//util.CheckError(err)
-	//keyGenOpts := []options.KeyGenerateOption{options.Key.Type(options.Ed25519Key)}
-	//id, err := config.CreateIdentity(ioutil.Discard, keyGenOpts)
-	//util.CheckError(err)
-	//cfg, err := config.InitWithIdentity(id)
-	cfg, err := config.Init(ioutil.Discard, 2048)
+	repoPath, err := ioutil.TempDir("", repoStr)
 	util.CheckError(err)
-	//cfg.Datastore.Spec = map[string]interface{}{
-	//	"type": "mem",
-	//	"path": "mem",
-	//}
-	//cfg.Pubsub = config.PubsubConfig{"gossipsub", false}
+
+	keyGenOpts := []options.KeyGenerateOption{options.Key.Type(options.Ed25519Key)}
+	id, err := config.CreateIdentity(ioutil.Discard, keyGenOpts)
+	util.CheckError(err)
+	cfg, err := config.InitWithIdentity(id)
+
 	ds := dsync.MutexWrap(dstore.NewMapDatastore())
-	//fm := fstore.NewFileManager(dstore.NewMapDatastore(), repoPath)
-	//fm.AllowFiles = true
 	ks, err := kstore.NewFSKeystore(repoPath)
 	util.CheckError(err)
-	r := &repo.Mock{D: ds, C: *cfg, K: ks} //, F: fm}
-	//err = fsrepo.Init(repoPath, cfg)
-	//util.CheckError(err)
-	//r, err := fsrepo.Open(repoPath)
-	//util.CheckError(err)
+	r := &repo.Mock{D: ds, C: *cfg, K: ks}
 	exOpts := map[string]bool{
 		//"discovery": false,
-		//"dht":       true,
+		"dht": true,
 		//"pubsub":    true,
 	}
 	buildCfg := core.BuildCfg{
-		Online: true,
-		//Routing:   libp2p.DHTOption,
-		//Host: mock.MockHostOption(mocknet.New(ctx)),
+		Online:    true,
 		Repo:      r,
 		ExtraOpts: exOpts,
 	}
+
 	node, err := core.NewNode(ctx, &buildCfg)
 	util.CheckError(err)
 	coreApi, err := coreapi.NewCoreAPI(node)
 	util.CheckError(err)
 
-	iPFS := &IPFS{coreApi, ctx, r.Keystore(), pubsub.New2(ctx, topic)}
-	//go iPFS.connect2Peers()
+	iPFS := &IPFS{coreApi, ctx, r.Keystore(), nil}
 	return iPFS
-}
-
-func (ipfs *IPFS) connect2Peers() {
-	var wg sync.WaitGroup
-	pInfos := make(map[peer.ID]*peer.AddrInfo, len(bootstrapNodes()))
-	for _, addrStr := range bootstrapNodes() {
-		addr, err := multiaddr.NewMultiaddr(addrStr)
-		util.CheckError(err)
-		pInfo, err := peer.AddrInfoFromP2pAddr(addr)
-		util.CheckError(err)
-		pi, ok := pInfos[pInfo.ID]
-		if !ok {
-			pi = &peer.AddrInfo{ID: pInfo.ID}
-			pInfos[pi.ID] = pi
-		}
-		pi.Addrs = append(pi.Addrs, pInfo.Addrs...)
-	}
-	wg.Add(len(pInfos))
-	for _, pInfo := range pInfos {
-		go func(peerInfo *peer.AddrInfo) {
-			defer wg.Done()
-			err := ipfs.ipfsApi.Swarm().Connect(ipfs.ctx, *peerInfo)
-			util.CheckError(err)
-		}(pInfo)
-	}
-	wg.Wait()
 }
 
 func (ipfs *IPFS) CoreApi() *iface.CoreAPI {
@@ -190,32 +146,42 @@ func (ipfs *IPFS) NameResolve(name string) path.Path {
 	return pth
 }
 
-func (ipfs *IPFS) PubsubLs() []string {
-	return ipfs.ps.Ls()
-}
-func (ipfs *IPFS) PubsubPeers() []peer.ID {
-	return ipfs.ps.Peers()
-}
-
-func (ipfs *IPFS) PubsubConnect() {
-	//ipfs.ps.Connect(ipfs.ctx)
+func (ipfs *IPFS) PubsubConnect(topic string) {
+	ipfs.ps = pubsub.New(topic)
 }
 
 func (ipfs *IPFS) PubsubPublish(data []byte) {
-	ipfs.ps.Publish(ipfs.ctx, data)
+	ipfs.ps.Publish(data)
 }
 
 func (ipfs *IPFS) PubsubSubTest() {
-	ipfs.ps.Subscribe(ipfs.ctx)
-}
-func (ipfs *IPFS) PubsubSubscribe(topic string) iface.PubSubSubscription {
-	sub, err := ipfs.ipfsApi.PubSub().Subscribe(ipfs.ctx, topic)
-	util.CheckError(err)
-	defer sub.Close()
+	var dataset []string
+	for {
+		data := ipfs.ps.Next()
+		if data == nil {
+			fmt.Println(dataset)
+			return
+		}
 
-	return sub
+		dataset = append(dataset, string(data))
+	}
+
+}
+func (ipfs *IPFS) PubsubSubscribe() [][]byte {
+	var dataset [][]byte
+	for {
+		data := ipfs.ps.Next()
+		if data == nil {
+			if len(dataset) > 0 {
+				return dataset
+			} else {
+				return nil
+			}
+		}
+		dataset = append(dataset, data)
+	}
 }
 
-func (ipfs *IPFS) SubNext(sub iface.PubSubSubscription) (iface.PubSubMessage, error) {
-	return sub.Next(ipfs.ctx)
+func (ipfs *IPFS) PubsubClose() {
+	ipfs.ps.Close()
 }

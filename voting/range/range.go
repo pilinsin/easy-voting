@@ -17,7 +17,10 @@ func New(cfg *voting.InitConfig, ipnsAddrs []string, min int, max int) *RangeVot
 		return nil
 	}
 
-	rv := &RangeVoting{min: min, max: max}
+	rv := &RangeVoting{
+		min,
+		max,
+	}
 	rv.Init(cfg)
 	return rv
 }
@@ -52,9 +55,9 @@ func (rv *RangeVoting) Vote(data voting.VoteInt) string {
 
 }
 
-func (rv *RangeVoting) Count(votes *voting.VoteMap, manPriKey ecies.PriKey) map[string](voting.VoteInt) {
-	var votingMap map[string](voting.VoteInt)
-	for h, v := range votes.Votes {
+func (rv *RangeVoting) Count(votes map[string](voting.Vote), manPriKey ecies.PriKey) map[string](voting.VoteInt) {
+	votingMap := make(map[string](voting.VoteInt))
+	for h, v := range votes {
 		data := voting.UnmarshalVoteInt(manPriKey.Decrypt(v.Data))
 		if rv.IsValidData(data) {
 			votingMap[h] = data

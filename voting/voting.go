@@ -2,7 +2,6 @@ package voting
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"EasyVoting/ipfs"
@@ -27,7 +26,6 @@ func GenerateKeyHash(userID string, votingID string) string {
 
 type Voting struct {
 	iPFS    *ipfs.IPFS
-	topic   string
 	key     string
 	begin   string
 	end     string
@@ -37,7 +35,7 @@ type Voting struct {
 }
 
 type InitConfig struct {
-	Is       *ipfs.IPFS
+	RepoStr  string
 	Topic    string
 	VotingID string
 	UserID   string
@@ -49,14 +47,18 @@ type InitConfig struct {
 }
 
 func (v *Voting) Init(cfg *InitConfig) {
-	v.iPFS = cfg.Is
-	v.topic = cfg.Topic
+	v.iPFS = ipfs.New(util.NewContext(), cfg.RepoStr)
 	v.key = GenerateKeyHash(cfg.UserID, cfg.VotingID)
 	v.begin = cfg.Begin
 	v.end = cfg.End
 	v.nCands = cfg.NCands
 	v.pubKey = cfg.PubKey
 	v.signKey = cfg.SignKey
+
+	v.iPFS.PubsubConnect(cfg.Topic)
+}
+func (v *Voting) Close() {
+	v.iPFS.PubsubClose()
 }
 
 func (v *Voting) WithinTime() bool {
@@ -79,84 +81,42 @@ func (v *Voting) BaseVote(data []byte) {
 	v.iPFS.PubsubPublish(data)
 }
 
-type VoteMap struct {
-	Counts int
-	Votes  map[string]Vote
-}
-
-func (vm *VoteMap) Append(vote Vote) {
-	vm.Counts++
-	vm.Votes[vote.Hash] = vote
-}
-func (vm *VoteMap) Copy(vm2 *VoteMap) {
-	vm.Counts = vm2.Counts
-	vm.Votes = vm2.Votes
-}
-func (v *Voting) Get(vts *VoteMap, usrVerfKeyMap map[string](ed25519.VerfKey), manVerfKey ed25519.VerfKey) *VoteMap {
-	var votes *VoteMap
+func (v *Voting) Get(vts map[string]Vote, usrVerfKeyMap map[string](ed25519.VerfKey)) map[string]Vote {
+	votes := make(map[string]Vote)
 	if vts != nil {
-		fmt.Println("vts is nil")
-		votes.Copy(vts)
+		for k, v := range vts {
+			votes[k] = v
+		}
 	}
 
-	sub := v.iPFS.PubsubSubscribe(v.topic)
-	defer sub.Close()
-	subCount := 0
-	for {
-		msg, err := v.iPFS.SubNext(sub)
-		fmt.Println(err != nil)
-		//if err == io.EOF || err == context.Canceled {
-		if err != nil {
-			util.CheckError(err)
-			return votes
-		}
-		if subCount < votes.Counts {
-			subCount++
-			continue
-		}
-
-		data := msg.Data()
-		if IsVoteEnd(data, manVerfKey) {
-			return votes
-		}
-
+	dataset := v.iPFS.PubsubSubscribe()
+	if dataset == nil {
+		return votes
+	}
+	for _, data := range dataset {
 		vd, err := UnmarshalVotingData(data)
-		if err != nil {
+		if err == nil {
 			if _, ok := usrVerfKeyMap[vd.Vote.Hash]; ok {
 				if vd.Verify(usrVerfKeyMap[vd.Vote.Hash]) {
-					votes.Append(vd.Vote)
+					if _, ok := votes[vd.Vote.Hash]; ok {
+						oldTime := votes[vd.Vote.Hash].Time
+						newTime := vd.Vote.Time
+						if newTime.After(oldTime) || newTime.Equal(oldTime) {
+							votes[vd.Vote.Hash] = vd.Vote
+						}
+					} else {
+						votes[vd.Vote.Hash] = vd.Vote
+					}
 				}
 			}
 		}
 
 	}
-}
-
-const voteEnd = "voting end"
-
-type VoteEnd struct {
-	Text string
-	Sign []byte
-}
-
-func (v *Voting) MarshalVoteEnd() []byte {
-	sign := v.signKey.Sign([]byte(voteEnd))
-	ve := VoteEnd{voteEnd, sign}
-	mve, err := json.Marshal(ve)
-	util.CheckError(err)
-	return mve
-}
-func IsVoteEnd(mve []byte, verfKey ed25519.VerfKey) bool {
-	var ve VoteEnd
-	err := json.Unmarshal(mve, &ve)
-	if err != nil {
-		return false
-	}
-	return verfKey.Verify([]byte(voteEnd), ve.Sign)
+	return votes
 }
 
 func (v *Voting) GenVotingData(data VoteInt) VotingData {
-	vt := Vote{v.key, v.pubKey.Encrypt(data.Marshal())}
+	vt := Vote{v.key, time.Now(), v.pubKey.Encrypt(data.Marshal())}
 	sign := v.signKey.Sign(vt.Marshal())
 	return VotingData{vt, sign}
 }
@@ -183,6 +143,7 @@ func UnmarshalVotingData(mvd []byte) (VotingData, error) {
 
 type Vote struct {
 	Hash string
+	Time time.Time
 	Data []byte
 }
 

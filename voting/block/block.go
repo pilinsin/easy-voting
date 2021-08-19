@@ -16,7 +16,7 @@ func New(cfg *voting.InitConfig, ipnsAddrs []string, total int) *BlockVoting {
 		return nil
 	}
 
-	bv := &BlockVoting{total: total}
+	bv := &BlockVoting{total}
 	bv.Init(cfg)
 	return bv
 }
@@ -50,9 +50,9 @@ func (bv *BlockVoting) Vote(data voting.VoteInt) string {
 	return ""
 }
 
-func (bv *BlockVoting) Count(votes *voting.VoteMap, manPriKey ecies.PriKey) map[string](voting.VoteInt) {
-	var votingMap map[string](voting.VoteInt)
-	for h, v := range votes.Votes {
+func (bv *BlockVoting) Count(votes map[string](voting.Vote), manPriKey ecies.PriKey) map[string](voting.VoteInt) {
+	votingMap := make(map[string](voting.VoteInt))
+	for h, v := range votes {
 		data := voting.UnmarshalVoteInt(manPriKey.Decrypt(v.Data))
 		if bv.IsValidData(data) {
 			votingMap[h] = data

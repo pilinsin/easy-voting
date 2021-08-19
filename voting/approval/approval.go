@@ -16,7 +16,7 @@ func New(cfg *voting.InitConfig, ipnsAddrs []string) *ApprovalVoting {
 		return nil
 	}
 
-	av := &ApprovalVoting{}
+	av := &ApprovalVoting{nCands}
 	av.Init(cfg)
 	return av
 }
@@ -41,12 +41,11 @@ func (av *ApprovalVoting) Vote(data voting.VoteInt) string {
 
 }
 
-
-func (av *ApprovalVoting) Count(votes *voting.VoteMap, manPriKey ecies.PriKey), manVerfKey ed25519.VerfKey, manPriKey ecies.PriKey) map[string](voting.VoteInt) {
-	var votingMap map[string](voting.VoteInt)
-	for h, v := range votes.Votes{
+func (av *ApprovalVoting) Count(votes map[string](voting.Vote), manPriKey ecies.PriKey) map[string](voting.VoteInt) {
+	votingMap := make(map[string](voting.VoteInt))
+	for h, v := range votes {
 		data := voting.UnmarshalVoteInt(manPriKey.Decrypt(v.Data))
-		if av.IsValidData(data){
+		if av.IsValidData(data) {
 			votingMap[h] = data
 		}
 	}

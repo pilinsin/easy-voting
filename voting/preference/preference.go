@@ -56,9 +56,9 @@ func (pv *PreferenceVoting) Vote(data voting.VoteInt) string {
 
 }
 
-func (pv *PreferenceVoting) Count(votes *voting.VoteMap, manPriKey ecies.PriKey) map[string](voting.VoteInt) {
-	var votingMap map[string](voting.VoteInt)
-	for h, v := range votes.Votes {
+func (pv *PreferenceVoting) Count(votes map[string](voting.Vote), manPriKey ecies.PriKey) map[string](voting.VoteInt) {
+	votingMap := make(map[string](voting.VoteInt))
+	for h, v := range votes {
 		data := voting.UnmarshalVoteInt(manPriKey.Decrypt(v.Data))
 		if pv.IsValidData(data) {
 			votingMap[h] = data
