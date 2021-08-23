@@ -55,25 +55,24 @@ func newDHT(ctx context.Context, h host.Host, verbose bool) *dht.IpfsDHT {
 
 	bootstraps := dht.GetDefaultBootstrapPeerAddrInfos()
 	var wg sync.WaitGroup
-	isErr := true
 	for _, pInfo := range bootstraps {
 		wg.Add(1)
 		go func(pAddr peer.AddrInfo) {
 			defer wg.Done()
-			hConnErr := h.Connect(ctx, pAddr)
-			isErr = isErr && (hConnErr != nil)
-			if verbose {
-				log.Println("Bootstrap connection:", hConnErr, pAddr)
+			for {
+				hConnErr := h.Connect(ctx, pAddr)
+				if verbose {
+					log.Println("Bootstrap connection:", hConnErr, pAddr)
+				}
+				if hConnErr == nil {
+					break
+				}
+				time.After(10 * time.Second)
 			}
 		}(pInfo)
 	}
 	wg.Wait()
-	if isErr {
-		return nil
-	} else {
-		return d
-	}
-
+	return d
 }
 func discoverPeers(ctx context.Context, h host.Host, disc *discovery.RoutingDiscovery, topic string, verbose bool) {
 	discovery.Advertise(ctx, disc, topic)
@@ -98,8 +97,8 @@ func discoverPeers(ctx context.Context, h host.Host, disc *discovery.RoutingDisc
 					continue
 				}
 				if h.Network().Connectedness(peerID.ID) != network.Connected {
-					_, err = h.Network().DialPeer(ctx, peerID.ID)
-					//err = h.Connect(ctx, peerID)
+					//_, err = h.Network().DialPeer(ctx, peerID.ID)
+					err = h.Connect(ctx, peerID)
 					if err != nil {
 						if verbose {
 							log.Println("connection error", peerID.ID)

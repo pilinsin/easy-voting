@@ -2,6 +2,7 @@ package blockvoting
 
 import (
 	"EasyVoting/util/ecies"
+	"EasyVoting/util/ed25519"
 	"EasyVoting/voting"
 )
 
@@ -21,8 +22,16 @@ func New(cfg *voting.InitConfig, ipnsAddrs []string, total int) *BlockVoting {
 	return bv
 }
 
+func (bv *BlockVoting) GenDefaultVoteInt() VoteInt {
+	vi := make(VoteInt)
+	for _, name := range bv.CandNames() {
+		vi[name] = 0
+	}
+	return vi
+}
+
 func (bv *BlockVoting) IsValidData(vi voting.VoteInt) bool {
-	if !bv.NumCandsMatch(len(vi)) {
+	if !bv.IsCandsMatch(vi) {
 		return false
 	}
 
@@ -39,15 +48,11 @@ func (bv *BlockVoting) Type() string {
 	return "blockvoting"
 }
 
-func (bv *BlockVoting) Vote(data voting.VoteInt) string {
+func (bv *BlockVoting) Vote(userID string, signKey ed25519.SignKey, data voting.VoteInt) {
 	if bv.WithinTime() && bv.IsValidData(data) {
-		vd := bv.GenVotingData(data)
-		mvd := vd.Marshal()
-		return bv.BaseVote(mvd)
+		bv.BaseVote(userID, signKey, data)
 	}
 
-	util.CheckError(errors.New("Invalid Data"))
-	return ""
 }
 
 func (bv *BlockVoting) Count(votes map[string](voting.Vote), manPriKey ecies.PriKey) map[string](voting.VoteInt) {

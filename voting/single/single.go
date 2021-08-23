@@ -2,6 +2,7 @@ package singlevoting
 
 import (
 	"EasyVoting/util/ecies"
+	"EasyVoting/util/ed25519"
 	"EasyVoting/voting"
 )
 
@@ -20,8 +21,16 @@ func New(cfg *voting.InitConfig, ipnsAddrs []string) *SingleVoting {
 	return sv
 }
 
+func (sv *SingleVoting) GenDefaultVoteInt() voting.VoteInt {
+	vi := make(voting.VoteInt)
+	for _, name := range sv.CandNames() {
+		vi[name] = 0
+	}
+	return vi
+}
+
 func (sv *SingleVoting) IsValidData(vi voting.VoteInt) bool {
-	if !sv.NumCandsMatch(len(vi)) {
+	if !sv.IsCandsMatch(vi) {
 		return false
 	}
 
@@ -38,11 +47,9 @@ func (sv *SingleVoting) Type() string {
 	return "singlevoting"
 }
 
-func (sv *SingleVoting) Vote(data voting.VoteInt) {
+func (sv *SingleVoting) Vote(userID string, signKey ed25519.SignKey, data voting.VoteInt) {
 	if sv.WithinTime() && sv.IsValidData(data) {
-		vd := sv.GenVotingData(data)
-		mvd := vd.Marshal()
-		sv.BaseVote(mvd)
+		sv.BaseVote(userID, signKey, data)
 	}
 }
 

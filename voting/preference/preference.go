@@ -2,6 +2,7 @@ package preferencevoting
 
 import (
 	"EasyVoting/util/ecies"
+	"EasyVoting/util/ed25519"
 	"EasyVoting/voting"
 )
 
@@ -20,8 +21,16 @@ func New(cfg *voting.InitConfig, ipnsAddrs []string) *PreferenceVoting {
 	return pv
 }
 
+func (pv *PreferenceVoting) GenDefaultVoteInt() VoteInt {
+	vi := make(VoteInt)
+	for _, name := range pv.CandNames() {
+		vi[name] = 0
+	}
+	return vi
+}
+
 func (pv *PreferenceVoting) IsValidData(vi voting.VoteInt) bool {
-	if !pv.NumCandsMatch(len(vi)) {
+	if !pv.IsCandsMatch(vi) {
 		return false
 	}
 
@@ -29,8 +38,19 @@ func (pv *PreferenceVoting) IsValidData(vi voting.VoteInt) bool {
 	for _, vote := range vi {
 		ps = append(ps, vote)
 	}
-	sort.Ints(ps)
 
+	isDefaultVote := true
+	for _, p := range ps {
+		if p != 0 {
+			isDefaultVote = false
+			break
+		}
+	}
+	if isDefaultVote {
+		return true
+	}
+
+	sort.Ints(ps)
 	for i, v := range ps {
 		if i != v {
 			return false
@@ -44,15 +64,10 @@ func (pv *PreferenceVoting) Type() string {
 	return "preferencevoting"
 }
 
-func (pv *PreferenceVoting) Vote(data voting.VoteInt) string {
+func (pv *PreferenceVoting) Vote(userID string, signKey ed25519.SignKey, data voting.VoteInt) {
 	if pv.WithinTime() && pv.IsValidData(data) {
-		vd := pv.GenVotingData(data)
-		mvd := vd.Marshal()
-		return pv.BaseVote(mvd)
+		pv.BaseVote(userID, signKey, data)
 	}
-
-	util.CheckError(errors.New("Invalid Data"))
-	return ""
 
 }
 

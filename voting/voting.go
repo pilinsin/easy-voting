@@ -25,38 +25,38 @@ func GenerateKeyHash(userID string, votingID string) string {
 }
 
 type Voting struct {
-	iPFS    *ipfs.IPFS
-	key     string
-	begin   string
-	end     string
-	nCands  int
-	pubKey  *ecies.PubKey
-	signKey *ed25519.SignKey
+	iPFS      *ipfs.IPFS
+	votingID  string
+	begin     string
+	end       string
+	candNames []string
+	pubKey    *ecies.PubKey
 }
 
 type InitConfig struct {
-	RepoStr  string
-	Topic    string
-	VotingID string
-	UserID   string
-	Begin    string
-	End      string
-	NCands   int
-	PubKey   *ecies.PubKey
-	SignKey  *ed25519.SignKey
+	RepoStr   string
+	Topic     string
+	VotingID  string
+	Begin     string
+	End       string
+	CandNames []string
+	PubKey    *ecies.PubKey
 }
 
 func (v *Voting) Init(cfg *InitConfig) {
 	v.iPFS = ipfs.New(util.NewContext(), cfg.RepoStr)
-	v.key = GenerateKeyHash(cfg.UserID, cfg.VotingID)
+	v.votingID = cfg.VotingID
 	v.begin = cfg.Begin
 	v.end = cfg.End
-	v.nCands = cfg.NCands
+	v.candNames = cfg.CandNames
 	v.pubKey = cfg.PubKey
-	v.signKey = cfg.SignKey
 
 	v.iPFS.PubsubConnect(cfg.Topic)
 }
+func (v *Voting) CandNames() []string {
+	return v.candNames
+}
+
 func (v *Voting) Close() {
 	v.iPFS.PubsubClose()
 }
@@ -73,12 +73,24 @@ func (v *Voting) WithinTime() bool {
 	return (now.Equal(bTime) || now.After(bTime)) && now.Before(eTime)
 }
 
-func (v *Voting) NumCandsMatch(num int) bool {
-	return num == v.nCands
+func (v *Voting) IsCandsMatch(vi VoteInt) bool {
+	if len(v.candNames) != len(vi) {
+		return false
+	}
+
+	for _, name := range v.candNames {
+		if _, ok := vi[name]; !ok {
+			return false
+		}
+	}
+
+	return true
 }
 
-func (v *Voting) BaseVote(data []byte) {
-	v.iPFS.PubsubPublish(data)
+func (v *Voting) BaseVote(userID string, signKey ed25519.SignKey, data VoteInt) {
+	vd := v.GenVotingData(userID, signKey, data)
+	mvd := vd.Marshal()
+	v.iPFS.PubsubPublish(mvd)
 }
 
 func (v *Voting) Get(vts map[string]Vote, usrVerfKeyMap map[string](ed25519.VerfKey)) map[string]Vote {
@@ -115,9 +127,10 @@ func (v *Voting) Get(vts map[string]Vote, usrVerfKeyMap map[string](ed25519.Verf
 	return votes
 }
 
-func (v *Voting) GenVotingData(data VoteInt) VotingData {
-	vt := Vote{v.key, time.Now(), v.pubKey.Encrypt(data.Marshal())}
-	sign := v.signKey.Sign(vt.Marshal())
+func (v *Voting) GenVotingData(userID string, signKey ed25519.SignKey, data VoteInt) VotingData {
+	hash := GenerateKeyHash(userID, v.votingID)
+	vt := Vote{hash, time.Now(), v.pubKey.Encrypt(data.Marshal())}
+	sign := signKey.Sign(vt.Marshal())
 	return VotingData{vt, sign}
 }
 
@@ -153,7 +166,6 @@ func (vt Vote) Marshal() []byte {
 	return mvt
 }
 
-//TODO: exclude null data
 func UnmarshalVote(mvt []byte) Vote {
 	var vt Vote
 	err := json.Unmarshal(mvt, &vt)
@@ -169,7 +181,6 @@ func (vi VoteInt) Marshal() []byte {
 	return mvi
 }
 
-//TODO: exclude null data
 func UnmarshalVoteInt(mvi []byte) VoteInt {
 	var vi VoteInt
 	err := json.Unmarshal(mvi, &vi)

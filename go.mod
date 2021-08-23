@@ -11,12 +11,14 @@ require (
 	github.com/ipfs/go-ipfs-keystore v0.0.2 // indirect
 	github.com/ipfs/interface-go-ipfs-core v0.4.0 // indirect
 	github.com/libp2p/go-libp2p v0.14.2 // indirect
+	github.com/libp2p/go-libp2p-blankhost v0.2.0 // indirect
 	github.com/libp2p/go-libp2p-connmgr v0.2.4 // indirect
 	github.com/libp2p/go-libp2p-core v0.8.5 // indirect
 	github.com/libp2p/go-libp2p-discovery v0.5.1 // indirect
 	github.com/libp2p/go-libp2p-kad-dht v0.12.2 // indirect
 	github.com/libp2p/go-libp2p-pubsub v0.4.1 // indirect
 	github.com/libp2p/go-libp2p-quic-transport v0.11.1 // indirect
+	github.com/libp2p/go-libp2p-swarm v0.5.0 // indirect
 	github.com/libp2p/go-libp2p-tls v0.1.3 // indirect
 	github.com/libp2p/go-libp2p-yamux v0.5.4 // indirect
 	github.com/libp2p/go-tcp-transport v0.2.2 // indirect

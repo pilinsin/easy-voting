@@ -2,6 +2,7 @@ package rangevoting
 
 import (
 	"EasyVoting/util/ecies"
+	"EasyVoting/util/ed25519"
 	"EasyVoting/voting"
 )
 
@@ -25,8 +26,16 @@ func New(cfg *voting.InitConfig, ipnsAddrs []string, min int, max int) *RangeVot
 	return rv
 }
 
+func (rv *RangeVoting) GenDefaultVoteInt() VoteInt {
+	vi := make(VoteInt)
+	for _, name := range rv.CandNames() {
+		vi[name] = rv.min
+	}
+	return vi
+}
+
 func (rv *RangeVoting) IsValidData(vi voting.VoteInt) bool {
-	if !rv.NumCandsMatch(len(vi)) {
+	if !rv.IsCandsMatch(vi) {
 		return false
 	}
 
@@ -43,15 +52,10 @@ func (rv *RangeVoting) Type() string {
 	return "rangevoting"
 }
 
-func (rv *RangeVoting) Vote(data voting.VoteInt) string {
+func (rv *RangeVoting) Vote(userID string, signKey ed25519.SignKey, data voting.VoteInt) {
 	if rv.WithinTime() && rv.IsValidData(data) {
-		vd := rv.GenVotingData(data)
-		mvd := vd.Marshal()
-		return rv.BaseVote(mvd)
+		rv.BaseVote(userID, signKey, data)
 	}
-
-	util.CheckError(errors.New("Invalid Data"))
-	return ""
 
 }
 

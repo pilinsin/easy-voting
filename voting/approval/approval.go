@@ -2,12 +2,12 @@ package approvalvoting
 
 import (
 	"EasyVoting/util/ecies"
+	"EasyVoting/util/ed25519"
 	"EasyVoting/voting"
 )
 
 type ApprovalVoting struct {
 	voting.Voting
-	nCands int
 }
 
 func New(cfg *voting.InitConfig, ipnsAddrs []string) *ApprovalVoting {
@@ -16,28 +16,31 @@ func New(cfg *voting.InitConfig, ipnsAddrs []string) *ApprovalVoting {
 		return nil
 	}
 
-	av := &ApprovalVoting{nCands}
+	av := &ApprovalVoting{}
 	av.Init(cfg)
 	return av
 }
 
+func (av *ApprovalVoting) GenDefaultVoteInt() VoteInt {
+	vi := make(VoteInt)
+	for _, name := range av.CandNames() {
+		vi[name] = 0
+	}
+	return vi
+}
+
 func (av *ApprovalVoting) IsValidData(vi voting.VoteInt) bool {
-	return av.NumCandsMatch(len(vi))
+	return av.IsCandsMatch(vi)
 }
 
 func (av *ApprovalVoting) Type() string {
 	return "approvalvoting"
 }
 
-func (av *ApprovalVoting) Vote(data voting.VoteInt) string {
+func (av *ApprovalVoting) Vote(userID string, signKey ed25519.SignKey, data voting.VoteInt) {
 	if av.WithinTime() && av.IsValidData(data) {
-		vd := av.GenVotingData(data)
-		mvd := vd.Marshal()
-		return av.BaseVote(mvd)
+		av.BaseVote(userID, signKey, data)
 	}
-
-	util.CheckError(errors.New("Invalid Data"))
-	return ""
 
 }
 

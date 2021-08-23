@@ -2,6 +2,7 @@ package cumulativevoting
 
 import (
 	"EasyVoting/util/ecies"
+	"EasyVoting/util/ed25519"
 	"EasyVoting/voting"
 )
 
@@ -25,8 +26,16 @@ func New(cfg *voting.InitConfig, ipnsAddrs []string, min int, total int) *Cumula
 	return cv
 }
 
+func (cv *CumulativeVoting) GenDefaultVoteInt() VoteInt {
+	vi := make(VoteInt)
+	for _, name := range cv.CandNames() {
+		vi[name] = cv.min
+	}
+	return vi
+}
+
 func (cv *CumulativeVoting) IsValidData(vi voting.VoteInt) bool {
-	if !cv.NumCandsMatch(len(vi)) {
+	if !cv.IsCandsMatch(vi) {
 		return false
 	}
 
@@ -44,15 +53,10 @@ func (cv *CumulativeVoting) Type() string {
 	return "cumulativevoting"
 }
 
-func (cv *CumulativeVoting) Vote(data voting.VoteInt) string {
+func (cv *CumulativeVoting) Vote(userID string, signKey ed25519.SignKey, data voting.VoteInt) {
 	if cv.WithinTime() && cv.IsValidData(data) {
-		vd := cv.GenVotingData(data)
-		mvd := vd.Marshal()
-		return cv.BaseVote(mvd)
+		cv.BaseVote(userID, signKey, data)
 	}
-
-	util.CheckError(errors.New("Invalid Data"))
-	return ""
 
 }
 

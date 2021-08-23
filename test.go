@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"EasyVoting/util"
@@ -14,52 +15,70 @@ import (
 //sudo sysctl -w net.core.rmem_max=2500000
 func main() {
 	topic := util.GenUniqueID(50, 50)
+	vid := util.GenUniqueID(30, 30)
+	begin := "2021-6-1  00:00am"
+	end := "2021-8-30 11:59pm"
+	cNames := []string{"A", "B", "C"}
 
 	eciesKeyPair := ecies.GenKeyPair()
 	cfg0 := voting.InitConfig{
-		RepoStr:  "ipfs0",
-		Topic:    topic,
-		VotingID: "nil",
-		UserID:   "nil",
-		Begin:    "nil",
-		End:      "nil",
-		NCands:   3,
+		RepoStr:   "ipfs_man",
+		Topic:     topic,
+		VotingID:  vid,
+		Begin:     begin,
+		End:       end,
+		CandNames: cNames,
+		PubKey:    eciesKeyPair.Public(),
 	}
 	sVoting0 := sv.New(&cfg0, nil)
 
+	uids := make([]string, 0)
+	usrSignKeys := make([]ed25519.SignKey, 0)
 	usrVrfKeyMap := make(map[string](ed25519.VerfKey))
-	for itr := 0; itr < 1000; itr++ {
-		<-time.After(10 * time.Second)
+	users := make([]*sv.SingleVoting, 0)
+	for itr := 0; itr < 3; itr++ {
 		signKeyPair := ed25519.GenKeyPair()
+		uid := util.GenUniqueID(30, 6)
 		cfg := voting.InitConfig{
-			RepoStr:  "ipfs" + string(itr+1),
-			Topic:    topic,
-			VotingID: util.GenUniqueID(30, 30),
-			UserID:   util.GenUniqueID(30, 6),
-			Begin:    "2021-6-1  00:00am",
-			End:      "2021-8-30 11:59pm",
-			NCands:   3,
-			PubKey:   eciesKeyPair.Public(),
-			SignKey:  signKeyPair.Sign(),
+			RepoStr:   "ipfs_usr" + strconv.Itoa(itr),
+			Topic:     topic,
+			VotingID:  vid,
+			Begin:     begin,
+			End:       end,
+			CandNames: cNames,
+			PubKey:    eciesKeyPair.Public(),
 		}
-		sVoting := sv.New(&cfg, nil)
+		users = append(users, sv.New(&cfg, nil))
 
-		v := voting.VoteInt{"A": 0, "B": 1, "C": 0}
-		sVoting.Vote(v)
-		v2 := voting.VoteInt{"A": 0, "B": 0, "C": 1}
-		sVoting.Vote(v2)
-
-		hash := voting.GenerateKeyHash(cfg.UserID, cfg.VotingID)
+		uids = append(uids, uid)
+		usrSignKeys = append(usrSignKeys, *signKeyPair.Sign())
+		hash := voting.GenerateKeyHash(uid, cfg.VotingID)
 		usrVrfKeyMap[hash] = *signKeyPair.Verf()
+	}
 
-		sVoting.Close()
+	defaultVote := sVoting0.GenDefaultVoteInt()
+	for idx, _ := range uids {
+		uid := uids[idx]
+		signKey := usrSignKeys[idx]
+		sVoting0.Vote(uid, signKey, defaultVote)
+	}
+	vm := sVoting0.Get(nil, usrVrfKeyMap)
+	vi := sVoting0.Count(vm, *eciesKeyPair.Private())
+	fmt.Println(vi)
+
+	time.After(5 * time.Second)
+
+	v := voting.VoteInt{"A": 0, "B": 1, "C": 0}
+	for idx, user := range users {
+		uid := uids[idx]
+		signKey := usrSignKeys[idx]
+		user.Vote(uid, signKey, v)
 	}
 
 	fmt.Println("a")
-	vm := sVoting0.Get(nil, usrVrfKeyMap)
-	fmt.Println(vm)
-	vi := sVoting0.Count(vm, *eciesKeyPair.Private())
-	fmt.Println(vi)
+	vm2 := sVoting0.Get(nil, usrVrfKeyMap)
+	vi2 := sVoting0.Count(vm2, *eciesKeyPair.Private())
+	fmt.Println(vi2)
 
 	/*
 		sk := ipfs.GenKeyFile()

@@ -60,6 +60,8 @@ func New(ctx context.Context, repoStr string) *IPFS {
 	coreApi, err := coreapi.NewCoreAPI(node)
 	util.CheckError(err)
 
+	//node.Close()
+
 	iPFS := &IPFS{coreApi, ctx, r.Keystore(), nil}
 	return iPFS
 }
@@ -183,5 +185,6 @@ func (ipfs *IPFS) PubsubSubscribe() [][]byte {
 }
 
 func (ipfs *IPFS) PubsubClose() {
+	ipfs.ipfsApi = nil
 	ipfs.ps.Close()
 }
