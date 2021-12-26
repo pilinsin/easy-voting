@@ -1,7 +1,6 @@
 package ed25519
 
 import (
-	"encoding/json"
 	ced "golang.org/x/crypto/ed25519"
 
 	"EasyVoting/util"
@@ -16,60 +15,53 @@ type VerfKey struct {
 }
 
 type KeyPair struct {
-	signKey SignKey
-	verfKey VerfKey
+	signKey *SignKey
+	verfKey *VerfKey
 }
 
-func GenKeyPair() *KeyPair {
-	pub, pri, err := ced.GenerateKey(nil)
-	util.CheckError(err)
-
-	kp := &KeyPair{SignKey{pri}, VerfKey{pub}}
+func NewKeyPair() *KeyPair {
+	pub, pri, _ := ced.GenerateKey(nil)
+	kp := &KeyPair{&SignKey{pri}, &VerfKey{pub}}
 	return kp
 }
-func (kp *KeyPair) Sign() SignKey {
+func (kp *KeyPair) Sign() *SignKey {
 	return kp.signKey
 }
-func (kp *KeyPair) Verf() VerfKey {
+func (kp *KeyPair) Verify() *VerfKey {
 	return kp.verfKey
 }
 
-func (key SignKey) Sign(msg []byte) []byte {
+func (key *SignKey) Verify() *VerfKey {
+	//var priKey sed.PrivateKey = key.signKey
+	pubKey := key.signKey.Public().(ced.PublicKey)
+	return &VerfKey{pubKey}
+}
+
+func (key *SignKey) Sign(msg []byte) []byte {
 	return ced.Sign(key.signKey, msg)
 }
-func (key VerfKey) Verify(msg, sig []byte) bool {
+func (key *VerfKey) Verify(msg, sig []byte) bool {
 	return ced.Verify(key.verfKey, msg, sig)
 }
 
-func (key SignKey) Equals(key2 SignKey) bool {
-	return util.ConstTimeBytesEqual(key.signKey, key2.signKey)
+func (key *SignKey) Equals(key2 *SignKey) bool {
+	return util.ConstTimeBytesEqual(key.Marshal(), key2.Marshal())
 }
-func (key VerfKey) Equals(key2 VerfKey) bool {
-	return util.ConstTimeBytesEqual(key.verfKey, key2.verfKey)
-}
-
-func (key SignKey) Marshal() []byte {
-	b, err := json.Marshal(key.signKey)
-	util.CheckError(err)
-	return b
-}
-func UnmarshalSign(b []byte) SignKey {
-	var key ced.PrivateKey
-	err := json.Unmarshal(b, &key)
-	util.CheckError(err)
-
-	return SignKey{key}
+func (key *VerfKey) Equals(key2 *VerfKey) bool {
+	return util.ConstTimeBytesEqual(key.Marshal(), key2.Marshal())
 }
 
-func (key VerfKey) Marshal() []byte {
-	b, err := json.Marshal(key.verfKey)
-	util.CheckError(err)
-	return b
+func (key *SignKey) Marshal() []byte {
+	return key.signKey
 }
-func UnmarshalVerf(b []byte) VerfKey {
-	var key ced.PublicKey
-	err := json.Unmarshal(b, &key)
-	util.CheckError(err)
-
-	return VerfKey{key}
+func (key *SignKey) Unmarshal(b []byte) error {
+	key.signKey = b
+	return nil
+}
+func (key *VerfKey) Marshal() []byte {
+	return key.verfKey
+}
+func (key *VerfKey) Unmarshal(b []byte) error {
+	key.verfKey = b
+	return nil
 }

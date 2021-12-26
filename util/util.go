@@ -2,20 +2,9 @@ package util
 
 import (
 	"bytes"
-	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"golang.org/x/crypto/argon2"
-	"io"
-	"log"
-	"math"
+	"strconv"
 )
-
-func CheckError(err error) {
-	if err != nil {
-		log.Panic(err)
-	}
-}
 
 func BoolPtr(b bool) *bool {
 	return &b
@@ -47,30 +36,16 @@ func ConstTimeBytesEqual(b1, b2 []byte) bool {
 	return res
 }
 
-func Bytes2Reader(b []byte) io.Reader {
-	return bytes.NewBuffer(b)
-}
-
-func Reader2Bytes(reader io.Reader) []byte {
-	buf := bytes.Buffer{}
-	_, err := buf.ReadFrom(reader)
-	CheckError(err)
-
-	return buf.Bytes()
-}
-
-func Bytes64EncodeStr(b []byte) string {
-	return base64.StdEncoding.EncodeToString(b)
-}
-func Bytes64DecodeStr(str string) []byte {
-	b, err := base64.StdEncoding.DecodeString(str)
-	CheckError(err)
-	return b
-}
-
-func NewContext() context.Context {
-	ctx, _ := context.WithCancel(context.Background())
-	return ctx
+//m1 > m2
+func MapContainMap(m1, m2 map[string][]byte) bool {
+	for k2, v2 := range m2 {
+		if v1, ok := m1[k2]; !ok {
+			return false
+		} else if v2 != nil && !bytes.Equal(v1, v2) {
+			return false
+		}
+	}
+	return true
 }
 
 func Hash(txt []byte, salt []byte) []byte {
@@ -82,32 +57,38 @@ func Hash(txt []byte, salt []byte) []byte {
 	return argon2.IDKey(txt, salt, 1, 64*1024, 4, keyLen)
 }
 
-func GenRandomBytes(length int) []byte {
-	rb := make([]byte, length)
-	_, err := rand.Read(rb)
-	CheckError(err)
-
-	return rb
-}
-
-func GenUniqueID(length int, step int) string {
-	idChars := "0123456789abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#%&"
-	idBytes := []byte(idChars)
-
-	nSteps := int(math.Ceil(float64(length) / float64(step)))
-	uidSize := length + nSteps - 1
-	uid := GenRandomBytes(uidSize)
-
-	for i, st := 0, 0; i < uidSize; i++ {
-		if st == step {
-			uid[i] = []byte("-")[0]
-			st = 0
-		} else {
-			//1byte = 8bit, 8bit >>2 = 6bit ([0, 63])
-			uid[i] = idBytes[int(uid[i])>>2]
-			st++
-		}
+func Arange(start, stop, step int) []int {
+	if start < 0 {
+		start = 0
+	}
+	if stop < 0 {
+		stop = 1
+	}
+	if step < 0 {
+		step = 1
 	}
 
-	return string(uid)
+	var arr []int
+	for i := start; i < stop; i += step {
+		arr = append(arr, i)
+	}
+	return arr
+}
+
+func ArangeStr(start, stop, step int) []string {
+	if start < 0 {
+		start = 0
+	}
+	if stop < 0 {
+		stop = 1
+	}
+	if step < 0 {
+		step = 1
+	}
+
+	var arr []string
+	for i := start; i < stop; i += step {
+		arr = append(arr, strconv.Itoa(i))
+	}
+	return arr
 }

@@ -2,7 +2,6 @@ package ipfs
 
 import (
 	"context"
-	"io"
 	"io/ioutil"
 	"time"
 
@@ -13,12 +12,11 @@ import (
 	kstore "github.com/ipfs/go-ipfs-keystore"
 	core "github.com/ipfs/go-ipfs/core"
 	coreapi "github.com/ipfs/go-ipfs/core/coreapi"
-	libp2p "github.com/ipfs/go-ipfs/core/node/libp2p"
 	repo "github.com/ipfs/go-ipfs/repo"
 	iface "github.com/ipfs/interface-go-ipfs-core"
 	options "github.com/ipfs/interface-go-ipfs-core/options"
+	nsopts "github.com/ipfs/interface-go-ipfs-core/options/namesys"
 	path "github.com/ipfs/interface-go-ipfs-core/path"
-	peer "github.com/libp2p/go-libp2p-core/peer"
 
 	"EasyVoting/util"
 )
@@ -29,29 +27,32 @@ type IPFS struct {
 	kStore  kstore.Keystore
 }
 
-func New(ctx context.Context, repoStr string) *IPFS {
+func New(repoStr string) *IPFS {
+	repoPath, _ := ioutil.TempDir("", repoStr)
+
+	keyGenOpts := []options.KeyGenerateOption{options.Key.Type(options.Ed25519Key)}
+	id, _ := config.CreateIdentity(ioutil.Discard, keyGenOpts)
+	cfg, _ := config.InitWithIdentity(id)
+
 	ds := dsync.MutexWrap(dstore.NewMapDatastore())
-	cfg, err := config.Init(ioutil.Discard, 2048)
-	util.CheckError(err)
-	ks, err := kstore.NewFSKeystore(repoStr)
-	util.CheckError(err)
-	r := repo.Mock{D: ds, C: *cfg, K: ks}
+	ks, _ := kstore.NewFSKeystore(repoPath)
+	r := &repo.Mock{D: ds, C: *cfg, K: ks}
 	exOpts := map[string]bool{
-		"discovery": true,
-		"dht":       true,
-		"pubsub":    true,
+		//"discovery": false,
+		"dht": true,
+		//"pubsub":    true,
 	}
 	buildCfg := core.BuildCfg{
 		Online:    true,
-		Routing:   libp2p.DHTOption,
-		Repo:      &r,
+		Repo:      r,
 		ExtraOpts: exOpts,
 	}
-	node, err := core.NewNode(ctx, &buildCfg)
-	util.CheckError(err)
-	coreApi, err := coreapi.NewCoreAPI(node)
-	util.CheckError(err)
-	return &IPFS{ipfsApi: coreApi, ctx: ctx, kStore: r.Keystore()}
+
+	ctx := context.Background()
+	node, _ := core.NewNode(ctx, &buildCfg)
+	coreApi, _ := coreapi.NewCoreAPI(node)
+
+	return &IPFS{coreApi, ctx, r.Keystore()}
 }
 
 func (ipfs *IPFS) CoreApi() *iface.CoreAPI {
@@ -60,96 +61,77 @@ func (ipfs *IPFS) CoreApi() *iface.CoreAPI {
 
 func (ipfs *IPFS) FileAdd(data []byte, pn bool) path.Resolved {
 	file := files.NewBytesFile(data)
-	resolved, err := ipfs.ipfsApi.Unixfs().Add(ipfs.ctx, file, options.Unixfs.Pin(pn))
-	util.CheckError(err)
-	return resolved
+	pth, _ := ipfs.ipfsApi.Unixfs().Add(ipfs.ctx, file, options.Unixfs.Pin(pn))
+	return pth
+}
+func (ipfs *IPFS) FileHash(data []byte) path.Resolved {
+	file := files.NewBytesFile(data)
+	pth, _ := ipfs.ipfsApi.Unixfs().Add(ipfs.ctx, file, options.Unixfs.HashOnly(true))
+	return pth
 }
 
-func (ipfs *IPFS) FileGet(pth path.Path) []byte {
+func (ipfs *IPFS) FileGet(pth path.Path) ([]byte, error) {
 	f, err := ipfs.ipfsApi.Unixfs().Get(ipfs.ctx, pth)
-	util.CheckError(err)
-	return IpfsFileNode2Bytes(f)
+	if err != nil {
+		return nil, err
+	} else {
+		return ipfsFileNodeToBytes(f)
+	}
 }
 
 func (ipfs *IPFS) hasKey(kw string) bool {
-	keys, err := ipfs.ipfsApi.Key().List(ipfs.ctx)
-	util.CheckError(err)
-	isExsitKey := false
+	keys, _ := ipfs.ipfsApi.Key().List(ipfs.ctx)
 	for _, key := range keys {
 		if key.Name() == kw {
-			isExsitKey = true
+			return true
 		}
 	}
-	return isExsitKey
+	return false
 }
-
-func (ipfs *IPFS) keyFileSet(kFile KeyFile, kw string) {
-	if ipfs.hasKey(kw) {
-		err := ipfs.kStore.Delete(kw)
-		util.CheckError(err)
-	}
-	err := ipfs.kStore.Put(kw, kFile.keyFile)
-	util.CheckError(err)
-
-}
-
 func (ipfs *IPFS) keySet(kw string) {
+	if kw == "self" {
+		return
+	}
 	if !ipfs.hasKey(kw) {
-		_, err := ipfs.ipfsApi.Key().Generate(ipfs.ctx, kw)
-		util.CheckError(err)
+		ipfs.ipfsApi.Key().Generate(ipfs.ctx, kw, options.Key.Type("ed25519"))
 	}
 }
-
-func NameGet(kFile KeyFile) string {
-	pid, err := peer.IDFromPrivateKey(kFile.keyFile)
-	util.CheckError(err)
-	name := iface.FormatKeyID(pid)
-
-	return name
+func parseDuration(vt string) time.Duration {
+	t, err := time.ParseDuration(vt)
+	if err != nil {
+		t, _ = time.ParseDuration("8760h")
+	}
+	return t
 }
 
-func (ipfs *IPFS) NamePublishWithKeyFile(pth path.Path, vt string, kFile KeyFile, kw string) iface.IpnsEntry {
-	t, err := time.ParseDuration(vt)
-	util.CheckError(err)
+func (ipfs *IPFS) NamePublishWithKeyFile(pth path.Path, vt string, kFile *KeyFile) iface.IpnsEntry {
+	t := parseDuration(vt)
 
-	ipfs.keyFileSet(kFile, kw)
-
-	ipnsEntry, err := ipfs.ipfsApi.Name().Publish(ipfs.ctx, pth, options.Name.ValidTime(t), options.Name.Key(kw))
-	util.CheckError(err)
+	var kw string
+	for {
+		kw = util.GenUniqueID(50, 50)
+		if ng := ipfs.hasKey(kw); !ng {
+			break
+		}
+	}
+	ipfs.kStore.Put(kw, kFile.keyFile)
+	ipnsEntry, _ := ipfs.ipfsApi.Name().Publish(ipfs.ctx, pth, options.Name.ValidTime(t), options.Name.Key(kw))
+	ipfs.kStore.Delete(kw)
 	return ipnsEntry
 }
 
 func (ipfs *IPFS) NamePublish(pth path.Path, vt string, kw string) iface.IpnsEntry {
-	t, err := time.ParseDuration(vt)
-	util.CheckError(err)
+	t := parseDuration(vt)
 
 	ipfs.keySet(kw)
-
-	ipnsEntry, err := ipfs.ipfsApi.Name().Publish(ipfs.ctx, pth, options.Name.ValidTime(t), options.Name.Key(kw))
-	util.CheckError(err)
+	ipnsEntry, _ := ipfs.ipfsApi.Name().Publish(ipfs.ctx, pth, options.Name.ValidTime(t), options.Name.Key(kw))
 	return ipnsEntry
 }
 
-func (ipfs *IPFS) NameResolve(name string) path.Path {
-	pth, err := ipfs.ipfsApi.Name().Resolve(ipfs.ctx, name)
-	util.CheckError(err)
-	return pth
+func (ipfs *IPFS) NameResolve(name string) (path.Path, error) {
+	return ipfs.ipfsApi.Name().Resolve(ipfs.ctx, name, options.Name.ResolveOption(nsopts.DhtRecordCount(1)))
 }
 
-func (ipfs *IPFS) PubsubPublish(topic string, data []byte) {
-	err := ipfs.ipfsApi.PubSub().Publish(ipfs.ctx, topic, data)
-	util.CheckError(err)
-}
-func (ipfs *IPFS) PubsubSubscribe(topic string) []byte {
-	sub, err := ipfs.ipfsApi.PubSub().Subscribe(ipfs.ctx, topic, options.PubSub.Discover(true))
-	util.CheckError(err)
-	defer sub.Close()
-
-	msg, err := sub.Next(ipfs.ctx)
-	if err == io.EOF || err == context.Canceled {
-		return nil
-	}
-	util.CheckError(err)
-
-	return msg.Data()
+func (ipfs *IPFS) Close() {
+	ipfs.ipfsApi = nil
 }
