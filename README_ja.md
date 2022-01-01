@@ -1,5 +1,5 @@
 # EasyVoting
-[IPFS](https://ipfs.io/)と[fyne](https://fyne.io/)を使用したオンライン投票アプリです。  
+[IPFS](https://ipfs.io/)と[Fyne](https://fyne.io/)を使用したオンライン投票アプリです。  
 ブロックチェーンは使用しません。
 
 [日本語版IPFS解説サイト](https://ipfs-book.decentralized-web.jp/)
@@ -49,7 +49,7 @@ userDataを入力することで、そのユーザーが登録済みかどうか
 投票フォームから投票内容を入力して投票します。   
 投票終了後、マネージャーによって生成されたresultMapを用いて検証・集計を行います。  
 
-
+<!--
 ```Go
 type VoteInt map[string]int
 type VotingData struct{
@@ -58,7 +58,7 @@ type VotingData struct{
 }
 votingData := voting.GenVotingData(voteInt)
 ```
-
+-->
 # Voting Type
 以下の投票方式に対応しています。  
 * [単記投票](https://ja.m.wikipedia.org/wiki/%E5%8D%98%E8%A8%98%E7%A7%BB%E8%AD%B2%E5%BC%8F%E6%8A%95%E7%A5%A8)  
