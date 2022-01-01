@@ -1,5 +1,5 @@
 # EasyVoting
-This is an Online Voting App based on [IPFS](https://ipfs.io/).<br>
+This is an Online Voting App based on [IPFS](https://ipfs.io/) and [Fyne](https://fyne.io/).<br>
 Blockchain is not used.<br>
 
 ## Feature
@@ -11,7 +11,7 @@ Blockchain is not used.<br>
 
 # Requirement
 [go-ipfs](https://github.com/ipfs/go-ipfs)  
-gui
+[fyne](https://github.com/fyne-io/fyne)
 
 # Process Flow
 <img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/system_process.png"><br>
@@ -204,4 +204,4 @@ I develop it in freelance.<br>
 I am going to release it free to make voting more common, and easy and fair.<br>
 Your support lets development continue.<br>
 
-ETH Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
+Ethereum Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
