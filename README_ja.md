@@ -22,44 +22,48 @@
 <!--
 <img alt="registration" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
 -->
-(マネージャー)  
-セットアップページにて、情報を入力してmCfgCid (registration Manager Config CID)を
-登録ページを生成して遷移します。  
-登録ページのユーザー用cidを公開します。  
-登録処理スイッチをonにして待機します。  
+(登録マネージャー)  
+セットアップページにて、情報を入力してmCfgCid (registration Manager Config CID)を得ます。  
+mCfgCidを入力して登録マネージャーページに遷移します。  
+ページに表示されるrCfgCid (Registration Config CID)を取得して公開します。  
+登録処理スイッチをオンにして待機します。  
 
 (ユーザー)  
-登録ページのcidを入力して遷移します。  
-userDataを入力して登録します。  
-UserInfoが出力されるので、コピーして保持しておきます。  
+rCfgCidを入力して登録ページに遷移します。  
+userDataを入力して登録を行います。  
+
+```Go
+var userData []string
+```
+
+userIdentityが出力されるので、それをコピーして保持しておきます。  
+```Go
+type UserIdentity struct{
+  userHash UserHash
+  userPriKey *ecies.PriKey
+  userSignKey *ed25519.SignKey
+  rKeyFile *ipfs.KeyFile
+}
+type UserHash string
+```
 
 ## Voting
 <!--
 <img alt="voting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
 -->
-(マネージャー)  
-セットアップページから登録ページcid(ユーザー用)を含む必要情報を入力して投票ページに遷移します。  
-投票ページcid(ユーザー用)を公開します。
-userDataを入力することで、そのユーザーが登録済みかどうか確認可能です。  
-投票終了まで待機します。  
-投票終了後、resultMapを生成します。  
+(投票マネージャー)  
+投票セットアップページにて、rCfgCidを含む幾つかの情報を入力し、mCfgCid (voting Manager Config CID)を得ます。   
+mCfgCidを入力して投票マネージャーページに遷移します。   
+vCfgCid (Voting Config CID)を取得して公開します。  
+userDataを入力することで、そのユーザーが登録されているかどうか検証が可能です。  
+投票期間終了後、resultMapを生成します。   
 
 (ユーザー)  
-投票ページcidを入力して投票ページに遷移します。  
-登録時に取得したuserInfoを入力します。  
-投票フォームから投票内容を入力して投票します。   
-投票終了後、マネージャーによって生成されたresultMapを用いて検証・集計を行います。  
+vCfgCidを入力して投票ページに遷移します。  
+userIdentityを含む幾つかの情報を入力して投票を行います。  
+投票期間終了後、resultMapを用いて検証と集計が可能です。  
 
-<!--
-```Go
-type VoteInt map[string]int
-type VotingData struct{
-  data VoteInt
-  enc []byte
-}
-votingData := voting.GenVotingData(voteInt)
-```
--->
+
 # Voting Type
 以下の投票方式に対応しています。  
 * [単記投票](https://ja.m.wikipedia.org/wiki/%E5%8D%98%E8%A8%98%E7%A7%BB%E8%AD%B2%E5%BC%8F%E6%8A%95%E7%A5%A8)  
