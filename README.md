@@ -13,175 +13,54 @@ Blockchain is not used.<br>
 [go-ipfs](https://github.com/ipfs/go-ipfs)  
 [fyne](https://github.com/fyne-io/fyne)
 
-# Process Flow
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/system_process.png"><br>
-## Online Voter Registration
-<img alt="registration" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
-(User)<br>
-Generate a RSA key pair.<br>
-The private key is stored locally.<br>
-The public key is added to IPFS, and then publish its CID with arbitrary key.<br>
-Register an email address and the IPNS address for a Manager's server.<br>
-
-## Voting Setup
-<img alt="voting_setup" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting_setup.png"><br>
-
-(Manager)<br>
-Generate a votingID.<br>
-Make voting IPNS address map and verification key map.<br>
-```Go
-votingID := util.GenUniqueID(30,30)
-
-var votingIPNSAddrs map[string]string
-var verfKeys        map[string]ed25519.VerfKey
-```
-
-Obtain the list of email addresses and registration IPNS addresses from the server.<br> 
-
-For each user, process the following.<br>
-1. Obtain the user public key from the registration IPNS address.<br>
-2. Generate an userID.<br>
-3. Generate a keyFile.<br>
-
-```Go
-userID := util.GenUniqueID(30,6)
-keyFile := ipfs.GenKeyFile()
-```
-4. Generate ED25519 signKey and verfKey.<br>
-5. Encode the userID, keyFile and signKey with the user public key.<br>
-6. Send an email include the encoded userID, keyFile and signKey to the user.<br>
-7. Calculate voting IPNS address corresponding to the keyFile.<br>
-8. Calculate a hash.<br>
-
-```Go
-hash := util.Hash(userID, votingID)
-```
-
-9. Append the IPNS address to the voting IPNS address map
-10. Append the verification key to the key map.<br>
-
-```Go
-votingIPNSAddrs[hash] = addr
-verfKeys[hash] = verfKey
-```
-
-<br>
-Generate a manager's RSA key pair.<br>
-The private key is stored locally.<br>
-<br>
-Add VotingInfo to IPFS and announce its CID.<br>
-
-```Go
-type VotingInfo struct{  
-  votingID        string   
-  manPubKey       rsa.PublicKey  
-  begin           string  
-  end             string  
-  votingType      string  
-  candidates      map[string]Candidate  
-  votingIPNSAddrs map[string]string
-  verfKeys        map[string]ed25519.VerfKey  
-}  
-type Candidate struct{  
-  url      string  
-  group    string  
-  groupURL string  
-}  
-```
-
-## Voting
-<img alt="voting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
-
-(User)<br>
-Obtain VotingInfo.<br>
-Obtain the encoded userID, keyFile and signKey from the email.<br>
-Decode the userID, keyFile and signKey with the user private key.<br>
-
-Calculate a voting IPNS address corresponding to the keyFile.<br>
-Verify the address with the voting IPNS addresses.<br>
-
-Reflect the votingType on a voting form.<br>
-Generate a voting data with a signature.<br>
-
-```Go
-type VoteInt map[string]int
-type VotingData struct{
-  data VoteInt
-  enc []byte
-}
-votingData := voting.GenVotingData(voteInt)
-```
-
-Encode the voting data with the manager's public key.<br> 
-Add the encoded voting data to IPFS and publish to the voting IPNS.<br>
-
-## Counting Setup
-<img alt="counting_setup" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting_setup.png"><br>
-
-(Manager)<br>
-Obtain VotingInfo.<br>
-Collect the encoded voting data from the voting IPNS address map.<br>
-Decode them with the manager's private key.<br>
-Concatenate them.<br>
-```Go
-var votingDataMap map[string]VotingData
-for k, v := range votingIPNSAddrs{
-  encVotingData := Get(v)
-  mvd := rsa.Decrypt(encVotingData, manPriKey)
-  votingData := voting.UnmarshalVotingData(mvd)
-  votingDataMap[k] = votingData
-}
-```
-
-Add the votingDataMap to IPFS and announce its CID.<br>
-   
-## Counting
-<img alt="counting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/counting.png"><br>
-
-(User)<br>
-Obtain the verfKeys from VotingInfo.<br>
-Obtain the votingDataMap.<br>
-Using the verfKeys and votingDataMap, check arbitrary voting data.<br>
-Tally them.<br>
-
-
 # Usage
+<!--
+<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/system_process.png"><br>
+-->
 ## Registration
+<!--
+<img alt="registration" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
+-->
+(Registration Manager)  
+In the registration setup page, input some informations.  
+Get a mCfgCid (registration Manager Config CID).  
+Input the mCfgCid and transition to the registration manager page.  
+Get the rCfgCid (Registration Config CID) from the page and open it.  
+Turn the registrate switch on, and then wait.    
+
 (User)  
-Input an arbitrary IPNS key, and then get a registration IPNS Address.<br>
-Register the address and an email address for a Manager's server.<br>
+Input the rCfgCid and transition to the registration page.  
+Input a userData and registrate.  
 
-## Voting Setup
-(Manager)  
-Obtain the list of email addresses and registration IPNS addresses from the server.<br> 
-Input the following informations from a form of the app:
-* Beginning time for voting
-* End time for voting
-* Voting type
-* Candidate informations 
+```Go
+var userData []string
+```
 
-A CID of a VotingInfo is output, so announce it.<br>
+Copy and keep a userInfo output.  
+```Go
+type UserInfo struct{
+  userHash UserHash
+  rIpnsName string
+}
+type UserHash string
+```
 
 ## Voting
-(User)  
-Input the CID of VotingInfo.<br>
-Receive an email include encoded userID, keyFile and signKey.<br>
-Input them.<br>
-Vote from a form.<br>
-
-## Counting Setup
+<!--
+<img alt="voting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
+-->
 (Manager)  
-Input the CID of VotingInfo.<br>
-A CID of a VotingDataMap is output, so announce it.<br>
+In the voting setup page, input some informations include the rCfgCid.  
+Get a mCfgCid (voting Manager Config CID).  
+Input the mCfgCid and transition to the voting manager page.  
+Get the vCfgCid (Voting Config CID) from the page and open it.  
+When input a userData for a user, the user can be verified.    
+After the voting time finished, generate a resultMap.    
 
-## Counting
 (User)  
-Input the CID of VotingInfo.<br>
-Input the CID of VotingDataMap.<br>
-If you want to verify your own vote, input your encoded userID.<br>
-The verification result is output.<br>
-The voting result is output.<br>
- 
+Input the vCfgCid and transition to the voting page.  
+Input some informations for voting include the userInfo.  
+After the voting time finished, verify and count from the resultMap.   
 
 # Voting Type
 This supports the following types:  
@@ -194,10 +73,10 @@ This supports the following types:
 
 
 # TODO
-* Registration process  
-* Counting process  
-* GUI   
-* Acceleration of IPNS processes 
+* GUI design
+* Bug fix  
+* Improvement of the registration process
+
 
 # Support
 I develop it in freelance.<br>
