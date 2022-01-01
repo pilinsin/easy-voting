@@ -36,11 +36,13 @@ Input a userData and registrate.
 var userData []string
 ```
 
-Copy and keep a userInfo output.  
+Copy and keep a userIdentity output.  
 ```Go
 type UserInfo struct{
   userHash UserHash
-  rIpnsName string
+  userPriKey *ecies.PriKey
+  userSignKey *ed25519.SignKey
+  rKeyFile *ipfs.KeyFile
 }
 type UserHash string
 ```
@@ -59,7 +61,7 @@ After the voting time finished, generate a resultMap.
 
 (User)  
 Input the vCfgCid and transition to the voting page.  
-Input some informations for voting include the userInfo.  
+Input some informations for voting include the userIdentity.  
 After the voting time finished, verify and count from the resultMap.   
 
 # Voting Type
