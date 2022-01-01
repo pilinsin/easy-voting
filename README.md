@@ -38,7 +38,7 @@ var userData []string
 
 Copy and keep a userIdentity output.  
 ```Go
-type UserInfo struct{
+type UserIdentity struct{
   userHash UserHash
   userPriKey *ecies.PriKey
   userSignKey *ed25519.SignKey
