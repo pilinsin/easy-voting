@@ -23,7 +23,8 @@
 <img alt="registration" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
 -->
 (マネージャー)  
-セットアップページから登録ページを生成して遷移します。  
+セットアップページにて、情報を入力してmCfgCid (registration Manager Config CID)を
+登録ページを生成して遷移します。  
 登録ページのユーザー用cidを公開します。  
 登録処理スイッチをonにして待機します。  
 
