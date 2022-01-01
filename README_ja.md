@@ -58,3 +58,29 @@ type VotingData struct{
 }
 votingData := voting.GenVotingData(voteInt)
 ```
+
+# Voting Type
+以下の投票方式に対応しています。  
+* [単記投票](https://ja.m.wikipedia.org/wiki/%E5%8D%98%E8%A8%98%E7%A7%BB%E8%AD%B2%E5%BC%8F%E6%8A%95%E7%A5%A8)  
+* [連記投票](https://ja.m.wikipedia.org/wiki/%E9%80%A3%E8%A8%98%E6%8A%95%E7%A5%A8)  
+* [承認投票](https://ja.m.wikipedia.org/wiki/%E8%AA%8D%E5%AE%9A%E6%8A%95%E7%A5%A8)  
+* [範囲投票](https://ja.m.wikipedia.org/wiki/%E6%8E%A1%E7%82%B9%E6%8A%95%E7%A5%A8)  
+* [累積投票](https://ja.m.wikipedia.org/wiki/%E7%B4%AF%E7%A9%8D%E6%8A%95%E7%A5%A8)  
+* [選好投票](https://ja.m.wikipedia.org/wiki/%E9%81%B8%E5%A5%BD%E6%8A%95%E7%A5%A8)  
+
+
+# TODO
+* GUIデザイン
+* バグ修正
+* 登録時の新規ユーザーへの対応
+
+# Support
+どの組織にも属さずフリーランスで開発しています。  
+このシステムは投票という制度をより身近で簡単で公平なものにすることを目的としています。  
+開発継続のため、ご支援ご協力をお願いいたします。  
+
+Ethereum Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
+
+
+
+
