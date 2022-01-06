@@ -36,7 +36,7 @@ func (kf KeyFile) Marshal() []byte {
 	return kb
 }
 func (kf *KeyFile) Unmarshal(b []byte) error {
-	kFile, err := p2pcrypt.UnmarshalPrivateKey(b)
+	kFile, err := p2pcrypt.UnmarshalEd25519PrivateKey(b)
 	if err == nil {
 		kf.keyFile = kFile
 		return nil

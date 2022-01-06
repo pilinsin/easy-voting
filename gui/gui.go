@@ -1,6 +1,8 @@
 package gui
 
 import (
+	"fmt"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -9,80 +11,96 @@ import (
 
 	"EasyVoting/ipfs"
 	rpage "EasyVoting/registration/page"
+	rputil "EasyVoting/registration/page/util"
 	rutil "EasyVoting/registration/util"
 	vpage "EasyVoting/voting/page"
 	vutil "EasyVoting/voting/util"
 )
 
 type GUI struct {
-	a     fyne.App
-	w     fyne.Window
-	page  fyne.CanvasObject
-	setup fyne.CanvasObject
-	is    *ipfs.IPFS
+	a    fyne.App
+	w    fyne.Window
+	page *fyne.Container
+	is   *ipfs.IPFS
 }
 
 func New(title string, is *ipfs.IPFS) *GUI {
 	a := app.New()
 	win := a.NewWindow(title)
-	return &GUI{a: a, w: win, is: is}
+	page := container.NewMax()
+	return &GUI{a, win, page, is}
 }
 
-func (gui *GUI) withRemove(page fyne.CanvasObject) fyne.CanvasObject {
+func (gui *GUI) withRemove(page fyne.CanvasObject, closer rputil.IPageCloser) fyne.CanvasObject {
 	rmvBtn := widget.NewButtonWithIcon("", theme.ContentClearIcon(), func() {
+		closer.Close()
 		gui.changePage(gui.defaultPage())
 	})
 	return container.NewBorder(container.NewBorder(nil, nil, nil, rmvBtn), nil, nil, nil, page)
 }
 
 func (gui *GUI) changePage(page fyne.CanvasObject) {
-	gui.page = page
+	for _, obj := range gui.page.Objects {
+		gui.page.Remove(obj)
+	}
+	gui.page.Add(page)
+	gui.page.Refresh()
 }
 
-func (gui *GUI) loadPage(cid string) fyne.CanvasObject {
+func (gui *GUI) loadPage(cid string) (fyne.CanvasObject, rputil.IPageCloser) {
 	if _, err := rutil.ConfigFromCid(cid, gui.is); err == nil {
+		fmt.Println("rCfg")
 		return rpage.LoadPage(cid, gui.is)
 	}
 	if _, err := rutil.ManConfigFromCid(cid, gui.is); err == nil {
+		fmt.Println("rmCfg")
 		return rpage.LoadManPage(cid, gui.is)
 	}
 	if _, err := vutil.ConfigFromCid(cid, gui.is); err == nil {
+		fmt.Println("vCfg")
 		return vpage.LoadPage(cid, gui.is)
 	}
 	if _, err := vutil.ManConfigFromCid(cid, gui.is); err == nil {
+		fmt.Println("vmCfg")
 		return vpage.LoadManPage(cid, gui.is)
 	}
-	return nil
+	return nil, nil
 }
 func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	cidEntry := widget.NewEntry()
 	cidEntry.PlaceHolder = "page CID (Qm...)"
 	loadBtn := widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {
-		page := container.NewVScroll(gui.loadPage(cidEntry.Text))
+		loadPage, closer := gui.loadPage(cidEntry.Text)
+		if loadPage == nil {
+			cidEntry.SetText("")
+			return
+		}
+		page := container.NewVScroll(loadPage)
 		//page.SetMinSize(fyne,NewSize(101.1,201.2))
-		gui.changePage(gui.withRemove(page))
+		gui.changePage(gui.withRemove(page, closer))
 	})
 	return container.NewBorder(nil, nil, nil, loadBtn, cidEntry)
 }
 
 func (gui *GUI) newPageForm() fyne.CanvasObject {
+	var setup fyne.CanvasObject
 	chmod := &widget.Select{
-		Options:     []string{"registration", "voting"},
-		PlaceHolder: "registration / voting",
+		Options:  []string{"registration", "voting"},
+		Selected: "registration",
 	}
 	chmod.OnChanged = func(mode string) {
 		if mode == "registration" {
-			gui.setup = rpage.NewSetupPage(gui.a, gui.is) // <- 空白
+			setup = rpage.NewSetupPage(gui.w, gui.is)
 		} else {
-			gui.setup = vpage.NewSetupPage(gui.a, gui.is) // <- nil pointer dereference
+			setup = vpage.NewSetupPage(gui.w, gui.is)
 		}
+		newForm := container.NewBorder(chmod, nil, nil, nil, setup)
+		defPage := container.NewBorder(gui.loadPageForm(), nil, nil, nil, newForm)
+		gui.changePage(defPage)
 	}
 	chmod.ExtendBaseWidget(chmod)
-	if gui.setup == nil {
-		return chmod
-	} else {
-		return container.NewVBox(chmod, gui.setup)
-	}
+
+	return container.NewBorder(chmod, nil, nil, nil)
 }
 
 func (gui *GUI) defaultPage() fyne.CanvasObject {
@@ -92,7 +110,7 @@ func (gui *GUI) defaultPage() fyne.CanvasObject {
 }
 
 func (gui *GUI) Run() {
-	gui.page = container.NewMax(gui.defaultPage())
+	gui.page.Add(gui.defaultPage())
 	gui.w.SetContent(gui.page)
 	gui.w.ShowAndRun()
 }

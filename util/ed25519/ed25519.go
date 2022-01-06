@@ -1,6 +1,7 @@
 package ed25519
 
 import (
+	sed "crypto/ed25519"
 	ced "golang.org/x/crypto/ed25519"
 
 	"EasyVoting/util"
@@ -32,8 +33,8 @@ func (kp *KeyPair) Verify() *VerfKey {
 }
 
 func (key *SignKey) Verify() *VerfKey {
-	//var priKey sed.PrivateKey = key.signKey
-	pubKey := key.signKey.Public().(ced.PublicKey)
+	var priKey sed.PrivateKey = key.signKey
+	pubKey := priKey.Public().(ced.PublicKey)
 	return &VerfKey{pubKey}
 }
 

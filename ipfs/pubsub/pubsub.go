@@ -13,10 +13,11 @@ import (
 	host "github.com/libp2p/go-libp2p-core/host"
 	network "github.com/libp2p/go-libp2p-core/network"
 	peer "github.com/libp2p/go-libp2p-core/peer"
-
 	"github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	libpubsub "github.com/libp2p/go-libp2p-pubsub"
+
+	"EasyVoting/util"
 )
 
 type PubSub struct {
@@ -29,10 +30,9 @@ func (ps *PubSub) Topic() string {
 	return ps.topic
 }
 
-func newHost(ctx context.Context) (host.Host, error) {
+func newHost() (host.Host, error) {
 	priv, _, _ := p2pcrypt.GenerateEd25519Key(rand.Reader)
 	return libp2p.New(
-		ctx,
 		libp2p.Identity(priv),
 		libp2p.ListenAddrStrings(
 			"/ip4/0.0.0.0/tcp/0",
@@ -78,7 +78,7 @@ func newDHT(ctx context.Context, h host.Host, verbose bool) (*dht.IpfsDHT, error
 	}
 	return d, nil
 }
-func discoverPeers(ctx context.Context, h host.Host, disc *discovery.RoutingDiscovery, topic string, verbose bool) error {
+func discoverPeers(ctx context.Context, h host.Host, disc *discovery.RoutingDiscovery, topic string, parent, verbose bool) error {
 	discovery.Advertise(ctx, disc, topic)
 
 	timer := time.NewTicker(time.Second)
@@ -93,19 +93,17 @@ func discoverPeers(ctx context.Context, h host.Host, disc *discovery.RoutingDisc
 				return err
 			}
 
-			numConnectPeers := 0
+			numConnectOthers := 0
 			for _, peerID := range peerIDs {
 				if peerID.ID == h.ID() {
 					if verbose {
 						log.Println("self ID", peerID.ID)
 					}
-					numConnectPeers++
 					continue
 				}
 				if h.Network().Connectedness(peerID.ID) != network.Connected {
 					//_, err = h.Network().DialPeer(ctx, peerID.ID)
-					err = h.Connect(ctx, peerID)
-					if err != nil {
+					if err = h.Connect(ctx, peerID); err != nil {
 						if verbose {
 							log.Println("connection error", peerID.ID)
 						}
@@ -114,28 +112,33 @@ func discoverPeers(ctx context.Context, h host.Host, disc *discovery.RoutingDisc
 						if verbose {
 							log.Println("connect", peerID.ID)
 						}
-						numConnectPeers++
+						numConnectOthers++
 						continue
 					}
 				} else {
 					if verbose {
 						log.Println("already connected", peerID.ID)
 					}
-					numConnectPeers++
+					numConnectOthers++
 				}
 			}
-			if len(peerIDs) > 0 && len(peerIDs) == numConnectPeers {
+			if len(peerIDs) <= 0 {
+				return util.NewError("no peers are found")
+			}
+			if parent || numConnectOthers > 0 {
 				return nil
+			} else {
+				return util.NewError("cannot connect to any other peers.")
 			}
 		}
 	}
 
 }
 
-func New(topic string) (*PubSub, error) {
+func New(topic string, parent bool) (*PubSub, error) {
 	//publishより前にsubscribeしておけば読み込める
 	//new PubSub -> Subscribe -> (Publish)
-	ps, err := new(topic, true)
+	ps, err := newPubSub(topic, parent, true)
 	if err != nil {
 		return nil, err
 	}
@@ -145,9 +148,9 @@ func New(topic string) (*PubSub, error) {
 	}
 	return &PubSub{ps, sub, topic}, nil
 }
-func new(topic string, verbose bool) (*libpubsub.PubSub, error) {
+func newPubSub(topic string, parent, verbose bool) (*libpubsub.PubSub, error) {
 	ctx := context.Background()
-	h, err := newHost(ctx)
+	h, err := newHost()
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +163,7 @@ func new(topic string, verbose bool) (*libpubsub.PubSub, error) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err = discoverPeers(ctx, h, disc, topic, verbose)
+		err = discoverPeers(ctx, h, disc, topic, parent, verbose)
 		if err != nil {
 			return
 		}
@@ -178,6 +181,9 @@ func new(topic string, verbose bool) (*libpubsub.PubSub, error) {
 		return nil, err
 	}
 	return ps, nil
+}
+func (ps *PubSub) Close() {
+	ps.sub.Cancel()
 }
 
 func (ps *PubSub) Publish(data []byte) {
@@ -231,8 +237,4 @@ func (ps *PubSub) Subscribe() [][]byte {
 		}
 		dataset = append(dataset, data)
 	}
-}
-
-func (ps *PubSub) Close() {
-	ps.sub.Cancel()
 }

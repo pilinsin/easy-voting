@@ -20,7 +20,8 @@ func CandCards(cands []vutil.Candidate) fyne.CanvasObject {
 	return container.NewAdaptiveGrid(4, candList...)
 }
 func candCard(cand vutil.Candidate) *widget.Card {
-	img := canvas.NewImageFromResource(cand.Image)
+	res := fyne.NewStaticResource(cand.Name, cand.Image)
+	img := canvas.NewImageFromResource(res)
 	img.FillMode = canvas.ImageFillContain
 
 	card := &widget.Card{
@@ -35,16 +36,17 @@ func candCard(cand vutil.Candidate) *widget.Card {
 }
 
 type CandForm struct {
-	fyne.CanvasObject
 	cands []*candEntry
 }
 
-func NewCandForm(a fyne.App) *CandForm {
-	cf := &CandForm{}
-	contents := container.NewAdaptiveGrid(4, nil)
+func NewCandForm() *CandForm {
+	return &CandForm{}
+}
+func (cf *CandForm) Render(w fyne.Window) fyne.CanvasObject {
+	contents := container.NewAdaptiveGrid(4)
 	//AddButton (CandEntry with RemoveButton)
 	addBtn := widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {
-		cand := newCandEntry(a)
+		cand := newCandEntry(w)
 		cf.cands = append(cf.cands, cand)
 		rmvBtn := &widget.Button{Icon: theme.ContentClearIcon()}
 		withRmvBtn := container.NewBorder(container.NewBorder(nil, nil, nil, rmvBtn), nil, nil, nil, cand.Render())
@@ -55,8 +57,7 @@ func NewCandForm(a fyne.App) *CandForm {
 		rmvBtn.ExtendBaseWidget(rmvBtn)
 		contents.Add(withRmvBtn)
 	})
-	cf.CanvasObject = container.NewBorder(container.NewBorder(nil, nil, addBtn, nil), nil, nil, nil, contents)
-	return cf
+	return container.NewBorder(container.NewBorder(nil, nil, addBtn, nil), nil, nil, nil, contents)
 }
 func (cf *CandForm) Candidates() []vutil.Candidate {
 	candidates := make([]vutil.Candidate, len(cf.cands))
@@ -83,9 +84,9 @@ type candEntry struct {
 	imgBtn *widget.Button
 }
 
-func newCandEntry(a fyne.App) *candEntry {
+func newCandEntry(w fyne.Window) *candEntry {
 	imgBtn := &widget.Button{Icon: theme.ContentAddIcon()}
-	imgBtn.OnTapped = imageDialog(a, imgBtn.Icon)
+	imgBtn.OnTapped = imageDialog(w, imgBtn.Icon)
 	imgBtn.ExtendBaseWidget(imgBtn)
 
 	cand := &candEntry{
@@ -100,10 +101,18 @@ func (ce *candEntry) Render() fyne.CanvasObject {
 	return container.NewVBox(ce.imgBtn, ce.name, ce.group, ce.url)
 }
 func (ce *candEntry) Candidate() vutil.Candidate {
+	var icon fyne.Resource
+	defIcon := theme.ContentAddIcon()
+	selected := ce.imgBtn.Icon
+	if resourceEqual(selected, defIcon) {
+		icon = theme.DeleteIcon()
+	} else {
+		icon = selected
+	}
 	return vutil.Candidate{
 		Name:  ce.name.Text,
 		Group: ce.group.Text,
 		Url:   ce.url.Text,
-		Image: ce.imgBtn.Icon,
+		Image: icon.Content(),
 	}
 }

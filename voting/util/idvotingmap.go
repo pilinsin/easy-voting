@@ -223,12 +223,12 @@ func UnmarshalIdVotingMap(m []byte) (*idVotingMap, error) {
 		return nil, err
 	}
 
-	ivm := &idVotingMap{}
-	err = ivm.rm.Unmarshal(mivm.Mrm)
-	ivm.tInfo = mivm.TimeInfo
-	if err != nil {
+	rm := &ipfs.ReccurentMap{}
+	if err = rm.Unmarshal(mivm.Mrm); err != nil {
 		return nil, err
 	}
+
+	ivm := &idVotingMap{rm, mivm.TimeInfo}
 	return ivm, nil
 }
 func IdVotingMapFromCid(ivmCid string, is *ipfs.IPFS) (*idVotingMap, error) {

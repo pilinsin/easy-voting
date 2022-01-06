@@ -40,7 +40,7 @@ func NewManager(mCfgCid string, is *ipfs.IPFS) (*manager, error) {
 	return man, nil
 }
 func (m *manager) Close() {
-	m.is.Close()
+	m.is = nil
 }
 
 func (m manager) IsValidUser(userData ...string) bool {

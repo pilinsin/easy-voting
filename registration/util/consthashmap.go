@@ -17,6 +17,9 @@ func NewConstHashMap(hashes []UhHash, capacity int, is *ipfs.IPFS) *ConstHashMap
 	}
 	return chm
 }
+func (chm *ConstHashMap) Len(is *ipfs.IPFS) int {
+	return chm.rm.Len(is)
+}
 func (chm *ConstHashMap) Append(hash UhHash, is *ipfs.IPFS) {
 	chm.rm.Append(hash, nil, is)
 }
@@ -32,7 +35,12 @@ func (chm ConstHashMap) Marshal() []byte {
 	return chm.rm.Marshal()
 }
 func (chm *ConstHashMap) Unmarshal(m []byte) error {
-	return chm.rm.Unmarshal(m)
+	rm := &ipfs.ReccurentMap{}
+	if err := rm.Unmarshal(m); err != nil {
+		return err
+	}
+	chm.rm = rm
+	return nil
 }
 func (chm *ConstHashMap) FromCid(chmCid string, is *ipfs.IPFS) error {
 	mchm, err := ipfs.FromCid(chmCid, is)

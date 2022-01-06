@@ -1,10 +1,11 @@
 package registration
 
 import (
-	"time"
+	"fmt"
+	//"time"
+	"strings"
 
 	"EasyVoting/ipfs"
-	"EasyVoting/ipfs/pubsub"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
 	"EasyVoting/util/ecies"
@@ -14,6 +15,7 @@ import (
 type IRegistration interface {
 	Close()
 	VerifyHashNameMap() bool
+	VerifyUserIdentity(identity *rutil.UserIdentity) bool
 	Registrate(userData ...string) (*rutil.UserIdentity, error)
 }
 
@@ -51,13 +53,13 @@ func NewRegistration(rCfgCid string, is *ipfs.IPFS) (*registration, error) {
 	return r, nil
 }
 func (r *registration) Close() {
-	r.is.Close()
 	r.is = nil
 }
 func (r *registration) VerifyHashNameMap() bool {
 	chm := &rutil.ConstHashMap{}
 	err := chm.FromCid(r.chmCid, r.is)
 	if err != nil {
+		fmt.Println("chm unmarshal error")
 		return false
 	}
 
@@ -65,38 +67,47 @@ func (r *registration) VerifyHashNameMap() bool {
 	pth, _ := r.is.NameResolve(r.hnmIpnsName)
 	mhnm, err := r.is.FileGet(pth)
 	if err != nil {
+		fmt.Println("hnmName error")
 		return false
 	}
 	err = hnm.Unmarshal(mhnm)
 	if err != nil {
+		fmt.Println("hnm unmarshal error")
 		return false
 	}
 
 	if ok := hnm.VerifyHashes(chm, r.is); !ok {
+		fmt.Println("invalid uhHash is contained in hnm")
 		return false
 	}
 	if hnm.VerifyCid(r.hnmCid, r.is) {
-		r.hnmCid = pth.String()
+		r.hnmCid = strings.TrimPrefix(pth.String(), "/ipfs/")
 		return true
 	} else {
+		fmt.Println("invalid hnm cid")
 		return false
 	}
+}
+func (r *registration) VerifyUserIdentity(identity *rutil.UserIdentity) bool {
+	hnm := &rutil.HashNameMap{}
+	if err := hnm.FromName(r.hnmIpnsName, r.is); err != nil {
+		return false
+	}
+	return hnm.VerifyUserIdentity(identity, r.salt2, r.is)
 }
 func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, error) {
 	userHash := rutil.NewUserHash(r.is, r.salt1, userData...)
 	uhHash := rutil.NewUhHash(r.is, r.salt2, userHash)
 
 	chm := &rutil.ConstHashMap{}
-	err := chm.FromCid(r.chmCid, r.is)
-	if err != nil {
+	if err := chm.FromCid(r.chmCid, r.is); err != nil {
 		return nil, err
 	}
 	if ok := chm.ContainHash(uhHash, r.is); !ok {
 		return nil, util.NewError("uhHash is not contained")
 	}
 	hnm := &rutil.HashNameMap{}
-	err = hnm.FromName(r.hnmIpnsName, r.is)
-	if err != nil {
+	if err := hnm.FromName(r.hnmIpnsName, r.is); err != nil {
 		return nil, err
 	}
 	if _, ok := hnm.ContainHash(uhHash, r.is); ok {
@@ -117,23 +128,22 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 	if err != nil {
 		return nil, util.AddError(err, "encUInfo err in r.Registrate")
 	}
-	ps, err := pubsub.New(r.psTopic)
-	if err != nil {
-		return nil, util.AddError(err, "pubsub.New error")
-	}
-	defer ps.Close()
-	ps.Publish(encInfo)
+	r.is.PubSubPublish(encInfo, r.psTopic)
+	return id, nil
+	/*
+		for {
+			hnm := &rutil.HashNameMap{}
+			err = hnm.FromName(r.hnmIpnsName, r.is)
+			if err != nil {
+				return nil, err
+			}
+			if hnm.VerifyUserInfo(uInfo, r.salt2, r.is) {
+				fmt.Println("uInfo verified")
+				return id, nil
+			}
 
-	for {
-		hnm := &rutil.HashNameMap{}
-		err = hnm.FromName(r.hnmIpnsName, r.is)
-		if err != nil {
-			return nil, err
-		}
-		if hnm.VerifyUserInfo(uInfo, r.salt2, r.is) {
-			return id, nil
-		} else {
+			fmt.Println("wait for registration")
 			<-time.After(30 * time.Second)
 		}
-	}
+	*/
 }

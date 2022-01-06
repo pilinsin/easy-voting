@@ -3,6 +3,7 @@ package ipfs
 import (
 	"errors"
 	"os"
+	"strings"
 
 	cid "github.com/ipfs/go-cid"
 	files "github.com/ipfs/go-ipfs-files"
@@ -95,6 +96,6 @@ func CidFromName(ipnsName string, is *IPFS) (string, error) {
 	if err != nil {
 		return "", err
 	} else {
-		return pth.String(), nil
+		return strings.TrimPrefix(pth.String(), "/ipfs/"), nil
 	}
 }

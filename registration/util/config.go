@@ -48,11 +48,11 @@ func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
 func ConfigFromCid(rCfgCid string, is *ipfs.IPFS) (*config, error) {
 	m, err := ipfs.FromCid(rCfgCid, is)
 	if err != nil {
-		return nil, util.NewError("invalid rCfgCid")
+		return nil, util.NewError("from rCfgCid error")
 	}
 	rCfg, err := UnmarshalConfig(m)
 	if err != nil {
-		return nil, util.NewError("invalid rCfgCid")
+		return nil, util.NewError("unmarshal rCfgCid error")
 	}
 	return rCfg, nil
 }
@@ -85,7 +85,7 @@ func UnmarshalConfig(m []byte) (*config, error) {
 	}
 
 	pubKey := &ecies.PubKey{}
-	if err := util.Unmarshal(mCfg.RPubKey, pubKey); err != nil {
+	if err := pubKey.Unmarshal(mCfg.RPubKey); err != nil {
 		return nil, err
 	}
 	cfg := &config{

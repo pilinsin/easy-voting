@@ -14,45 +14,46 @@ import (
 func VotingBtn(v viface.IVoting, candNameGroups []string, label *widget.Label) fyne.CanvasObject {
 	votingForm := v.NewVotingForm(candNameGroups)
 	voteBtn := widget.NewButtonWithIcon("", theme.UploadIcon(), func() {
-		label.Text = "processing..."
+		label.SetText("processing...")
 		err := v.Vote(votingForm.VoteInt())
 		if err != nil {
-			label.Text = fmt.Sprintln(err)
+			label.SetText(fmt.Sprintln(err))
 			return
 		}
-		label.Text = "voting has been done."
+		label.SetText("voting has been done.")
 	})
 	return container.NewVBox(votingForm, voteBtn)
 }
 func CheckMyVoteBtn(v viface.IVoting, label *widget.Label) fyne.CanvasObject {
 	//get icon
 	return widget.NewButtonWithIcon("", theme.UploadIcon(), func() {
-		label.Text = "processing..."
+		label.SetText("processing...")
 		vi, err := v.GetMyVote()
 		if err != nil {
-			label.Text = fmt.Sprintln(err)
+			label.SetText(fmt.Sprintln(err))
 			return
 		}
 		label.Text = ""
 		for cand, vote := range vi {
 			label.Text += fmt.Sprintln(cand, vote, "\n")
 		}
+		label.Refresh()
 	})
 }
 
 func CountBtn(v viface.IVoting, label *widget.Label) fyne.CanvasObject {
 	//set icon
 	return widget.NewButtonWithIcon("", theme.UploadIcon(), func() {
-		label.Text = "processing..."
+		label.SetText("processing...")
 		if ok, err := v.VerifyResultMap(); err != nil {
-			label.Text = fmt.Sprintln(err)
+			label.SetText(fmt.Sprintln(err))
 		} else if !ok {
-			label.Text = "invalid resultMap"
+			label.SetText("invalid resultMap")
 		} else {
 			if res, nVoted, nVoters, err := v.Count(); err != nil {
-				label.Text = fmt.Sprintln(err)
+				label.SetText(fmt.Sprintln(err))
 			} else {
-				label.Text = fmt.Sprintln("result:", res, ", nVoted:", nVoted, ", nVoter:", nVoters)
+				label.SetText(fmt.Sprintln("result:", res, ", nVoted:", nVoted, ", nVoter:", nVoters))
 			}
 		}
 	})
@@ -67,15 +68,15 @@ func CheckUserForm(labels []string, m viface.IManager, noteLabel *widget.Label) 
 		cuForm.Items = append(cuForm.Items, formItem)
 	}
 	cuForm.OnSubmit = func() {
-		noteLabel.Text = "processing..."
+		noteLabel.SetText("processing...")
 		var texts []string
 		for _, entry := range entries {
 			texts = append(texts, entry.Text)
 		}
 		if ok := m.IsValidUser(texts...); ok {
-			noteLabel.Text = "valid"
+			noteLabel.SetText("valid")
 		} else {
-			noteLabel.Text = "NOT valid"
+			noteLabel.SetText("NOT valid")
 		}
 	}
 	cuForm.ExtendBaseWidget(cuForm)
@@ -85,11 +86,11 @@ func CheckUserForm(labels []string, m viface.IManager, noteLabel *widget.Label) 
 func GetResultMapBtn(m viface.IManager, label *widget.Label) fyne.CanvasObject {
 	//get icon
 	return widget.NewButtonWithIcon("", theme.UploadIcon(), func() {
-		label.Text = "processing..."
+		label.SetText("processing...")
 		if err := m.GetResultMap(); err != nil {
-			label.Text = fmt.Sprintln(err)
+			label.SetText(fmt.Sprintln(err))
 		} else {
-			label.Text = "GetResultMap has finished"
+			label.SetText("GetResultMap has finished")
 		}
 	})
 }
@@ -97,13 +98,13 @@ func GetResultMapBtn(m viface.IManager, label *widget.Label) fyne.CanvasObject {
 func VerifyResultMapBtn(m viface.IManager, label *widget.Label) fyne.CanvasObject {
 	//set icon
 	return widget.NewButtonWithIcon("", theme.UploadIcon(), func() {
-		label.Text = "processing..."
+		label.SetText("processing...")
 		if ok, err := m.VerifyResultMap(); err != nil {
-			label.Text = fmt.Sprintln(err)
+			label.SetText(fmt.Sprintln(err))
 		} else if !ok {
-			label.Text = "invalid resultMap"
+			label.SetText("invalid resultMap")
 		} else {
-			label.Text = "valid resultMap"
+			label.SetText("valid resultMap")
 		}
 	})
 }

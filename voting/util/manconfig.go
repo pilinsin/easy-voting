@@ -37,11 +37,11 @@ func (mCfg manConfig) Config() *config        { return mCfg.config }
 func ManConfigFromCid(mCfgCid string, is *ipfs.IPFS) (*manConfig, error) {
 	m, err := ipfs.FromCid(mCfgCid, is)
 	if err != nil {
-		return nil, util.NewError("invalid mCfgCid")
+		return nil, util.NewError("from mCfgCid error")
 	}
 	mCfg, err := UnmarshalManConfig(m)
 	if err != nil {
-		return nil, util.NewError("invalid mCfgCid")
+		return nil, util.NewError("unmarshal mCfgCid error")
 	}
 	return mCfg, nil
 }
@@ -64,13 +64,11 @@ func UnmarshalManConfig(m []byte) (*manConfig, error) {
 		return nil, err
 	}
 	priKey := &ecies.PriKey{}
-	err = priKey.Unmarshal(mCfg.Pri)
-	if err != nil {
+	if err := priKey.Unmarshal(mCfg.Pri); err != nil {
 		return nil, err
 	}
 	kf := &ipfs.KeyFile{}
-	err = kf.Unmarshal(mCfg.Kf)
-	if err != nil {
+	if err := kf.Unmarshal(mCfg.Kf); err != nil {
 		return nil, err
 	}
 

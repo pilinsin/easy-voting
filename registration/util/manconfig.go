@@ -30,11 +30,11 @@ func (mCfg manConfig) Config() *config        { return mCfg.config }
 func ManConfigFromCid(mCfgCid string, is *ipfs.IPFS) (*manConfig, error) {
 	m, err := ipfs.FromCid(mCfgCid, is)
 	if err != nil {
-		return nil, util.NewError("invalid mCfgCid")
+		return nil, util.NewError("from mCfgCid error")
 	}
 	mCfg, err := UnmarshalManConfig(m)
 	if err != nil {
-		return nil, util.NewError("invalid mCfgCid")
+		return nil, util.NewError("unmarshal mCfgCid error")
 	}
 	return mCfg, nil
 }
@@ -53,21 +53,20 @@ func UnmarshalManConfig(m []byte) (*manConfig, error) {
 		RPriKey    []byte
 		HnmKeyFile []byte
 	}{}
-	err := util.Unmarshal(m, mManCfg)
-	if err != nil {
+	if err := util.Unmarshal(m, mManCfg); err != nil {
 		return nil, err
 	}
 
-	rCfg := &config{}
-	if err := util.Unmarshal(mManCfg.MRCfg, rCfg); err != nil {
+	rCfg, err := UnmarshalConfig(mManCfg.MRCfg)
+	if err != nil {
 		return nil, err
 	}
 	priKey := &ecies.PriKey{}
-	if err := util.Unmarshal(mManCfg.RPriKey, priKey); err != nil {
+	if err := priKey.Unmarshal(mManCfg.RPriKey); err != nil {
 		return nil, err
 	}
 	kf := &ipfs.KeyFile{}
-	if err := util.Unmarshal(mManCfg.HnmKeyFile, kf); err != nil {
+	if err := kf.Unmarshal(mManCfg.HnmKeyFile); err != nil {
 		return nil, err
 	}
 	mCfg := &manConfig{

@@ -1,8 +1,6 @@
 package votingutil
 
 import (
-	"fyne.io/fyne/v2"
-
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
@@ -77,7 +75,7 @@ type Candidate struct {
 	Name  string
 	Group string
 	Url   string
-	Image fyne.Resource
+	Image []byte
 }
 
 type config struct {
@@ -169,11 +167,11 @@ func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
 func ConfigFromCid(vCfgCid string, is *ipfs.IPFS) (*config, error) {
 	m, err := ipfs.FromCid(vCfgCid, is)
 	if err != nil {
-		return nil, util.NewError("invalid vCfgCid")
+		return nil, util.NewError("from vCfgCid error")
 	}
 	vCfg, err := UnmarshalConfig(m)
 	if err != nil {
-		return nil, util.NewError("invalid vCfgCid")
+		return nil, util.NewError("unmarshal vCfgCid error")
 	}
 	return vCfg, nil
 }

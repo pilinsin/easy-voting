@@ -6,8 +6,8 @@ import (
 	"log"
 )
 
-func NewError(str string) error {
-	return errors.New(str)
+func NewError(a ...interface{}) error {
+	return errors.New(fmt.Sprintln(a...))
 }
 func AddError(err error, str string) error {
 	return errors.New(fmt.Sprintln(str, ":", err))

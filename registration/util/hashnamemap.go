@@ -1,6 +1,8 @@
 package registrationutil
 
 import (
+	"fmt"
+
 	"EasyVoting/ipfs"
 	"EasyVoting/util"
 	"EasyVoting/util/ecies"
@@ -28,14 +30,6 @@ func (hnd hashNameData) Verify(is *ipfs.IPFS) *ed25519.VerfKey {
 }
 func (hnd hashNameData) Name() string {
 	return hnd.rIpnsName
-}
-
-//login verification
-func (hnd hashNameData) VerifyIdentity(identity *UserIdentity) bool {
-	hash := identity.userHash == hnd.userHash
-	name, err := identity.KeyFile().Name()
-	nm := name == hnd.rIpnsName
-	return hash && (err != nil) && nm
 }
 func (hnd hashNameData) Marshal() []byte {
 	mhnd := &struct {
@@ -136,6 +130,9 @@ func (hnm HashNameMap) VerifyCid(cid string, is *ipfs.IPFS) bool {
 	return hnm.rm.ContainCid(cid, is)
 }
 func (hnm HashNameMap) VerifyHashes(chm *ConstHashMap, is *ipfs.IPFS) bool {
+	if chm.Len(is) == 0 {
+		return true
+	}
 	for hd := range hnm.NextKeyValue(is) {
 		uhHash := hd.Key()
 		if ok := chm.ContainHash(uhHash, is); !ok {
@@ -157,11 +154,29 @@ func (hnm HashNameMap) VerifyUserInfo(uInfo *UserInfo, salt string, is *ipfs.IPF
 		return uh && rn && cid && (err1 == nil) && (err2 == nil)
 	}
 }
+func (hnm HashNameMap) VerifyUserIdentity(identity *UserIdentity, salt string, is *ipfs.IPFS) bool {
+	uhHash := NewUhHash(is, salt, identity.userHash)
+	if hnd, ok := hnm.ContainHash(uhHash, is); !ok {
+		fmt.Println("verifyUserIdentity: not contain uhHash")
+		return false
+	} else {
+		name, err := identity.KeyFile().Name()
+		nm := name == hnd.rIpnsName
+		pub := identity.Private().Public().Equals(hnd.Public(is))
+		verf := identity.Sign().Verify().Equals(hnd.Verify(is))
+		return (err == nil) && nm && pub && verf
+	}
+}
 func (hnm HashNameMap) Marshal() []byte {
 	return hnm.rm.Marshal()
 }
 func (hnm *HashNameMap) Unmarshal(m []byte) error {
-	return hnm.rm.Unmarshal(m)
+	rm := &ipfs.ReccurentMap{}
+	if err := rm.Unmarshal(m); err != nil {
+		return err
+	}
+	hnm.rm = rm
+	return nil
 }
 func (hnm *HashNameMap) FromName(hnmName string, is *ipfs.IPFS) error {
 	mhnm, err := ipfs.FromName(hnmName, is)

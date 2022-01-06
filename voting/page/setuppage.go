@@ -13,40 +13,38 @@ import (
 	vutil "EasyVoting/voting/util"
 )
 
-type setupPage struct {
-	fyne.CanvasObject
-	is *ipfs.IPFS
-}
-
-func NewSetupPage(a fyne.App, is *ipfs.IPFS) fyne.CanvasObject {
+func NewSetupPage(w fyne.Window, is *ipfs.IPFS) fyne.CanvasObject {
 	noteLabel := widget.NewLabel("")
+	cidEntry := widget.NewEntry()
+	cidEntry.SetPlaceHolder("voting manager cid")
 
-	title := vputil.PlaceHolderEntry("title")
+	title := widget.NewEntry()
 	begin := vputil.NewTimeSelect()
 	end := vputil.NewTimeSelect()
-	loc := vputil.PlaceHolderSelect(util.GetOsTimeZones(), "location", nil)
-	rCfgCid := vputil.PlaceHolderEntry("rCfgCid")
-	cands := vputil.NewCandForm(a)
+	loc := widget.NewSelect(util.GetOsTimeZones(), nil)
+	rCfgCid := widget.NewEntry()
+	cands := vputil.NewCandForm()
 	vParam := vputil.NewVParamEntry()
-	vType := vputil.PlaceHolderSelect(vutil.VotingTypes(), "voting type", nil)
+	vType := widget.NewSelect(vutil.VotingTypes(), nil)
 
 	form := &widget.Form{}
 	form.Items = append(form.Items, widget.NewFormItem("title", title))
-	form.Items = append(form.Items, widget.NewFormItem("begin", begin))
-	form.Items = append(form.Items, widget.NewFormItem("end", end))
+	form.Items = append(form.Items, widget.NewFormItem("begin", begin.Render()))
+	form.Items = append(form.Items, widget.NewFormItem("end", end.Render()))
 	form.Items = append(form.Items, widget.NewFormItem("location", loc))
 	form.Items = append(form.Items, widget.NewFormItem("rCfgCid", rCfgCid))
-	form.Items = append(form.Items, widget.NewFormItem("candidates", cands))
-	form.Items = append(form.Items, widget.NewFormItem("voteParams", vParam))
+	form.Items = append(form.Items, widget.NewFormItem("candidates", cands.Render(w)))
+	form.Items = append(form.Items, widget.NewFormItem("voteParams", vParam.Render()))
 	form.Items = append(form.Items, widget.NewFormItem("voting type", vType))
 	form.OnSubmit = func() {
-		noteLabel.Text = "processing..."
+		noteLabel.SetText("processing...")
 
 		vt, err := vutil.VotingTypeFromStr(vType.Selected)
 		if err != nil {
-			noteLabel.Text = fmt.Sprintln(err)
+			noteLabel.SetText(fmt.Sprintln(err))
 			return
 		}
+
 		mCfg, vCfg, err := vutil.NewConfigs(
 			title.Text,
 			begin.Time(),
@@ -59,13 +57,15 @@ func NewSetupPage(a fyne.App, is *ipfs.IPFS) fyne.CanvasObject {
 			is,
 		)
 		if err != nil {
-			noteLabel.Text = fmt.Sprintln(err)
+			noteLabel.SetText(fmt.Sprintln(err))
 		} else {
 			mCfgCid := ipfs.ToCidWithAdd(mCfg.Marshal(), is)
 			ipfs.ToCidWithAdd(vCfg.Marshal(), is)
-			noteLabel.Text = "voting manager cid: " + mCfgCid
+			noteLabel.SetText("voting manager cid:")
+			cidEntry.SetText(mCfgCid)
 		}
 	}
 	form.ExtendBaseWidget(form)
-	return &setupPage{container.NewVBox(form, noteLabel), is}
+
+	return container.NewVScroll(container.NewVBox(form, noteLabel, cidEntry))
 }

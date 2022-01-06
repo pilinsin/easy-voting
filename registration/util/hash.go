@@ -16,7 +16,7 @@ func NewUserHash(is *ipfs.IPFS, salt string, userData ...string) UserHash {
 type UhHash string
 
 func NewUhHash(is *ipfs.IPFS, salt string, userHash UserHash) UhHash {
-	m := util.StrToBytes64(string(userHash) + salt)
+	m := util.AnyStrToBytes64(string(userHash) + salt)
 	cidStr := ipfs.ToCid(m, is)
 	return UhHash(ipfs.ToCid(util.Hash([]byte(cidStr), []byte(salt)), is))
 }

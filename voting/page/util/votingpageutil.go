@@ -35,6 +35,9 @@ func intEntry() *widget.Entry {
 		Text:     "0",
 	}
 	e.OnChanged = func(val string) {
+		if val == "" {
+			return
+		}
 		if _, err := strconv.Atoi(val); err != nil {
 			e.Text = "0"
 			e.Refresh()
@@ -65,24 +68,27 @@ func setUrl(text string, urlStr string) fyne.CanvasObject {
 	return widget.NewLabel("")
 }
 
-func imageDialog(a fyne.App, res fyne.Resource) func() {
+func resourceEqual(selected, def fyne.Resource) bool {
+	name := selected.Name() == def.Name()
+	content := util.ConstTimeBytesEqual(selected.Content(), def.Content())
+	return name && content
+}
+
+func imageDialog(w fyne.Window, res fyne.Resource) func() {
 	return func() {
 		onSelected := func(rc fyne.URIReadCloser, err error) {
-			if err != nil {
+			if rc == nil || err != nil {
 				return
 			}
 			img := canvas.NewImageFromURI(rc.URI())
 			img.FillMode = canvas.ImageFillContain
 			res = img.Resource
 		}
-		fOpenWin := a.NewWindow("Open a candidate image file")
-		dialog.NewFileOpen(onSelected, fOpenWin)
-		fOpenWin.ShowAndRun()
+		dialog.ShowFileOpen(onSelected, w)
 	}
 }
 
 type TimeSelect struct {
-	fyne.CanvasObject
 	Y *widget.Select
 	M *widget.Select
 	D *widget.Select
@@ -110,7 +116,7 @@ func NewTimeSelect() *TimeSelect {
 	}
 	year.OnChanged = func(y string) {
 		d := lastDay(y, month.Selected)
-		day.Options = util.ArangeStr(1, d, 1)
+		day.Options = util.ArangeStr(1, d+1, 1)
 		selected, _ := strconv.Atoi(day.Selected)
 		if selected > d {
 			day.Selected = strconv.Itoa(d)
@@ -119,7 +125,7 @@ func NewTimeSelect() *TimeSelect {
 	}
 	month.OnChanged = func(mth string) {
 		d := lastDay(year.Selected, mth)
-		day.Options = util.ArangeStr(1, d, 1)
+		day.Options = util.ArangeStr(1, d+1, 1)
 		selected, _ := strconv.Atoi(day.Selected)
 		if selected > d {
 			day.Selected = strconv.Itoa(d)
@@ -141,15 +147,16 @@ func NewTimeSelect() *TimeSelect {
 	}
 	min.ExtendBaseWidget(min)
 
-	ts := &TimeSelect{
+	return &TimeSelect{
 		Y: year,
 		M: month,
 		D: day,
 		h: hour,
 		m: min,
 	}
-	ts.CanvasObject = container.NewHBox(ts.Y, ts.M, ts.D, ts.h, ts.m)
-	return ts
+}
+func (ts *TimeSelect) Render() fyne.CanvasObject {
+	return container.NewHBox(ts.Y, ts.M, ts.D, ts.h, ts.m)
 }
 func (ts *TimeSelect) Time() string {
 	Y := ts.Y.Selected
@@ -162,20 +169,24 @@ func (ts *TimeSelect) Time() string {
 }
 
 type VParamEntry struct {
-	fyne.CanvasObject
 	min   *widget.Entry
 	max   *widget.Entry
 	total *widget.Entry
 }
 
 func NewVParamEntry() *VParamEntry {
-	vpe := &VParamEntry{
+	return &VParamEntry{
 		min:   intEntry(),
 		max:   intEntry(),
 		total: intEntry(),
 	}
-	vpe.CanvasObject = container.NewVBox(vpe.min, vpe.max, vpe.total)
-	return vpe
+}
+func (vpe *VParamEntry) Render() fyne.CanvasObject {
+	form := widget.NewForm()
+	form.Append("min", vpe.min)
+	form.Append("max", vpe.max)
+	form.Append("total", vpe.total)
+	return form
 }
 func (vpe *VParamEntry) VoteParams() vutil.VoteParams {
 	min, _ := strconv.Atoi(vpe.min.Text)

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/gob"
+	"encoding/json"
 	"io"
-	"strconv"
 	"strings"
 )
 
@@ -23,7 +23,23 @@ func ReaderToBytes(reader io.Reader) []byte {
 	return buf.Bytes()
 }
 
-func Bytes64ToStr(b []byte) string {
+func AnyBytes64ToStr(b []byte) string {
+	buf := &bytes.Buffer{}
+	enc := json.NewEncoder(buf)
+	enc.Encode(&struct{ B []byte }{b})
+	s := buf.String()
+	s = strings.Split(s, ":")[1]
+	return strings.Split(s, "\"")[1]
+}
+func StrToAnyBytes64(str string) []byte {
+	str = "{\"B\":\"" + str + "\"}"
+	buf := bytes.NewBufferString(str)
+	dec := json.NewDecoder(buf)
+	obj := &struct{ B []byte }{}
+	dec.Decode(obj)
+	return obj.B
+}
+func Bytes64ToAnyStr(b []byte) string {
 	b, err := base64.StdEncoding.DecodeString(string(b))
 	if err != nil {
 		return ""
@@ -31,30 +47,9 @@ func Bytes64ToStr(b []byte) string {
 		return string(b)
 	}
 }
-func StrToBytes64(str string) []byte {
+func AnyStrToBytes64(str string) []byte {
 	b64Str := base64.StdEncoding.EncodeToString([]byte(str))
 	return []byte(b64Str)
-}
-func Bytes64ToStrs(b []byte) []string {
-	s := Bytes64ToStr(b)
-	return strings.Split(s, " |_| ")
-}
-func StrsToBytes64(strs []string) []byte {
-	s := strings.Join(strs, " |_| ")
-	return StrToBytes64(s)
-}
-func Bytes64ToInt(b []byte) int {
-	s := Bytes64ToStr(b)
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		return 0
-	} else {
-		return i
-	}
-}
-func IntToBytes64(i int) []byte {
-	s := strconv.Itoa(i)
-	return StrToBytes64(s)
 }
 
 func Marshal(objWithPublicMembers interface{}) ([]byte, error) {

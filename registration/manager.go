@@ -1,10 +1,13 @@
 package registration
 
 import (
+	"fmt"
+
+	iface "github.com/ipfs/interface-go-ipfs-core"
+
 	"EasyVoting/ipfs"
-	"EasyVoting/ipfs/pubsub"
 	rutil "EasyVoting/registration/util"
-	"EasyVoting/util"
+	//"EasyVoting/util"
 	"EasyVoting/util/ecies"
 )
 
@@ -15,7 +18,7 @@ type IManager interface {
 
 type manager struct {
 	is          *ipfs.IPFS
-	ps          *pubsub.PubSub
+	sub         iface.PubSubSubscription
 	priKey      *ecies.PriKey
 	keyFile     *ipfs.KeyFile
 	salt2       string
@@ -28,14 +31,11 @@ func NewManager(mCfgCid string, is *ipfs.IPFS) (*manager, error) {
 	if err != nil {
 		return nil, err
 	}
-	ps, err := pubsub.New("registration_pubsub/" + mCfgCid)
-	if err != nil {
-		return nil, util.AddError(err, "pubsub.New error")
-	}
+	rCfgCid := ipfs.ToCid(mCfg.Config().Marshal(), is)
 
 	man := &manager{
 		is:          is,
-		ps:          ps,
+		sub:         is.PubSubSubscribe("registration_pubsub/" + rCfgCid),
 		priKey:      mCfg.Private(),
 		keyFile:     mCfg.KeyFile(),
 		salt2:       mCfg.Salt2(),
@@ -45,44 +45,57 @@ func NewManager(mCfgCid string, is *ipfs.IPFS) (*manager, error) {
 	return man, nil
 }
 func (m *manager) Close() {
-	m.is.Close()
+	m.sub.Close()
+	m.sub = nil
 	m.is = nil
-	m.ps.Close()
-	m.ps = nil
 }
 func (m *manager) Registrate() error {
 	chm := &rutil.ConstHashMap{}
 	err := chm.FromCid(m.chmCid, m.is)
 	if err != nil {
+		fmt.Println("m.Registrate FromCid error", err)
 		return err
 	}
 	hnm := &rutil.HashNameMap{}
 	hnm.FromName(m.hnmIpnsName, m.is)
 	if err != nil {
+		fmt.Println("hnm.FromName error", err)
 		return err
 	}
 
-	for _, encUInfo := range m.ps.Subscribe() {
+	subs := m.is.PubSubNextAll(m.sub)
+	fmt.Println("data group: ", subs)
+	if len(subs) <= 0 {
+		return nil
+	}
+
+	for _, encUInfo := range subs {
 		mUInfo, err := m.priKey.Decrypt(encUInfo)
 		if err != nil {
+			fmt.Println("decrypt uInfo error")
 			continue
 		}
 		uInfo := &rutil.UserInfo{}
 		err = uInfo.Unmarshal(mUInfo)
 		if err != nil {
+			fmt.Println("uInfo unmarshal error")
 			continue
 		}
 
 		uhHash := rutil.NewUhHash(m.is, m.salt2, uInfo.UserHash())
 		if ok := chm.ContainHash(uhHash, m.is); !ok {
+			fmt.Println("the uhHash is not contained")
 			continue
 		}
 		if _, ok := hnm.ContainHash(uhHash, m.is); ok {
+			fmt.Println("the uhHash is already registrated")
 			continue
 		}
 		hnm.Append(uInfo, m.salt2, m.is)
+		fmt.Println("uInfo appended")
 	}
 
-	ipfs.ToNameWithKeyFile(hnm.Marshal(), m.keyFile, m.is)
+	name := ipfs.ToNameWithKeyFile(hnm.Marshal(), m.keyFile, m.is)
+	fmt.Println("ipnsPublished to ", name)
 	return nil
 }

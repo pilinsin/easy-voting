@@ -2,6 +2,7 @@ package ipfs
 
 import (
 	"EasyVoting/util"
+	"fmt"
 )
 
 type keyValue struct {
@@ -87,24 +88,19 @@ func (rm ReccurentMap) NextKeyValue(is *IPFS) <-chan *keyValue {
 	return ch
 }
 func (rm *ReccurentMap) Append(key interface{}, value []byte, is *IPFS) {
-	keyStr, ok := key.(string)
-	if !ok {
+	keyStr := fmt.Sprintln(key)
+	if _, ok := rm.ContainKey(keyStr, is); ok {
+		fmt.Println("rm.Append already contain key")
 		return
 	}
 
-	if _, ok := rm.ContainKey(keyStr, is); ok {
-		return
-	}
+	rm.curMap[keyStr] = value
 	if len(rm.curMap) >= rm.capacity {
 		rm = rm.ToCidLog(is)
 	}
-	rm.curMap[keyStr] = value
 }
 func (rm ReccurentMap) ContainKey(key interface{}, is *IPFS) ([]byte, bool) {
-	keyStr, ok := key.(string)
-	if !ok {
-		return nil, false
-	}
+	keyStr := fmt.Sprintln(key)
 
 	var err error
 	for {
@@ -121,6 +117,10 @@ func (rm ReccurentMap) ContainKey(key interface{}, is *IPFS) ([]byte, bool) {
 	}
 }
 func (rm ReccurentMap) ContainCid(cid string, is *IPFS) bool {
+	if ToCid(rm.Marshal(), is) == cid {
+		return true
+	}
+
 	rm0 := ReccurentMap{}
 	m, err := FromCid(cid, is)
 	if err != nil {
@@ -152,12 +152,11 @@ func (rm ReccurentMap) ToCidLog(is *IPFS) *ReccurentMap {
 	cid := ToCidWithAdd(m, is)
 	capacity := rm.capacity
 
-	rm2 := &ReccurentMap{
+	return &ReccurentMap{
+		curMap:   make(map[string][]byte, capacity),
 		cidLog:   cid,
 		capacity: capacity,
 	}
-	rm2.curMap = make(map[string][]byte, capacity)
-	return rm2
 }
 func (rm ReccurentMap) FromCidLog(is *IPFS) (ReccurentMap, error) {
 	rm0 := ReccurentMap{}

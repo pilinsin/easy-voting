@@ -6,32 +6,33 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"EasyVoting/ipfs"
+	rputil "EasyVoting/registration/page/util"
 	"EasyVoting/voting"
-	viface "EasyVoting/voting/interface"
 	vputil "EasyVoting/voting/page/util"
 	vutil "EasyVoting/voting/util"
 )
 
-type managerPage struct {
-	fyne.CanvasObject
-	m viface.IManager
-}
-
-func LoadManPage(mCfgCid string, is *ipfs.IPFS) fyne.CanvasObject {
+func LoadManPage(mCfgCid string, is *ipfs.IPFS) (fyne.CanvasObject, rputil.IPageCloser) {
 	mCfg, err := vutil.ManConfigFromCid(mCfgCid, is)
 	if err != nil {
-		return vputil.ErrorPage(err)
+		return vputil.ErrorPage(err), nil
 	}
 	m, err := voting.NewManager(mCfgCid, is)
 	if err != nil {
-		return vputil.ErrorPage(err)
+		return vputil.ErrorPage(err), nil
 	}
 
 	vCfgCid := ipfs.ToCid(mCfg.Config().Marshal(), is)
+	mCfgEntry := widget.NewEntry()
+	mCfgEntry.Text = mCfgCid
+	vCfgEntry := widget.NewEntry()
+	vCfgEntry.Text = vCfgCid
 	titleLabel := container.NewVBox(
 		widget.NewLabel(mCfg.Title()),
-		widget.NewLabel("manConfig:("+mCfgCid),
-		widget.NewLabel("vConfig:("+vCfgCid),
+		widget.NewLabel("manConfig:"),
+		mCfgEntry,
+		widget.NewLabel("vConfig:"),
+		vCfgEntry,
 	)
 	noteLabel := widget.NewLabel("")
 
@@ -44,5 +45,5 @@ func LoadManPage(mCfgCid string, is *ipfs.IPFS) fyne.CanvasObject {
 
 	page := container.NewVBox(contents, cuForm, getBtn, verifyBtn, noteLabel)
 	page = container.NewBorder(titleLabel, nil, nil, nil, page)
-	return &managerPage{page, m}
+	return page, rputil.NewPageCloser(m.Close, func() {})
 }

@@ -41,7 +41,7 @@ func (v *voting) init(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPF
 	v.resMapName = vCfg.ResMapName()
 }
 func (v *voting) Close() {
-	v.is.Close()
+	v.is = nil
 	v.identity = nil
 }
 

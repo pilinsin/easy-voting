@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"EasyVoting/ipfs"
+	rputil "EasyVoting/registration/page/util"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
 	"EasyVoting/voting"
@@ -14,19 +15,14 @@ import (
 	vutil "EasyVoting/voting/util"
 )
 
-type votingPage struct {
-	fyne.CanvasObject
-	v viface.IVoting
-}
-
-func LoadPage(vCfgCid string, is *ipfs.IPFS) fyne.CanvasObject {
+func LoadPage(vCfgCid string, is *ipfs.IPFS) (fyne.CanvasObject, rputil.IPageCloser) {
 	vCfg, err := vutil.ConfigFromCid(vCfgCid, is)
 	if err != nil {
-		return vputil.ErrorPage(err)
+		return vputil.ErrorPage(err), nil
 	}
 	v, err := voting.NewVoting(vCfgCid, &rutil.UserIdentity{}, is)
 	if err != nil {
-		return vputil.ErrorPage(err)
+		return vputil.ErrorPage(err), nil
 	}
 
 	titleLabel := widget.NewLabel(vCfg.Title() + " (" + vCfgCid + ")")
@@ -42,13 +38,13 @@ func LoadPage(vCfgCid string, is *ipfs.IPFS) fyne.CanvasObject {
 
 	page := container.NewVBox(contents, idEntry, idPage, counter, noteLabel)
 	page = container.NewBorder(titleLabel, nil, nil, nil, page)
-	return &votingPage{page, v}
+	return page, rputil.NewPageCloser(v.Close, func() {})
 }
 
 func identityEntry(vCfgCid string, candNameGroups []string, is *ipfs.IPFS, v viface.IVoting, idPage fyne.CanvasObject, label *widget.Label) fyne.CanvasObject {
 	e := &widget.Entry{Wrapping: fyne.TextTruncate}
 	e.OnSubmitted = func(text string) {
-		m := util.StrToBytes64(text)
+		m := util.AnyStrToBytes64(text)
 		identity := &rutil.UserIdentity{}
 		if err := identity.Unmarshal(m); err != nil {
 			v, _ = voting.NewVoting(vCfgCid, &rutil.UserIdentity{}, is)

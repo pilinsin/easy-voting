@@ -39,7 +39,7 @@ func (nim *NameIdMap) Append(rIpnsName, uid string, is *ipfs.IPFS) {
 	if err != nil {
 		return
 	}
-	encUid, err := rb.Public().Encrypt(util.StrToBytes64(uid))
+	encUid, err := rb.Public().Encrypt(util.AnyStrToBytes64(uid))
 	if err != nil {
 		return
 	}
@@ -58,7 +58,7 @@ func (nim NameIdMap) ContainIdentity(identity *rutil.UserIdentity, is *ipfs.IPFS
 		if err != nil {
 			return "", false
 		}
-		return util.Bytes64ToStr(bUid), true
+		return util.Bytes64ToAnyStr(bUid), true
 	} else {
 		return "", false
 	}
@@ -90,9 +90,12 @@ func (nim *NameIdMap) Unmarshal(m []byte) error {
 	if err := util.Unmarshal(m, mnim); err != nil {
 		return err
 	}
-	if err := nim.rm.Unmarshal(mnim.N); err != nil {
+
+	rm := &ipfs.ReccurentMap{}
+	if err := rm.Unmarshal(mnim.N); err != nil {
 		return err
 	}
+	nim.rm = rm
 	nim.vid = mnim.V
 	return nil
 }

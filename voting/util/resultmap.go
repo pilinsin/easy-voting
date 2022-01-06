@@ -79,12 +79,12 @@ func UnmarshalResultMap(m []byte) (*resultMap, error) {
 		return nil, err
 	}
 
-	resMap := &resultMap{}
-	if err := resMap.rm.Unmarshal(mResMap.Mrm); err != nil {
+	rm := &ipfs.ReccurentMap{}
+	if err := rm.Unmarshal(mResMap.Mrm); err != nil {
 		return nil, err
 	}
-	resMap.tInfo = mResMap.TimeInfo
-	resMap.nVoters = mResMap.N
+
+	resMap := &resultMap{rm, mResMap.TimeInfo, mResMap.N}
 	return resMap, nil
 }
 func ResultMapFromName(resMapName string, is *ipfs.IPFS) (*resultMap, error) {
