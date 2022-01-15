@@ -30,9 +30,8 @@ Turn the registrate switch on, and then wait.
 
 ```Go
 type ManIdentity struct{
-  manPriKey *ecies.PriKey
-  manSignKey *ed25519.SignKey
-  rKeyFile *ipfs.KeyFile
+  rPriKey *ecies.PriKey
+  hnmKeyFile *ipfs.KeyFile
 }
 ```
 
@@ -69,8 +68,7 @@ After the voting time finished, generate a resultMap.
 ```Go
 type ManIdentity struct{
   manPriKey *ecies.PriKey
-  manSignKey *ed25519.SignKey
-  rKeyFile *ipfs.KeyFile
+  resMapKeyFile *ipfs.KeyFile
 }
 ```
 
