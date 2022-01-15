@@ -28,11 +28,13 @@ The ManIdentity is stored locally with a key input in the setup page.
 Input the rCfgCid and key, and then transition to the registration manager page.  
 Turn the registrate switch on, and then wait.    
 
+```Go
 type ManIdentity struct{
   manPriKey *ecies.PriKey
   manSignKey *ed25519.SignKey
   rKeyFile *ipfs.KeyFile
 }
+```
 
 (User)  
 Input the rCfgCid and transition to the registration page.  
@@ -64,12 +66,13 @@ The ManIdentity is stored locally with a key input in the voting setup page.
 Input the vCfgCid and key, and then transition to the voting manager page.  
 When input a userData for a user, the user can be verified.    
 After the voting time finished, generate a resultMap.    
-
+```Go
 type ManIdentity struct{
   manPriKey *ecies.PriKey
   manSignKey *ed25519.SignKey
   rKeyFile *ipfs.KeyFile
 }
+```
 
 (User)  
 Input the vCfgCid and the key, and then transition to the voting page.  
