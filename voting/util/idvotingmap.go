@@ -93,18 +93,18 @@ func (kv keyValue) Value() (*VotingBox, *ed25519.VerfKey) {
 }
 
 type idVotingMap struct {
-	rm    *ipfs.ReccurentMap
+	sm    *ipfs.ScalableMap
 	tInfo *util.TimeInfo
 }
 
 func NewIdVotingMap(capacity int, tInfo *util.TimeInfo) *idVotingMap {
 	return &idVotingMap{
-		rm:    ipfs.NewReccurentMap(capacity),
+		sm:    ipfs.NewScalableMap(capacity),
 		tInfo: tInfo,
 	}
 }
 func (ivm idVotingMap) Len(is *ipfs.IPFS) int {
-	return ivm.rm.Len(is)
+	return ivm.sm.Len(is)
 }
 func (ivm idVotingMap) withinTime() bool {
 	return ivm.tInfo.WithinTime(time.Now())
@@ -115,7 +115,7 @@ func (ivm idVotingMap) Next(is *ipfs.IPFS) <-chan *VotingBox {
 	ch := make(chan *VotingBox)
 	go func() {
 		defer close(ch)
-		for m := range ivm.rm.Next(is) {
+		for m := range ivm.sm.Next(is) {
 			vd := &votingData{}
 			err := vd.Unmarshal(m)
 			if err != nil {
@@ -136,7 +136,7 @@ func (ivm idVotingMap) NextKeyValue(is *ipfs.IPFS) <-chan *keyValue {
 	ch := make(chan *keyValue)
 	go func() {
 		defer close(ch)
-		for kv := range ivm.rm.NextKeyValue(is) {
+		for kv := range ivm.sm.NextKeyValue(is) {
 			vd := &votingData{}
 			err := vd.Unmarshal(kv.Value())
 			if err != nil {
@@ -152,7 +152,7 @@ func (ivm idVotingMap) NextKeyValue(is *ipfs.IPFS) <-chan *keyValue {
 	return ch
 }
 func (ivm *idVotingMap) Vote(hash UidVidHash, vote VoteInt, id *rutil.UserIdentity, manPubKey *ecies.PubKey, is *ipfs.IPFS) {
-	if m, ok := ivm.rm.ContainKey(string(hash), is); !ok {
+	if m, ok := ivm.sm.ContainKey(string(hash), is); !ok {
 		return
 	} else if ok := ivm.withinTime(); !ok {
 		return
@@ -183,13 +183,13 @@ func (ivm *idVotingMap) Append(hash UidVidHash, rIpnsName string, is *ipfs.IPFS)
 	_, err := rutil.RBoxFromName(rIpnsName, is)
 	if err == nil {
 		data := NewVotingData(rIpnsName, is)
-		ivm.rm.Append(string(hash), data.Marshal(), is)
+		ivm.sm.Append(string(hash), data.Marshal(), is)
 	}
 }
 
 //*votingBox, *verfKey, bool
 func (ivm idVotingMap) ContainHash(hash UidVidHash, is *ipfs.IPFS) (*VotingBox, *ed25519.VerfKey, bool) {
-	if m, ok := ivm.rm.ContainKey(hash, is); !ok {
+	if m, ok := ivm.sm.ContainKey(hash, is); !ok {
 		return nil, nil, false
 	} else {
 		vd := &votingData{}
@@ -209,7 +209,7 @@ func (ivm idVotingMap) Marshal() []byte {
 	mivm := &struct {
 		Mrm      []byte
 		TimeInfo *util.TimeInfo
-	}{ivm.rm.Marshal(), ivm.tInfo}
+	}{ivm.sm.Marshal(), ivm.tInfo}
 	m, _ := util.Marshal(mivm)
 	return m
 }
@@ -223,12 +223,12 @@ func UnmarshalIdVotingMap(m []byte) (*idVotingMap, error) {
 		return nil, err
 	}
 
-	rm := &ipfs.ReccurentMap{}
-	if err = rm.Unmarshal(mivm.Mrm); err != nil {
+	sm := &ipfs.ScalableMap{}
+	if err = sm.Unmarshal(mivm.Mrm); err != nil {
 		return nil, err
 	}
 
-	ivm := &idVotingMap{rm, mivm.TimeInfo}
+	ivm := &idVotingMap{sm, mivm.TimeInfo}
 	return ivm, nil
 }
 func IdVotingMapFromCid(ivmCid string, is *ipfs.IPFS) (*idVotingMap, error) {

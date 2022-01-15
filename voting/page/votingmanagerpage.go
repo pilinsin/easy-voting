@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
+	"EasyVoting/util"
 	"EasyVoting/ipfs"
 	rputil "EasyVoting/registration/page/util"
 	"EasyVoting/voting"
@@ -12,34 +13,37 @@ import (
 	vutil "EasyVoting/voting/util"
 )
 
-func LoadManPage(mCfgCid string, is *ipfs.IPFS) (fyne.CanvasObject, rputil.IPageCloser) {
-	mCfg, err := vutil.ManConfigFromCid(mCfgCid, is)
+func LoadManPage(vCfgCid string, manIdentity *vutil.ManIdentity, is *ipfs.IPFS) (fyne.CanvasObject, rputil.IPageCloser) {
+	vCfg, err := vutil.ConfigFromCid(vCfgCid, is)
 	if err != nil {
-		return vputil.ErrorPage(err), nil
+		return nil, nil
 	}
-	m, err := voting.NewManager(mCfgCid, is)
+	if ok := vCfg.IsCompatible(manIdentity); !ok{
+		return nil, nil
+	}
+	m, err := voting.NewManager(vCfgCid, manIdentity, is)
 	if err != nil {
-		return vputil.ErrorPage(err), nil
+		m.Close()
+		return nil, nil
 	}
 
-	vCfgCid := ipfs.ToCid(mCfg.Config().Marshal(), is)
-	mCfgEntry := widget.NewEntry()
-	mCfgEntry.Text = mCfgCid
 	vCfgEntry := widget.NewEntry()
 	vCfgEntry.Text = vCfgCid
+	midEntry := widget.NewEntry()
+	midEntry.SetText(util.AnyBytes64ToStr(manIdentity.Marshal()))
 	titleLabel := container.NewVBox(
-		widget.NewLabel(mCfg.Title()),
-		widget.NewLabel("manConfig:"),
-		mCfgEntry,
+		widget.NewLabel(vCfg.Title()),
 		widget.NewLabel("vConfig:"),
 		vCfgEntry,
+		widget.NewLabel("voting manager identity:"),
+		midEntry,
 	)
 	noteLabel := widget.NewLabel("")
 
-	mCfg.ShuffleCandidates()
-	contents := vputil.CandCards(mCfg.Candidates())
+	vCfg.ShuffleCandidates()
+	contents := vputil.CandCards(vCfg.Candidates())
 
-	cuForm := vputil.CheckUserForm(mCfg.UserDataLabels(), m, noteLabel)
+	cuForm := vputil.CheckUserForm(vCfg.UserDataLabels(), m, noteLabel)
 	getBtn := vputil.GetResultMapBtn(m, noteLabel)
 	verifyBtn := vputil.VerifyResultMapBtn(m, noteLabel)
 

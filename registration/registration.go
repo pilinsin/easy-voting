@@ -2,7 +2,7 @@ package registration
 
 import (
 	"fmt"
-	//"time"
+	"time"
 	"strings"
 
 	"EasyVoting/ipfs"
@@ -119,7 +119,8 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 	userSignKeyPair := ed25519.NewKeyPair()
 
 	rb := rutil.NewRegistrationBox(userEncKeyPair.Public(), userSignKeyPair.Verify())
-	rIpnsName := ipfs.ToNameWithKeyFile(rb.Marshal(), rKeyFile, r.is)
+	rIpnsName, _ := rKeyFile.Name()
+	go func(){ipfs.ToNameWithKeyFile(rb.Marshal(), rKeyFile, r.is)}()
 
 	id := rutil.NewUserIdentity(userHash, rKeyFile, userEncKeyPair.Private(), userSignKeyPair.Sign())
 	uInfo := rutil.NewUserInfo(userHash, rIpnsName)
@@ -129,21 +130,21 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 		return nil, util.AddError(err, "encUInfo err in r.Registrate")
 	}
 	r.is.PubSubPublish(encInfo, r.psTopic)
-	return id, nil
-	/*
-		for {
-			hnm := &rutil.HashNameMap{}
-			err = hnm.FromName(r.hnmIpnsName, r.is)
-			if err != nil {
-				return nil, err
-			}
-			if hnm.VerifyUserInfo(uInfo, r.salt2, r.is) {
-				fmt.Println("uInfo verified")
-				return id, nil
-			}
-
-			fmt.Println("wait for registration")
-			<-time.After(30 * time.Second)
+	//return id, nil
+	
+	ticker := time.NewTicker(30*time.Second)
+	defer ticker.Stop()
+	for {
+		hnm := &rutil.HashNameMap{}
+		if err := hnm.FromName(r.hnmIpnsName, r.is); err != nil {
+			return nil, err
 		}
-	*/
+		if hnm.VerifyUserInfo(uInfo, r.salt2, r.is) {
+			//fmt.Println("uInfo verified")
+			return id, nil
+		}
+		//fmt.Println("wait for registration")
+		<-ticker.C
+	}
+
 }

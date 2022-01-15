@@ -7,33 +7,16 @@ import (
 )
 
 type NameIdMap struct {
-	rm  *ipfs.ReccurentMap
+	sm  *ipfs.ScalableMap
 	vid string
 }
 
 func NewNameIdMap(capacity int, vid string) *NameIdMap {
 	return &NameIdMap{
-		rm:  ipfs.NewReccurentMap(capacity),
+		sm:  ipfs.NewScalableMap(capacity),
 		vid: vid,
 	}
 }
-
-/*
-func (nim NameIdMap) Next(is *ipfs.IPFS) <-chan *rutil.RegistrationBox{
-	ch := make(chan *rutil.RegistrationBox)
-	go func(){
-		defer close(ch)
-		for kv := range nim.rm.NextKeyValue(is){
-			rb := &rutil.RegistrationBox{}
-			err := rb.FromName(kv.Key(), is)
-			if err == nil{
-				ch <- rb
-			}
-		}
-	}()
-	return ch
-}
-*/
 func (nim *NameIdMap) Append(rIpnsName, uid string, is *ipfs.IPFS) {
 	rb, err := rutil.RBoxFromName(rIpnsName, is)
 	if err != nil {
@@ -45,7 +28,7 @@ func (nim *NameIdMap) Append(rIpnsName, uid string, is *ipfs.IPFS) {
 	}
 
 	nvHash := NewNameVidHash(rIpnsName, nim.vid)
-	nim.rm.Append(nvHash, encUid, is)
+	nim.sm.Append(nvHash, encUid, is)
 }
 func (nim NameIdMap) ContainIdentity(identity *rutil.UserIdentity, is *ipfs.IPFS) (string, bool) {
 	name, err := identity.KeyFile().Name()
@@ -53,7 +36,7 @@ func (nim NameIdMap) ContainIdentity(identity *rutil.UserIdentity, is *ipfs.IPFS
 		return "", false
 	}
 	nvHash := NewNameVidHash(name, nim.vid)
-	if encUid, ok := nim.rm.ContainKey(nvHash, is); ok {
+	if encUid, ok := nim.sm.ContainKey(nvHash, is); ok {
 		bUid, err := identity.Private().Decrypt(encUid)
 		if err != nil {
 			return "", false
@@ -71,14 +54,14 @@ func (nim NameIdMap) VerifyIdentity(identity *rutil.UserIdentity, is *ipfs.IPFS)
 		return false
 	}
 	nvHash := NewNameVidHash(name, nim.vid)
-	_, ok := nim.rm.ContainKey(nvHash, is)
+	_, ok := nim.sm.ContainKey(nvHash, is)
 	return ok
 }
 func (nim NameIdMap) Marshal() []byte {
 	mnim := &struct {
 		N []byte
 		V string
-	}{nim.rm.Marshal(), nim.vid}
+	}{nim.sm.Marshal(), nim.vid}
 	m, _ := util.Marshal(mnim)
 	return m
 }
@@ -91,11 +74,11 @@ func (nim *NameIdMap) Unmarshal(m []byte) error {
 		return err
 	}
 
-	rm := &ipfs.ReccurentMap{}
-	if err := rm.Unmarshal(mnim.N); err != nil {
+	sm := &ipfs.ScalableMap{}
+	if err := sm.Unmarshal(mnim.N); err != nil {
 		return err
 	}
-	nim.rm = rm
+	nim.sm = sm
 	nim.vid = mnim.V
 	return nil
 }

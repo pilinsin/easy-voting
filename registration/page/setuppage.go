@@ -14,49 +14,46 @@ import (
 func NewSetupPage(w fyne.Window, is *ipfs.IPFS) fyne.CanvasObject {
 	noteLabel := widget.NewLabel("")
 	cidEntry := widget.NewEntry()
-	cidEntry.SetPlaceHolder("registration manager cid")
+	cidEntry.SetPlaceHolder("registration config cid")
 
 	titleEntry := widget.NewEntry()
 
 	userDataset := make(chan []string)
-	var err error
 	//load icon
 	loadCsvBtn := &widget.Button{
 		Text: "upload userDataset csv",
 		Icon: theme.UploadIcon(),
 	}
-	loadCsvBtn.OnTapped = func() {
-		dialogErr := rputil.CsvDialog(w, userDataset)
-		if dialogErr == nil {
-			loadCsvBtn.Hide()
-			noteLabel.Text = "csv file uploaded"
-		} else {
-			noteLabel.Text = "invalid csv file"
-		}
-		err = dialogErr
-	}
+	loadCsvBtn.OnTapped = rputil.CsvDialog(w, userDataset, loadCsvBtn, noteLabel)
 	loadCsvBtn.ExtendBaseWidget(loadCsvBtn)
+
+	kwEntry := widget.NewEntry()
+	kwEntry.SetPlaceHolder("keyword of registration manager identity")
 
 	form := &widget.Form{}
 	form.Items = append(form.Items, widget.NewFormItem("title", titleEntry))
 	form.Items = append(form.Items, widget.NewFormItem("csv", loadCsvBtn))
+	form.Items = append(form.Items, widget.NewFormItem("keyword", kwEntry))
 	form.OnSubmit = func() {
 		if titleEntry.Text == "" {
 			noteLabel.SetText("title is empty")
 			return
 		}
-		if err != nil {
-			noteLabel.SetText("invalid csv file")
+		if loadCsvBtn.Visible(){
+			noteLabel.SetText("csv is empty")
 			return
 		}
 
 		noteLabel.SetText("processing...")
 		userDataLabels := <-userDataset
-		mCfg, rCfg := rutil.NewConfigs(titleEntry.Text, userDataset, userDataLabels, is)
-		mCfgCid := ipfs.ToCidWithAdd(mCfg.Marshal(), is)
-		ipfs.ToCidWithAdd(rCfg.Marshal(), is)
-		noteLabel.SetText("registration manager cid: ")
-		cidEntry.SetText(mCfgCid)
+		mId, rCfg := rutil.NewConfigs(titleEntry.Text, userDataset, userDataLabels, is)
+		rCfgCid := ipfs.ToCidWithAdd(rCfg.Marshal(), is)
+		noteLabel.SetText("registration config cid: ")
+		cidEntry.SetText(rCfgCid)
+
+		idStore := rutil.NewIdentityStore()
+		idStore.Put(kwEntry.Text, mId.Marshal())
+		idStore.Close()
 
 		form.Hide()
 	}

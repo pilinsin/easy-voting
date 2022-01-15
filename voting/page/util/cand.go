@@ -1,38 +1,50 @@
 package votingpageutil
 
 import (
+	//"fmt"
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
+	"EasyVoting/util"
 	vutil "EasyVoting/voting/util"
 )
 
 func CandCards(cands []vutil.Candidate) fyne.CanvasObject {
 	var candList [](fyne.CanvasObject)
 	for _, cand := range cands {
-		card := candCard(cand)
-		content := container.NewGridWrap(fyne.NewSize(120.0, 268.0), card)
-		candList = append(candList, content)
+		card := newCandCard(cand)
+		candList = append(candList, card.Render())
 	}
 	return container.NewAdaptiveGrid(4, candList...)
 }
-func candCard(cand vutil.Candidate) *widget.Card {
-	res := fyne.NewStaticResource(cand.Name, cand.Image)
-	img := canvas.NewImageFromResource(res)
-	img.FillMode = canvas.ImageFillContain
-
-	card := &widget.Card{
-		Title:    cand.Name,
-		Subtitle: cand.Group,
-		Content:  setUrl("URL", cand.Url),
+type candCard struct {
+	name   *widget.Label
+	group  *widget.Label
+	url   fyne.CanvasObject
+	imgCanvas *imageCanvas
+}
+func newCandCard(cand vutil.Candidate) *candCard {
+	res := fyne.NewStaticResource(cand.ImageName, cand.Image)
+	img := newImageCanvas(res)
+	if resourceEqual(res, defaultIcon()){
+		img.SetImage(nil)
 	}
-	card.ExtendBaseWidget(card)
-	card.SetImage(img)
 
+	card := &candCard{
+		name:     widget.NewLabel(cand.Name),
+		group: widget.NewLabel(cand.Group),
+		url:  setUrl("URL", cand.Url),
+		imgCanvas: img,
+	}
 	return card
+}
+func (cc *candCard) Render() fyne.CanvasObject{
+	return container.NewVBox(cc.imgCanvas.Render(), cc.name, cc.group, cc.url)
 }
 
 type CandForm struct {
@@ -82,11 +94,20 @@ type candEntry struct {
 	group  *widget.Entry
 	url    *widget.Entry
 	imgBtn *widget.Button
+	imgCanvas *imageCanvas
+	thumbnail chan fyne.Resource
 }
-
 func newCandEntry(w fyne.Window) *candEntry {
+	imgCanvas := newImageCanvas(defaultIcon())
+	imgCanvas.Hide()
+
+	thumb := make(chan fyne.Resource)
 	imgBtn := &widget.Button{Icon: theme.ContentAddIcon()}
-	imgBtn.OnTapped = imageDialog(w, imgBtn.Icon)
+	imgBtn.OnTapped = func(){
+		imageDialog(w, thumb, imgBtn, imgCanvas)()
+		//fmt.Println(thumb.Name())
+		//fmt.Println(resourceEqual(thumb, theme.ContentAddIcon()))
+	}
 	imgBtn.ExtendBaseWidget(imgBtn)
 
 	cand := &candEntry{
@@ -94,25 +115,54 @@ func newCandEntry(w fyne.Window) *candEntry {
 		group:  PlaceHolderEntry("Group"),
 		url:    PlaceHolderEntry("URL"),
 		imgBtn: imgBtn,
+		imgCanvas: imgCanvas,
+		thumbnail: thumb,
 	}
 	return cand
 }
 func (ce *candEntry) Render() fyne.CanvasObject {
-	return container.NewVBox(ce.imgBtn, ce.name, ce.group, ce.url)
+	return container.NewVBox(ce.imgCanvas.Render(), ce.imgBtn, ce.name, ce.group, ce.url)
 }
 func (ce *candEntry) Candidate() vutil.Candidate {
-	var icon fyne.Resource
-	defIcon := theme.ContentAddIcon()
-	selected := ce.imgBtn.Icon
-	if resourceEqual(selected, defIcon) {
-		icon = theme.DeleteIcon()
-	} else {
-		icon = selected
+	var res fyne.Resource
+	ctx, cancel := util.CancelTimerContext(10*time.Millisecond)
+	defer cancel()
+	select{
+		case res, _ = <- ce.thumbnail:
+		case <-ctx.Done():
+			res  = defaultIcon()
+			close(ce.thumbnail)
 	}
+	
 	return vutil.Candidate{
 		Name:  ce.name.Text,
 		Group: ce.group.Text,
 		Url:   ce.url.Text,
-		Image: icon.Content(),
+		Image: res.Content(),
+		ImageName: res.Name(),
 	}
+}
+
+type imageCanvas struct{
+	imgCanvas *fyne.Container
+}
+func newImageCanvas(res fyne.Resource) *imageCanvas{
+	imgCanvas := canvas.NewImageFromResource(res)
+	imgCanvas.FillMode = canvas.ImageFillContain
+	imgGridCanvas := container.NewGridWrap(fyne.NewSize(169, 239.27), imgCanvas)
+	return &imageCanvas{imgGridCanvas}
+}
+func (iCanvas *imageCanvas) Render() fyne.CanvasObject{
+	return iCanvas.imgCanvas
+}
+func (iCanvas *imageCanvas) Hide(){
+	iCanvas.imgCanvas.Hide()
+}
+func (iCanvas *imageCanvas) Show(){
+	iCanvas.imgCanvas.Show()
+}
+func (iCanvas *imageCanvas) SetImage(res fyne.Resource){
+	imgCanvas, _ := iCanvas.imgCanvas.Objects[0].(*canvas.Image)
+	imgCanvas.Resource = res
+	imgCanvas.Refresh()
 }

@@ -16,27 +16,30 @@ import (
 	"EasyVoting/util"
 )
 
-func LoadManPage(mCfgCid string, is *ipfs.IPFS) (fyne.CanvasObject, rputil.IPageCloser) {
-	mCfg, err := rutil.ManConfigFromCid(mCfgCid, is)
+func LoadManPage(rCfgCid string, manIdentity *rutil.ManIdentity, is *ipfs.IPFS) (fyne.CanvasObject, rputil.IPageCloser) {
+	rCfg, err := rutil.ConfigFromCid(rCfgCid, is)
 	if err != nil {
-		return rputil.ErrorPage(err), nil
+		return nil, nil
 	}
-	m, err := rman.NewManager(mCfgCid, is)
+	if ok := rCfg.IsCompatible(manIdentity); !ok{
+		return nil, nil
+	}
+	m, err := rman.NewManager(rCfgCid, manIdentity, is)
 	if err != nil {
-		return rputil.ErrorPage(err), nil
+		m.Close()
+		return nil, nil
 	}
-
-	rCfgCid := ipfs.ToCid(mCfg.Config().Marshal(), is)
-	mCfgEntry := widget.NewEntry()
-	mCfgEntry.Text = mCfgCid
+	
 	rCfgEntry := widget.NewEntry()
-	rCfgEntry.Text = rCfgCid
+	rCfgEntry.SetText(rCfgCid)
+	mIdEntry := widget.NewEntry()
+	mIdEntry.SetText(util.AnyBytes64ToStr(manIdentity.Marshal()))
 	titleLabel := container.NewVBox(
-		widget.NewLabel(mCfg.Title()),
-		widget.NewLabel("manConfig:"),
-		mCfgEntry,
+		widget.NewLabel(rCfg.Title()),
 		widget.NewLabel("rConfig:"),
 		rCfgEntry,
+		widget.NewLabel("registration manager identity:"),
+		mIdEntry,
 	)
 	noteLabel := widget.NewLabel("")
 

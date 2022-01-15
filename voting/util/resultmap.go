@@ -7,14 +7,14 @@ import (
 )
 
 type resultMap struct {
-	rm      *ipfs.ReccurentMap
+	sm      *ipfs.ScalableMap
 	tInfo   *util.TimeInfo
 	nVoters int
 }
 
 func NewResultMap(capacity int, ivm *idVotingMap, manPriKey *ecies.PriKey, is *ipfs.IPFS) (*resultMap, error) {
 	resMap := &resultMap{
-		rm:      ipfs.NewReccurentMap(capacity),
+		sm:      ipfs.NewScalableMap(capacity),
 		tInfo:   ivm.tInfo,
 		nVoters: ivm.Len(is),
 	}
@@ -25,13 +25,13 @@ func NewResultMap(capacity int, ivm *idVotingMap, manPriKey *ecies.PriKey, is *i
 		if err != nil {
 			return nil, err
 		}
-		resMap.rm.Append(uvHash, msv, is)
+		resMap.sm.Append(uvHash, msv, is)
 	}
 	return resMap, nil
 }
 func (resMap resultMap) NumVoters() int { return resMap.nVoters }
 func (resMap resultMap) VerifyVotes(ivm *idVotingMap, is *ipfs.IPFS) bool {
-	for kv := range resMap.rm.NextKeyValue(is) {
+	for kv := range resMap.sm.NextKeyValue(is) {
 		sv, err := UnmarshalSignedVote(kv.Value())
 		if err != nil {
 			return false
@@ -50,7 +50,7 @@ func (resMap resultMap) Next(is *ipfs.IPFS) <-chan *VoteInt {
 	ch := make(chan *VoteInt)
 	go func() {
 		defer close(ch)
-		for m := range resMap.rm.Next(is) {
+		for m := range resMap.sm.Next(is) {
 			if sv, err := UnmarshalSignedVote(m); err == nil {
 				if vi, err := sv.Vote(resMap.tInfo); err == nil {
 					ch <- vi
@@ -65,7 +65,7 @@ func (resMap resultMap) Marshal() []byte {
 		Mrm      []byte
 		TimeInfo *util.TimeInfo
 		N        int
-	}{resMap.rm.Marshal(), resMap.tInfo, resMap.nVoters}
+	}{resMap.sm.Marshal(), resMap.tInfo, resMap.nVoters}
 	m, _ := util.Marshal(mResMap)
 	return m
 }
@@ -79,12 +79,12 @@ func UnmarshalResultMap(m []byte) (*resultMap, error) {
 		return nil, err
 	}
 
-	rm := &ipfs.ReccurentMap{}
-	if err := rm.Unmarshal(mResMap.Mrm); err != nil {
+	sm := &ipfs.ScalableMap{}
+	if err := sm.Unmarshal(mResMap.Mrm); err != nil {
 		return nil, err
 	}
 
-	resMap := &resultMap{rm, mResMap.TimeInfo, mResMap.N}
+	resMap := &resultMap{sm, mResMap.TimeInfo, mResMap.N}
 	return resMap, nil
 }
 func ResultMapFromName(resMapName string, is *ipfs.IPFS) (*resultMap, error) {

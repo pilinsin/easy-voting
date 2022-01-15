@@ -26,21 +26,20 @@ type manager struct {
 	hnmIpnsName string
 }
 
-func NewManager(mCfgCid string, is *ipfs.IPFS) (*manager, error) {
-	mCfg, err := rutil.ManConfigFromCid(mCfgCid, is)
+func NewManager(rCfgCid string, manIdentity *rutil.ManIdentity, is *ipfs.IPFS) (*manager, error) {
+	rCfg, err := rutil.ConfigFromCid(rCfgCid, is)
 	if err != nil {
 		return nil, err
 	}
-	rCfgCid := ipfs.ToCid(mCfg.Config().Marshal(), is)
 
 	man := &manager{
 		is:          is,
 		sub:         is.PubSubSubscribe("registration_pubsub/" + rCfgCid),
-		priKey:      mCfg.Private(),
-		keyFile:     mCfg.KeyFile(),
-		salt2:       mCfg.Salt2(),
-		chmCid:      mCfg.ChMapCid(),
-		hnmIpnsName: mCfg.HnmIpnsName(),
+		priKey:      manIdentity.Private(),
+		keyFile:    	manIdentity.KeyFile(),
+		salt2:       rCfg.Salt2(),
+		chmCid:      rCfg.ChMapCid(),
+		hnmIpnsName: rCfg.HnmIpnsName(),
 	}
 	return man, nil
 }
@@ -51,24 +50,23 @@ func (m *manager) Close() {
 }
 func (m *manager) Registrate() error {
 	chm := &rutil.ConstHashMap{}
-	err := chm.FromCid(m.chmCid, m.is)
-	if err != nil {
+	if err := chm.FromCid(m.chmCid, m.is); err != nil {
 		fmt.Println("m.Registrate FromCid error", err)
 		return err
 	}
 	hnm := &rutil.HashNameMap{}
-	hnm.FromName(m.hnmIpnsName, m.is)
-	if err != nil {
+	if err := hnm.FromName(m.hnmIpnsName, m.is); err != nil {
 		fmt.Println("hnm.FromName error", err)
 		return err
 	}
 
+	//it takes 5~6 mins
 	subs := m.is.PubSubNextAll(m.sub)
 	fmt.Println("data group: ", subs)
 	if len(subs) <= 0 {
 		return nil
 	}
-
+	isHnmUpdated := false
 	for _, encUInfo := range subs {
 		mUInfo, err := m.priKey.Decrypt(encUInfo)
 		if err != nil {
@@ -76,12 +74,10 @@ func (m *manager) Registrate() error {
 			continue
 		}
 		uInfo := &rutil.UserInfo{}
-		err = uInfo.Unmarshal(mUInfo)
-		if err != nil {
+		if err := uInfo.Unmarshal(mUInfo); err != nil {
 			fmt.Println("uInfo unmarshal error")
 			continue
 		}
-
 		uhHash := rutil.NewUhHash(m.is, m.salt2, uInfo.UserHash())
 		if ok := chm.ContainHash(uhHash, m.is); !ok {
 			fmt.Println("the uhHash is not contained")
@@ -91,11 +87,14 @@ func (m *manager) Registrate() error {
 			fmt.Println("the uhHash is already registrated")
 			continue
 		}
+
 		hnm.Append(uInfo, m.salt2, m.is)
+		isHnmUpdated = true
 		fmt.Println("uInfo appended")
 	}
-
-	name := ipfs.ToNameWithKeyFile(hnm.Marshal(), m.keyFile, m.is)
-	fmt.Println("ipnsPublished to ", name)
+	if isHnmUpdated{
+		name := ipfs.ToNameWithKeyFile(hnm.Marshal(), m.keyFile, m.is)
+		fmt.Println("ipnsPublished to ", name)
+	}
 	return nil
 }

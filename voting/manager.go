@@ -21,21 +21,21 @@ type manager struct {
 	resMapKeyFile *ipfs.KeyFile
 }
 
-func NewManager(mCfgCid string, is *ipfs.IPFS) (*manager, error) {
-	mCfg, err := vutil.ManConfigFromCid(mCfgCid, is)
+func NewManager(vCfgCid string, manIdentity *vutil.ManIdentity, is *ipfs.IPFS) (*manager, error) {
+	vCfg, err := vutil.ConfigFromCid(vCfgCid, is)
 	if err != nil {
-		return nil, util.NewError("invalid mCfgCid")
+		return nil, util.NewError("invalid vCfgCid")
 	}
 
 	man := &manager{
 		is:            is,
-		tInfo:         mCfg.TimeInfo(),
-		salt1:         mCfg.Salt1(),
-		salt2:         mCfg.Salt2(),
-		chmCid:        mCfg.UchmCid(),
-		ivmCid:        mCfg.UivmCid(),
-		manPriKey:     mCfg.Private(),
-		resMapKeyFile: mCfg.KeyFile(),
+		tInfo:         vCfg.TimeInfo(),
+		salt1:         vCfg.Salt1(),
+		salt2:         vCfg.Salt2(),
+		chmCid:        vCfg.UchmCid(),
+		ivmCid:        vCfg.UivmCid(),
+		manPriKey:     manIdentity.Private(),
+		resMapKeyFile: manIdentity.KeyFile(),
 	}
 	return man, nil
 }

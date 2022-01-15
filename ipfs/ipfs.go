@@ -5,14 +5,11 @@ import (
 	"io/ioutil"
 	"time"
 
-	//dstore "github.com/ipfs/go-datastore"
-	//dsync "github.com/ipfs/go-datastore/sync"
-	//config "github.com/ipfs/go-ipfs-config"
 	files "github.com/ipfs/go-ipfs-files"
 	kstore "github.com/ipfs/go-ipfs-keystore"
 	core "github.com/ipfs/go-ipfs/core"
 	coreapi "github.com/ipfs/go-ipfs/core/coreapi"
-	//repo "github.com/ipfs/go-ipfs/repo"
+	libp2p "github.com/ipfs/go-ipfs/core/node/libp2p"
 	iface "github.com/ipfs/interface-go-ipfs-core"
 	options "github.com/ipfs/interface-go-ipfs-core/options"
 	nsopts "github.com/ipfs/interface-go-ipfs-core/options/namesys"
@@ -29,13 +26,6 @@ type IPFS struct {
 
 func New(repoStr string) (*IPFS, error) {
 	repoPath, _ := ioutil.TempDir("", repoStr)
-
-	/*
-		ds := dsync.MutexWrap(dstore.NewMapDatastore())
-		ks, _ := kstore.NewFSKeystore(repoPath)
-		r := &repo.Mock{D: ds, C: *cfg, K: ks}
-	*/
-
 	r, err := newRepo(repoPath)
 	if err != nil {
 		return nil, err
@@ -49,6 +39,7 @@ func New(repoStr string) (*IPFS, error) {
 	buildCfg := core.BuildCfg{
 		Online:    true,
 		Repo:      r,
+		Routing: libp2p.DHTOption,
 		ExtraOpts: exOpts,
 	}
 
@@ -57,33 +48,6 @@ func New(repoStr string) (*IPFS, error) {
 	api, _ := coreapi.NewCoreAPI(node)
 
 	return &IPFS{api, ctx, r.Keystore()}, nil
-	/*
-		repoPath, _ := ioutil.TempDir("", repoStr)
-
-		keyGenOpts := []options.KeyGenerateOption{options.Key.Type(options.Ed25519Key)}
-		id, _ := config.CreateIdentity(ioutil.Discard, keyGenOpts)
-		cfg, _ := config.InitWithIdentity(id)
-
-		ds := dsync.MutexWrap(dstore.NewMapDatastore())
-		ks, _ := kstore.NewFSKeystore(repoPath)
-		r := &repo.Mock{D: ds, C: *cfg, K: ks}
-		exOpts := map[string]bool{
-			//"discovery": false,
-			"dht": true,
-			//"pubsub":    true,
-		}
-		buildCfg := core.BuildCfg{
-			Online:    true,
-			Repo:      r,
-			ExtraOpts: exOpts,
-		}
-
-		ctx := context.Background()
-		node, _ := core.NewNode(ctx, &buildCfg)
-		coreApi, _ := coreapi.NewCoreAPI(node)
-
-		return &IPFS{coreApi, ctx, r.Keystore()}
-	*/
 }
 func (ipfs *IPFS) Close() {
 	ipfs.ipfsApi = nil
@@ -174,7 +138,7 @@ func (ipfs *IPFS) PubSubSubscribe(topic string) iface.PubSubSubscription {
 	return sub
 }
 func (ipfs *IPFS) PubSubNext(sub iface.PubSubSubscription) []byte {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := util.CancelTimerContext(5*time.Second)
 	defer cancel()
 
 	msg, err := sub.Next(ctx)

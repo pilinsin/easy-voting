@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func NewContext() context.Context {
@@ -12,6 +13,9 @@ func NewContext() context.Context {
 }
 func CancelContext() (context.Context, context.CancelFunc) {
 	return context.WithCancel(context.Background())
+}
+func CancelTimerContext(t time.Duration) (context.Context, context.CancelFunc){
+	return context.WithTimeout(context.Background(), t)
 }
 func SignalContext() (context.Context, context.CancelFunc) {
 	return signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

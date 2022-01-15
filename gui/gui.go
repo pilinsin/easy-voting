@@ -1,14 +1,13 @@
 package gui
 
 import (
-	"fmt"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
+	"EasyVoting/util"
 	"EasyVoting/ipfs"
 	rpage "EasyVoting/registration/page"
 	rputil "EasyVoting/registration/page/util"
@@ -18,17 +17,21 @@ import (
 )
 
 type GUI struct {
-	a    fyne.App
 	w    fyne.Window
+	size fyne.Size
 	page *fyne.Container
 	is   *ipfs.IPFS
 }
 
-func New(title string, is *ipfs.IPFS) *GUI {
+func New(title string, width, height float32) *GUI {
+	size := fyne.NewSize(width, height)
 	a := app.New()
+	a.Settings().SetTheme(theme.LightTheme())
 	win := a.NewWindow(title)
+	win.Resize(size)
 	page := container.NewMax()
-	return &GUI{a, win, page, is}
+	is, _ := ipfs.New("." + title)
+	return &GUI{win, size, page, is}
 }
 
 func (gui *GUI) withRemove(page fyne.CanvasObject, closer rputil.IPageCloser) fyne.CanvasObject {
@@ -45,32 +48,45 @@ func (gui *GUI) changePage(page fyne.CanvasObject) {
 	}
 	gui.page.Add(page)
 	gui.page.Refresh()
+	gui.w.Resize(gui.size)
 }
 
-func (gui *GUI) loadPage(cid string) (fyne.CanvasObject, rputil.IPageCloser) {
-	if _, err := rutil.ConfigFromCid(cid, gui.is); err == nil {
-		fmt.Println("rCfg")
+func (gui *GUI) loadPage(cid, kw string) (fyne.CanvasObject, rputil.IPageCloser) {
+	idStore := rutil.NewIdentityStore()
+	mid, ok := idStore.Get(kw)
+	if !ok{
+		mid = util.StrToAnyBytes64(kw)
+	}
+
+	if rCfg, err := rutil.ConfigFromCid(cid, gui.is); err == nil {
+		manIdentity := &rutil.ManIdentity{}
+		if err := manIdentity.Unmarshal(mid); err == nil{
+			if rCfg.IsCompatible(manIdentity){
+				return rpage.LoadManPage(cid, manIdentity, gui.is)
+			}
+		}
 		return rpage.LoadPage(cid, gui.is)
 	}
-	if _, err := rutil.ManConfigFromCid(cid, gui.is); err == nil {
-		fmt.Println("rmCfg")
-		return rpage.LoadManPage(cid, gui.is)
-	}
-	if _, err := vutil.ConfigFromCid(cid, gui.is); err == nil {
-		fmt.Println("vCfg")
-		return vpage.LoadPage(cid, gui.is)
-	}
-	if _, err := vutil.ManConfigFromCid(cid, gui.is); err == nil {
-		fmt.Println("vmCfg")
-		return vpage.LoadManPage(cid, gui.is)
+	if vCfg, err := vutil.ConfigFromCid(cid, gui.is); err == nil {
+		manIdentity := &vutil.ManIdentity{}
+		if err := manIdentity.Unmarshal(mid); err == nil{
+			if vCfg.IsCompatible(manIdentity){
+				return vpage.LoadManPage(cid, manIdentity, gui.is)
+			}
+		}
+		userIdentity := &rutil.UserIdentity{}
+		userIdentity.Unmarshal(mid)
+		return vpage.LoadPage(cid, userIdentity, gui.is)
 	}
 	return nil, nil
 }
 func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	cidEntry := widget.NewEntry()
-	cidEntry.PlaceHolder = "page CID (Qm...)"
+	cidEntry.PlaceHolder = "registration or voting config CID (Qm...)"
+	kwEntry := widget.NewEntry()
+	kwEntry.PlaceHolder = "keyword of UserIdentity or ManIdentity"
 	loadBtn := widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {
-		loadPage, closer := gui.loadPage(cidEntry.Text)
+		loadPage, closer := gui.loadPage(cidEntry.Text, kwEntry.Text)
 		if loadPage == nil {
 			cidEntry.SetText("")
 			return
@@ -79,7 +95,7 @@ func (gui *GUI) loadPageForm() fyne.CanvasObject {
 		//page.SetMinSize(fyne,NewSize(101.1,201.2))
 		gui.changePage(gui.withRemove(page, closer))
 	})
-	return container.NewBorder(nil, nil, nil, loadBtn, cidEntry)
+	return container.NewBorder(nil, nil, nil, loadBtn, container.NewVBox(cidEntry, kwEntry))
 }
 
 func (gui *GUI) newPageForm() fyne.CanvasObject {

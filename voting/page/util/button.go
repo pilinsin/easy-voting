@@ -25,8 +25,7 @@ func VotingBtn(v viface.IVoting, candNameGroups []string, label *widget.Label) f
 	return container.NewVBox(votingForm, voteBtn)
 }
 func CheckMyVoteBtn(v viface.IVoting, label *widget.Label) fyne.CanvasObject {
-	//get icon
-	return widget.NewButtonWithIcon("", theme.UploadIcon(), func() {
+	return widget.NewButtonWithIcon("check my vote", theme.CheckButtonIcon(), func() {
 		label.SetText("processing...")
 		vi, err := v.GetMyVote()
 		if err != nil {
@@ -42,8 +41,7 @@ func CheckMyVoteBtn(v viface.IVoting, label *widget.Label) fyne.CanvasObject {
 }
 
 func CountBtn(v viface.IVoting, label *widget.Label) fyne.CanvasObject {
-	//set icon
-	return widget.NewButtonWithIcon("", theme.UploadIcon(), func() {
+	return widget.NewButtonWithIcon("count", theme.DocumentIcon(), func() {
 		label.SetText("processing...")
 		if ok, err := v.VerifyResultMap(); err != nil {
 			label.SetText(fmt.Sprintln(err))
@@ -84,8 +82,7 @@ func CheckUserForm(labels []string, m viface.IManager, noteLabel *widget.Label) 
 }
 
 func GetResultMapBtn(m viface.IManager, label *widget.Label) fyne.CanvasObject {
-	//get icon
-	return widget.NewButtonWithIcon("", theme.UploadIcon(), func() {
+	return widget.NewButtonWithIcon("get ResultMap", theme.DownloadIcon(), func() {
 		label.SetText("processing...")
 		if err := m.GetResultMap(); err != nil {
 			label.SetText(fmt.Sprintln(err))
@@ -96,8 +93,7 @@ func GetResultMapBtn(m viface.IManager, label *widget.Label) fyne.CanvasObject {
 }
 
 func VerifyResultMapBtn(m viface.IManager, label *widget.Label) fyne.CanvasObject {
-	//set icon
-	return widget.NewButtonWithIcon("", theme.UploadIcon(), func() {
+	return widget.NewButtonWithIcon("verify ResultMap", theme.CheckButtonCheckedIcon(), func() {
 		label.SetText("processing...")
 		if ok, err := m.VerifyResultMap(); err != nil {
 			label.SetText(fmt.Sprintln(err))

@@ -5,12 +5,13 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+	"io"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"fyne.io/fyne/v2/theme"
 
 	"EasyVoting/util"
 	vutil "EasyVoting/voting/util"
@@ -68,23 +69,41 @@ func setUrl(text string, urlStr string) fyne.CanvasObject {
 	return widget.NewLabel("")
 }
 
+func defaultIcon() fyne.Resource{
+	return theme.FyneLogo()
+}
 func resourceEqual(selected, def fyne.Resource) bool {
 	name := selected.Name() == def.Name()
 	content := util.ConstTimeBytesEqual(selected.Content(), def.Content())
 	return name && content
 }
 
-func imageDialog(w fyne.Window, res fyne.Resource) func() {
-	return func() {
+func imageDialog(w fyne.Window, res chan <- fyne.Resource, hideObj fyne.CanvasObject, resCanvas *imageCanvas) func(){
+	return func(){
 		onSelected := func(rc fyne.URIReadCloser, err error) {
-			if rc == nil || err != nil {
-				return
-			}
-			img := canvas.NewImageFromURI(rc.URI())
-			img.FillMode = canvas.ImageFillContain
-			res = img.Resource
+			if rc == nil || err != nil {return}
+			if ok := isImageExtension(rc.URI().Extension()); !ok{return}
+
+			data, err := io.ReadAll(rc)
+			if err != nil{return}
+			loadRes := &fyne.StaticResource{rc.URI().Name(), data}
+			go func(){
+				res <- loadRes
+				close(res)
+			}()
+			hideObj.Hide()
+			resCanvas.Show()
+			resCanvas.SetImage(loadRes)
 		}
 		dialog.ShowFileOpen(onSelected, w)
+	}
+}
+func isImageExtension(ext string) bool{
+	switch ext {
+	case ".bmp", ".png", ".jpeg", ".jpg", ".gif", ".tiff", ".vp8l", ".webp", ".svg":
+		return true
+	default:
+		return false
 	}
 }
 

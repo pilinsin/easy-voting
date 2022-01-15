@@ -3,10 +3,8 @@ package util
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/gob"
 	"encoding/json"
 	"io"
-	"strings"
 )
 
 func BytesToReader(b []byte) io.Reader {
@@ -24,20 +22,15 @@ func ReaderToBytes(reader io.Reader) []byte {
 }
 
 func AnyBytes64ToStr(b []byte) string {
-	buf := &bytes.Buffer{}
-	enc := json.NewEncoder(buf)
-	enc.Encode(&struct{ B []byte }{b})
-	s := buf.String()
-	s = strings.Split(s, ":")[1]
-	return strings.Split(s, "\"")[1]
+	return base64.StdEncoding.EncodeToString(b)
 }
 func StrToAnyBytes64(str string) []byte {
-	str = "{\"B\":\"" + str + "\"}"
-	buf := bytes.NewBufferString(str)
-	dec := json.NewDecoder(buf)
-	obj := &struct{ B []byte }{}
-	dec.Decode(obj)
-	return obj.B
+	b, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return nil
+	} else {
+		return b
+	}
 }
 func Bytes64ToAnyStr(b []byte) string {
 	b, err := base64.StdEncoding.DecodeString(string(b))
@@ -54,12 +47,13 @@ func AnyStrToBytes64(str string) []byte {
 
 func Marshal(objWithPublicMembers interface{}) ([]byte, error) {
 	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
+	enc := json.NewEncoder(&buf)
 	err := enc.Encode(objWithPublicMembers)
 	return buf.Bytes(), err
 }
 func Unmarshal(b []byte, objWithPublicMembers interface{}) error {
-	dec := gob.NewDecoder(bytes.NewBuffer(b))
+	dec := json.NewDecoder(bytes.NewBuffer(b))
+	dec.DisallowUnknownFields()
 	err := dec.Decode(objWithPublicMembers)
 	return err
 }

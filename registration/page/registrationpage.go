@@ -19,32 +19,35 @@ import (
 func LoadPage(rCfgCid string, is *ipfs.IPFS) (fyne.CanvasObject, rputil.IPageCloser) {
 	rCfg, err := rutil.ConfigFromCid(rCfgCid, is)
 	if err != nil {
-		return rputil.ErrorPage(err), nil
+		return nil, nil
 	}
 	r, err := user.NewRegistration(rCfgCid, is)
 	if err != nil {
-		return rputil.ErrorPage(err), nil
+		r.Close()
+		return nil, nil
 	}
 
 	titleLabel := widget.NewLabel(rCfg.Title() + " (" + rCfgCid + ")")
 	noteLabel := widget.NewLabel("")
 
 	rForm := registrationForm(rCfg.UserDataLabels(), r, noteLabel)
-	idVerfBtn := identityVerifyButton(r, noteLabel)
+	//idVerfBtn := identityVerifyButton(r, noteLabel)
 
 	hnmVerifyLabel := widget.NewLabel("verifying HashNameMap...")
 	ctx, cancel := util.CancelContext()
 	newVerifyHnmGoRoutine(ctx, r, hnmVerifyLabel)
 	closer := rputil.NewPageCloser(r.Close, cancel)
 
-	page := container.NewVBox(rForm, idVerfBtn, noteLabel, hnmVerifyLabel)
+	page := container.NewVBox(rForm, noteLabel, hnmVerifyLabel)
 	page = container.NewBorder(titleLabel, nil, nil, nil, page)
 	return page, closer
 }
 
 func registrationForm(labels []string, r user.IRegistration, noteLabel *widget.Label) fyne.CanvasObject {
+	kwEntry := widget.NewEntry()
+	kwEntry.SetPlaceHolder("iuput a userIdentity keyword")
 	idEntry := widget.NewEntry()
-	idEntry.SetPlaceHolder("userIdentity will be output here")
+	idEntry.SetPlaceHolder("user identity will be output here")
 
 	rForm := &widget.Form{}
 	entries := make([]*widget.Entry, len(labels))
@@ -53,6 +56,7 @@ func registrationForm(labels []string, r user.IRegistration, noteLabel *widget.L
 		formItem := widget.NewFormItem(label, entries[idx])
 		rForm.Items = append(rForm.Items, formItem)
 	}
+	rForm.Items = append(rForm.Items, widget.NewFormItem("keyword", kwEntry))
 	rForm.OnSubmit = func() {
 		noteLabel.SetText("processing...")
 		var texts []string
@@ -62,39 +66,17 @@ func registrationForm(labels []string, r user.IRegistration, noteLabel *widget.L
 		if identity, err := r.Registrate(texts...); err != nil {
 			noteLabel.SetText(fmt.Sprintln("registration error:", err))
 		} else {
-			idStr := util.AnyBytes64ToStr(identity.Marshal())
+			mid := identity.Marshal()
+			idStore := rutil.NewIdentityStore()
+			idStore.Put(kwEntry.Text, mid)
+			idStore.Close()
+			idEntry.SetText(util.AnyBytes64ToStr(mid))
 			noteLabel.SetText("registration is done")
-			idEntry.SetText(idStr)
 		}
 	}
 	rForm.ExtendBaseWidget(rForm)
 	return container.NewVBox(rForm, idEntry)
 }
-
-func identityVerifyButton(r user.IRegistration, noteLabel *widget.Label) fyne.CanvasObject {
-	e := widget.NewEntry()
-	e.SetPlaceHolder("input userIdentity")
-	f := &widget.Form{}
-	f.Items = append(f.Items, widget.NewFormItem("verify registration", e))
-	f.OnSubmit = func() {
-		noteLabel.SetText("processing...")
-		str := e.Text
-		m := util.StrToAnyBytes64(str)
-		identity := &rutil.UserIdentity{}
-		if err := identity.Unmarshal(m); err != nil {
-			noteLabel.SetText("this identity is invalid")
-			return
-		}
-		if ok := r.VerifyUserIdentity(identity); ok {
-			noteLabel.SetText("this identity is registrated")
-		} else {
-			noteLabel.SetText("this identity is not registrated")
-		}
-	}
-	f.ExtendBaseWidget(f)
-	return f
-}
-
 func newVerifyHnmGoRoutine(ctx context.Context, r user.IRegistration, label *widget.Label) {
 	go func(ctx context.Context) {
 		ticker := time.NewTicker(5 * time.Minute)

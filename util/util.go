@@ -4,7 +4,20 @@ import (
 	"bytes"
 	"golang.org/x/crypto/argon2"
 	"strconv"
+	"os"
+	"path/filepath"
 )
+
+func ExeDirPath() string{
+	exe, _ := os.Executable()
+	return filepath.Dir(exe)
+}
+func PathJoin(base string, adders ...string) string{
+	for _, adder := range adders{
+		base = filepath.Join(base, adder)
+	}
+	return base
+}
 
 func BoolPtr(b bool) *bool {
 	return &b

@@ -16,6 +16,16 @@ type config struct {
 	userDataLabels []string
 }
 
+func NewConfigs(title string, userDataset <-chan []string, userDataLabels []string, is *ipfs.IPFS) (*ManIdentity, *config) {
+	encKeyPair := ecies.NewKeyPair()
+	kf := ipfs.NewKeyFile()
+	rCfg := newConfig(title, userDataset, userDataLabels, encKeyPair.Public(), is, kf)
+	mi := &ManIdentity{
+		rPriKey:    encKeyPair.Private(),
+		hnmKeyFile: kf,
+	}
+	return mi, rCfg
+}
 func newConfig(title string, userDataset <-chan []string, userDataLabels []string, rPubKey *ecies.PubKey, is *ipfs.IPFS, kf *ipfs.KeyFile) *config {
 	cfg := &config{
 		title:          title,
@@ -44,6 +54,13 @@ func (cfg config) Salt2() string            { return cfg.salt2 }
 func (cfg config) ChMapCid() string         { return cfg.chmCid }
 func (cfg config) HnmIpnsName() string      { return cfg.hnmIpnsName }
 func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
+
+func (cfg config) IsCompatible(mi *ManIdentity) bool{
+	pub := cfg.rPubKey.Equals(mi.rPriKey.Public())
+	name, err := mi.hnmKeyFile.Name()
+	nm := cfg.hnmIpnsName == name
+	return pub && nm && (err == nil)
+}
 
 func ConfigFromCid(rCfgCid string, is *ipfs.IPFS) (*config, error) {
 	m, err := ipfs.FromCid(rCfgCid, is)

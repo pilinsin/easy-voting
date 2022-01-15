@@ -76,6 +76,7 @@ type Candidate struct {
 	Group string
 	Url   string
 	Image []byte
+	ImageName string
 }
 
 type config struct {
@@ -94,7 +95,23 @@ type config struct {
 	resMapName     string
 	userDataLabels []string
 }
+func NewConfigs(title, begin, end, loc, rCfgCid string, cands []Candidate, vParam VoteParams, vType VotingType, is *ipfs.IPFS) (*ManIdentity, *config, error) {
+	encKeyPair := ecies.NewKeyPair()
+	pub := encKeyPair.Public()
+	pri := encKeyPair.Private()
+	kf := ipfs.NewKeyFile()
+	name, _ := kf.Name()
 
+	vCfg, err := newConfig(title, begin, end, loc, cands, pub, vParam, vType, rCfgCid, name, is)
+	if err != nil {
+		return nil, nil, err
+	}
+	mId := &ManIdentity{
+		manPriKey:     pri,
+		resMapKeyFile: kf,
+	}
+	return mId, vCfg, nil
+}
 func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey *ecies.PubKey, vParam VoteParams, vType VotingType, rCfgCid string, resMapName string, is *ipfs.IPFS) (*config, error) {
 	rCfg, err := rutil.ConfigFromCid(rCfgCid, is)
 	if err != nil {
@@ -163,6 +180,13 @@ func (cfg config) UnimCid() string          { return cfg.nimCid }
 func (cfg config) UivmCid() string          { return cfg.ivmCid }
 func (cfg config) ResMapName() string       { return cfg.resMapName }
 func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
+
+func (cfg config) IsCompatible(mi *ManIdentity) bool{
+	pub := cfg.manPubKey.Equals(mi.manPriKey.Public())
+	name, err := mi.resMapKeyFile.Name()
+	nm := cfg.resMapName == name
+	return pub && nm && (err == nil)
+}
 
 func ConfigFromCid(vCfgCid string, is *ipfs.IPFS) (*config, error) {
 	m, err := ipfs.FromCid(vCfgCid, is)

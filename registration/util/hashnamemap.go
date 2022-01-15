@@ -67,19 +67,19 @@ func (kv keyValue) Value() *hashNameData {
 }
 
 type HashNameMap struct {
-	rm *ipfs.ReccurentMap
+	sm *ipfs.ScalableMap
 }
 
 func NewHashNameMap(capacity int) *HashNameMap {
 	return &HashNameMap{
-		rm: ipfs.NewReccurentMap(capacity),
+		sm: ipfs.NewScalableMap(capacity),
 	}
 }
 func (hnm HashNameMap) Next(is *ipfs.IPFS) <-chan *hashNameData {
 	ch := make(chan *hashNameData)
 	go func() {
 		defer close(ch)
-		for m := range hnm.rm.Next(is) {
+		for m := range hnm.sm.Next(is) {
 			hnd := &hashNameData{}
 			err := hnd.Unmarshal(m)
 			if err == nil {
@@ -93,7 +93,7 @@ func (hnm HashNameMap) NextKeyValue(is *ipfs.IPFS) <-chan *keyValue {
 	ch := make(chan *keyValue)
 	go func() {
 		defer close(ch)
-		for mkv := range hnm.rm.NextKeyValue(is) {
+		for mkv := range hnm.sm.NextKeyValue(is) {
 			hnd := &hashNameData{}
 			err := hnd.Unmarshal(mkv.Value())
 			if err == nil {
@@ -104,7 +104,7 @@ func (hnm HashNameMap) NextKeyValue(is *ipfs.IPFS) <-chan *keyValue {
 	return ch
 }
 func (hnm HashNameMap) ContainHash(hash UhHash, is *ipfs.IPFS) (*hashNameData, bool) {
-	if m, ok := hnm.rm.ContainKey(hash, is); !ok {
+	if m, ok := hnm.sm.ContainKey(hash, is); !ok {
 		return nil, false
 	} else {
 		hnd := &hashNameData{}
@@ -121,13 +121,13 @@ func (hnm *HashNameMap) Append(uInfo *UserInfo, salt string, is *ipfs.IPFS) {
 	if err == nil {
 		hash := NewUhHash(is, salt, uInfo.userHash)
 		data := NewHashNameData(uInfo)
-		hnm.rm.Append(hash, data.Marshal(), is)
+		hnm.sm.Append(hash, data.Marshal(), is)
 	}
 }
 
 //Verify no falsification
 func (hnm HashNameMap) VerifyCid(cid string, is *ipfs.IPFS) bool {
-	return hnm.rm.ContainCid(cid, is)
+	return hnm.sm.ContainCid(cid, is)
 }
 func (hnm HashNameMap) VerifyHashes(chm *ConstHashMap, is *ipfs.IPFS) bool {
 	if chm.Len(is) == 0 {
@@ -168,14 +168,14 @@ func (hnm HashNameMap) VerifyUserIdentity(identity *UserIdentity, salt string, i
 	}
 }
 func (hnm HashNameMap) Marshal() []byte {
-	return hnm.rm.Marshal()
+	return hnm.sm.Marshal()
 }
 func (hnm *HashNameMap) Unmarshal(m []byte) error {
-	rm := &ipfs.ReccurentMap{}
-	if err := rm.Unmarshal(m); err != nil {
+	sm := &ipfs.ScalableMap{}
+	if err := sm.Unmarshal(m); err != nil {
 		return err
 	}
-	hnm.rm = rm
+	hnm.sm = sm
 	return nil
 }
 func (hnm *HashNameMap) FromName(hnmName string, is *ipfs.IPFS) error {
