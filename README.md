@@ -23,10 +23,16 @@ Blockchain is not used.<br>
 -->
 (Registration Manager)  
 In the registration setup page, input some informations.  
-Get a mCfgCid (registration Manager Config CID).  
-Input the mCfgCid and transition to the registration manager page.  
-Get the rCfgCid (Registration Config CID) from the page and open it.  
+Get a rCfgCid (Registration Config CID) and a ManIdentity.  
+The ManIdentity is stored locally with a key input in the setup page.   
+Input the rCfgCid and key, and then transition to the registration manager page.  
 Turn the registrate switch on, and then wait.    
+
+type ManIdentity struct{
+  manPriKey *ecies.PriKey
+  manSignKey *ed25519.SignKey
+  rKeyFile *ipfs.KeyFile
+}
 
 (User)  
 Input the rCfgCid and transition to the registration page.  
@@ -36,7 +42,7 @@ Input a userData and registrate.
 var userData []string
 ```
 
-Copy and keep a userIdentity output.  
+A UserIdentity is output and stored locally.  
 ```Go
 type UserIdentity struct{
   userHash UserHash
@@ -53,14 +59,20 @@ type UserHash string
 -->
 (Manager)  
 In the voting setup page, input some informations include the rCfgCid.  
-Get a mCfgCid (voting Manager Config CID).  
-Input the mCfgCid and transition to the voting manager page.  
-Get the vCfgCid (Voting Config CID) from the page and open it.  
+Get a vCfgCid (Voting Config CID) and a ManIdentity.  
+The ManIdentity is stored locally with a key input in the voting setup page.  
+Input the vCfgCid and key, and then transition to the voting manager page.  
 When input a userData for a user, the user can be verified.    
 After the voting time finished, generate a resultMap.    
 
+type ManIdentity struct{
+  manPriKey *ecies.PriKey
+  manSignKey *ed25519.SignKey
+  rKeyFile *ipfs.KeyFile
+}
+
 (User)  
-Input the vCfgCid and transition to the voting page.  
+Input the vCfgCid and the key, and then transition to the voting page.  
 Input some informations for voting include the userIdentity.  
 After the voting time finished, verify and count from the resultMap.   
 
