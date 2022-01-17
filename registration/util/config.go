@@ -3,12 +3,12 @@ package registrationutil
 import (
 	"EasyVoting/ipfs"
 	"EasyVoting/util"
-	"EasyVoting/util/ecies"
+	"EasyVoting/util/crypto/encrypt"
 )
 
 type config struct {
 	title          string
-	rPubKey        *ecies.PubKey
+	rPubKey        *encrypt.PubKey
 	salt1          string
 	salt2          string
 	chmCid         string
@@ -17,7 +17,7 @@ type config struct {
 }
 
 func NewConfigs(title string, userDataset <-chan []string, userDataLabels []string, is *ipfs.IPFS) (*ManIdentity, *config) {
-	encKeyPair := ecies.NewKeyPair()
+	encKeyPair := encrypt.NewKeyPair()
 	kf := ipfs.NewKeyFile()
 	rCfg := newConfig(title, userDataset, userDataLabels, encKeyPair.Public(), is, kf)
 	mi := &ManIdentity{
@@ -26,7 +26,7 @@ func NewConfigs(title string, userDataset <-chan []string, userDataLabels []stri
 	}
 	return mi, rCfg
 }
-func newConfig(title string, userDataset <-chan []string, userDataLabels []string, rPubKey *ecies.PubKey, is *ipfs.IPFS, kf *ipfs.KeyFile) *config {
+func newConfig(title string, userDataset <-chan []string, userDataLabels []string, rPubKey *encrypt.PubKey, is *ipfs.IPFS, kf *ipfs.KeyFile) *config {
 	cfg := &config{
 		title:          title,
 		rPubKey:        rPubKey,
@@ -48,7 +48,7 @@ func newConfig(title string, userDataset <-chan []string, userDataLabels []strin
 	return cfg
 }
 func (cfg config) Title() string            { return cfg.title }
-func (cfg config) RPubKey() *ecies.PubKey   { return cfg.rPubKey }
+func (cfg config) RPubKey() *encrypt.PubKey   { return cfg.rPubKey }
 func (cfg config) Salt1() string            { return cfg.salt1 }
 func (cfg config) Salt2() string            { return cfg.salt2 }
 func (cfg config) ChMapCid() string         { return cfg.chmCid }
@@ -101,7 +101,7 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		return nil, err
 	}
 
-	pubKey := &ecies.PubKey{}
+	pubKey := &encrypt.PubKey{}
 	if err := pubKey.Unmarshal(mCfg.RPubKey); err != nil {
 		return nil, err
 	}

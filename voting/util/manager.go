@@ -3,15 +3,15 @@ package votingutil
 import (
 	"EasyVoting/ipfs"
 	"EasyVoting/util"
-	"EasyVoting/util/ecies"
+	"EasyVoting/util/crypto/encrypt"
 )
 
 type ManIdentity struct {
-	manPriKey     *ecies.PriKey
+	manPriKey     *encrypt.PriKey
 	resMapKeyFile *ipfs.KeyFile
 }
 
-func (mi ManIdentity) Private() *ecies.PriKey { return mi.manPriKey }
+func (mi ManIdentity) Private() *encrypt.PriKey { return mi.manPriKey }
 func (mi ManIdentity) KeyFile() *ipfs.KeyFile { return mi.resMapKeyFile }
 
 func (mi ManIdentity) Marshal() []byte {
@@ -27,7 +27,7 @@ func (mi *ManIdentity) Unmarshal(m []byte) error {
 		return err
 	}
 
-	priKey := &ecies.PriKey{}
+	priKey := &encrypt.PriKey{}
 	if err := priKey.Unmarshal(mManId.Pri); err != nil {
 		return err
 	}

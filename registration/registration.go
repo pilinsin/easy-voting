@@ -8,8 +8,8 @@ import (
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
-	"EasyVoting/util/ecies"
-	"EasyVoting/util/ed25519"
+	"EasyVoting/util/crypto/encrypt"
+	"EasyVoting/util/crypto/sign"
 )
 
 type IRegistration interface {
@@ -23,7 +23,7 @@ type registration struct {
 	is          *ipfs.IPFS
 	psTopic     string
 	hnmCid      string
-	rPubKey     *ecies.PubKey
+	rPubKey     *encrypt.PubKey
 	salt1       string
 	salt2       string
 	chmCid      string
@@ -115,8 +115,8 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 	}
 
 	rKeyFile := ipfs.NewKeyFile()
-	userEncKeyPair := ecies.NewKeyPair()
-	userSignKeyPair := ed25519.NewKeyPair()
+	userEncKeyPair := encrypt.NewKeyPair()
+	userSignKeyPair := sign.NewKeyPair()
 
 	rb := rutil.NewRegistrationBox(userEncKeyPair.Public(), userSignKeyPair.Verify())
 	rIpnsName, _ := rKeyFile.Name()
@@ -140,7 +140,7 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 			return nil, err
 		}
 		if hnm.VerifyUserInfo(uInfo, r.salt2, r.is) {
-			//fmt.Println("uInfo verified")
+			fmt.Println("uInfo verified")
 			return id, nil
 		}
 		//fmt.Println("wait for registration")

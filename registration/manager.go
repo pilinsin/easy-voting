@@ -8,7 +8,7 @@ import (
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	//"EasyVoting/util"
-	"EasyVoting/util/ecies"
+	"EasyVoting/util/crypto/encrypt"
 )
 
 type IManager interface {
@@ -19,7 +19,7 @@ type IManager interface {
 type manager struct {
 	is          *ipfs.IPFS
 	sub         iface.PubSubSubscription
-	priKey      *ecies.PriKey
+	priKey      *encrypt.PriKey
 	keyFile     *ipfs.KeyFile
 	salt2       string
 	chmCid      string
@@ -88,9 +88,10 @@ func (m *manager) Registrate() error {
 			continue
 		}
 
-		hnm.Append(uInfo, m.salt2, m.is)
-		isHnmUpdated = true
-		fmt.Println("uInfo appended")
+		if err := hnm.Append(uInfo, m.salt2, m.is); err == nil{
+			isHnmUpdated = true
+			fmt.Println("uInfo appended")
+		}
 	}
 	if isHnmUpdated{
 		name := ipfs.ToNameWithKeyFile(hnm.Marshal(), m.keyFile, m.is)

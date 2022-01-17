@@ -3,22 +3,22 @@ package registrationutil
 import (
 	"EasyVoting/ipfs"
 	"EasyVoting/util"
-	"EasyVoting/util/ecies"
-	"EasyVoting/util/ed25519"
+	"EasyVoting/util/crypto/encrypt"
+	"EasyVoting/util/crypto/sign"
 )
 
 type registrationBox struct {
-	userPubKey  *ecies.PubKey
-	userVerfKey *ed25519.VerfKey
+	userPubKey  *encrypt.PubKey
+	userVerfKey *sign.VerfKey
 }
 
-func NewRegistrationBox(pubKey *ecies.PubKey, verfKey *ed25519.VerfKey) *registrationBox {
+func NewRegistrationBox(pubKey *encrypt.PubKey, verfKey *sign.VerfKey) *registrationBox {
 	return &registrationBox{pubKey, verfKey}
 }
-func (rb registrationBox) Public() *ecies.PubKey {
+func (rb registrationBox) Public() *encrypt.PubKey {
 	return rb.userPubKey
 }
-func (rb registrationBox) Verify() *ed25519.VerfKey {
+func (rb registrationBox) Verify() *sign.VerfKey {
 	return rb.userVerfKey
 }
 func RBoxFromName(rIpnsName string, is *ipfs.IPFS) (*registrationBox, error) {
@@ -52,11 +52,11 @@ func (rb *registrationBox) Unmarshal(m []byte) error {
 		return err
 	}
 
-	pubKey := &ecies.PubKey{}
+	pubKey := &encrypt.PubKey{}
 	if err := pubKey.Unmarshal(mrb.PubKey); err != nil {
 		return err
 	}
-	verfKey := &ed25519.VerfKey{}
+	verfKey := &sign.VerfKey{}
 	if err := verfKey.Unmarshal(mrb.VerfKey); err != nil {
 		return err
 	}
@@ -68,11 +68,11 @@ func (rb *registrationBox) Unmarshal(m []byte) error {
 type UserIdentity struct {
 	userHash    UserHash
 	rKeyFile    *ipfs.KeyFile
-	userPriKey  *ecies.PriKey
-	userSignKey *ed25519.SignKey
+	userPriKey  *encrypt.PriKey
+	userSignKey *sign.SignKey
 }
 
-func NewUserIdentity(uhHash UserHash, kf *ipfs.KeyFile, pri *ecies.PriKey, sign *ed25519.SignKey) *UserIdentity {
+func NewUserIdentity(uhHash UserHash, kf *ipfs.KeyFile, pri *encrypt.PriKey, sign *sign.SignKey) *UserIdentity {
 	return &UserIdentity{uhHash, kf, pri, sign}
 }
 func (ui UserIdentity) UserHash() UserHash {
@@ -81,10 +81,10 @@ func (ui UserIdentity) UserHash() UserHash {
 func (ui UserIdentity) KeyFile() *ipfs.KeyFile {
 	return ui.rKeyFile
 }
-func (ui UserIdentity) Private() *ecies.PriKey {
+func (ui UserIdentity) Private() *encrypt.PriKey {
 	return ui.userPriKey
 }
-func (ui UserIdentity) Sign() *ed25519.SignKey {
+func (ui UserIdentity) Sign() *sign.SignKey {
 	return ui.userSignKey
 }
 func (ui UserIdentity) Marshal() []byte {
@@ -112,11 +112,11 @@ func (ui *UserIdentity) Unmarshal(m []byte) error {
 	if err := kf.Unmarshal(mui.RKeyFile); err != nil {
 		return err
 	}
-	priKey := &ecies.PriKey{}
+	priKey := &encrypt.PriKey{}
 	if err := priKey.Unmarshal(mui.UserPriKey); err != nil {
 		return err
 	}
-	signKey := &ed25519.SignKey{}
+	signKey := &sign.SignKey{}
 	if err := signKey.Unmarshal(mui.UserSignKey); err != nil {
 		return err
 	}

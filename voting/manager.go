@@ -6,7 +6,7 @@ import (
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
-	"EasyVoting/util/ecies"
+	"EasyVoting/util/crypto/encrypt"
 	vutil "EasyVoting/voting/util"
 )
 
@@ -17,7 +17,7 @@ type manager struct {
 	salt2         string
 	chmCid        string
 	ivmCid        string
-	manPriKey     *ecies.PriKey
+	manPriKey     *encrypt.PriKey
 	resMapKeyFile *ipfs.KeyFile
 }
 

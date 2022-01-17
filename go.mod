@@ -4,6 +4,8 @@ go 1.16
 
 require (
 	fyne.io/fyne/v2 v2.1.2 // indirect
+	github.com/LoCCS/bliss v0.0.0-20180223025823-07585ac9b817 // indirect
+	github.com/companyzero/sntrup4591761 v0.0.0-20200131011700-2b0d299dbd22 // indirect
 	github.com/ecies/go v1.0.1 // indirect
 	github.com/ipfs/go-cid v0.1.0 // indirect
 	github.com/ipfs/go-datastore v0.5.1 // indirect

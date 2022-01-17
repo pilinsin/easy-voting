@@ -5,8 +5,8 @@ import (
 
 	"EasyVoting/ipfs"
 	"EasyVoting/util"
-	"EasyVoting/util/ecies"
-	"EasyVoting/util/ed25519"
+	"EasyVoting/util/crypto/encrypt"
+	"EasyVoting/util/crypto/sign"
 )
 
 type hashNameData struct {
@@ -20,11 +20,11 @@ func NewHashNameData(uInfo *UserInfo) *hashNameData {
 		rIpnsName: uInfo.rIpnsName,
 	}
 }
-func (hnd hashNameData) Public(is *ipfs.IPFS) *ecies.PubKey {
+func (hnd hashNameData) Public(is *ipfs.IPFS) *encrypt.PubKey {
 	rb, _ := RBoxFromName(hnd.rIpnsName, is)
 	return rb.Public()
 }
-func (hnd hashNameData) Verify(is *ipfs.IPFS) *ed25519.VerfKey {
+func (hnd hashNameData) Verify(is *ipfs.IPFS) *sign.VerfKey {
 	rb, _ := RBoxFromName(hnd.rIpnsName, is)
 	return rb.Verify()
 }
@@ -116,12 +116,14 @@ func (hnm HashNameMap) ContainHash(hash UhHash, is *ipfs.IPFS) (*hashNameData, b
 		}
 	}
 }
-func (hnm *HashNameMap) Append(uInfo *UserInfo, salt string, is *ipfs.IPFS) {
-	_, err := RBoxFromName(uInfo.Name(), is)
-	if err == nil {
+func (hnm *HashNameMap) Append(uInfo *UserInfo, salt string, is *ipfs.IPFS) error{
+	if _, err := RBoxFromName(uInfo.Name(), is); err != nil{
+		fmt.Println("hnm.Append err: ", err)
+		return err
+	}else{
 		hash := NewUhHash(is, salt, uInfo.userHash)
 		data := NewHashNameData(uInfo)
-		hnm.sm.Append(hash, data.Marshal(), is)
+		return hnm.sm.Append(hash, data.Marshal(), is)
 	}
 }
 
@@ -144,6 +146,7 @@ func (hnm HashNameMap) VerifyHashes(chm *ConstHashMap, is *ipfs.IPFS) bool {
 func (hnm HashNameMap) VerifyUserInfo(uInfo *UserInfo, salt string, is *ipfs.IPFS) bool {
 	uhHash := NewUhHash(is, salt, uInfo.userHash)
 	if hnd, ok := hnm.ContainHash(uhHash, is); !ok {
+		fmt.Println("verifyUserInfo: not contain uhHash")
 		return false
 	} else {
 		uh := uInfo.userHash == hnd.userHash

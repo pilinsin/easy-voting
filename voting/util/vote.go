@@ -6,8 +6,8 @@ import (
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
-	"EasyVoting/util/ecies"
-	"EasyVoting/util/ed25519"
+	"EasyVoting/util/crypto/encrypt"
+	"EasyVoting/util/crypto/sign"
 )
 
 type VotingBox struct {
@@ -18,7 +18,7 @@ type VotingBox struct {
 func NewVotingBox() *VotingBox {
 	return &VotingBox{}
 }
-func (vb *VotingBox) Vote(vi VoteInt, manPubKey *ecies.PubKey, identity *rutil.UserIdentity) {
+func (vb *VotingBox) Vote(vi VoteInt, manPubKey *encrypt.PubKey, identity *rutil.UserIdentity) {
 	sv := newSignedVote(vi, identity).marshal()
 	mev, err := manPubKey.Encrypt(sv)
 	if err != nil {
@@ -32,7 +32,7 @@ func (vb *VotingBox) Vote(vi VoteInt, manPubKey *ecies.PubKey, identity *rutil.U
 	vb.manEncVote = mev
 	vb.userEncVote = uev
 }
-func (vb VotingBox) GetVote(manPriKey *ecies.PriKey) ([]byte, error) {
+func (vb VotingBox) GetVote(manPriKey *encrypt.PriKey) ([]byte, error) {
 	mSignedVote, err := manPriKey.Decrypt(vb.manEncVote)
 	if err != nil {
 		return nil, err
@@ -90,22 +90,22 @@ func (vb *VotingBox) Unmarshal(m []byte) error {
 
 type signedVote struct {
 	*vote
-	sign []byte
+	sv []byte
 }
 
 func newSignedVote(vi VoteInt, identity *rutil.UserIdentity) *signedVote {
 	vote := newVote(vi)
-	sign := identity.Sign().Sign(vote.marshal())
+	sv := identity.Sign().Sign(vote.marshal())
 	return &signedVote{
 		vote: vote,
-		sign: sign,
+		sv: sv,
 	}
 }
-func (sv signedVote) Verify(verfKey *ed25519.VerfKey) bool {
-	return verfKey.Verify(sv.vote.marshal(), sv.sign)
+func (sv signedVote) Verify(verfKey *sign.VerfKey) bool {
+	return verfKey.Verify(sv.vote.marshal(), sv.sv)
 }
 func (sv signedVote) marshal() []byte {
-	msv := &struct{ V, S []byte }{sv.vote.marshal(), sv.sign}
+	msv := &struct{ V, S []byte }{sv.vote.marshal(), sv.sv}
 	m, _ := util.Marshal(msv)
 	return m
 }

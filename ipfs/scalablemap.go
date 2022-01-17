@@ -88,11 +88,11 @@ func (sm ScalableMap) NextKeyValue(is *IPFS) <-chan *keyValue {
 	}()
 	return ch
 }
-func (sm *ScalableMap) Append(key interface{}, value []byte, is *IPFS) {
+func (sm *ScalableMap) Append(key interface{}, value []byte, is *IPFS) error{
 	keyStr := fmt.Sprintln(key)
 	if _, ok := sm.ContainKey(keyStr, is); ok {
-		fmt.Println("rm.Append already contain key")
-		return
+		fmt.Println("sm.Append already contain key")
+		return util.NewError("append error: already contain key")
 	}
 
 	sm.bm[keyStr] = value
@@ -100,6 +100,7 @@ func (sm *ScalableMap) Append(key interface{}, value []byte, is *IPFS) {
 		cid := sm.bm.toCid(is)
 		sm.cids[cid] = struct{}{}
 	}
+	return nil
 }
 func (sm ScalableMap) ContainKey(key interface{}, is *IPFS) ([]byte, bool) {
 	keyStr := fmt.Sprintln(key)

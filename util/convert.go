@@ -6,6 +6,20 @@ import (
 	"encoding/json"
 	"io"
 )
+func Uint8sToBytes(u8s []uint8) []byte{
+	bs := make([]byte, len(u8s))
+	for idx, u8 := range u8s{
+		bs[idx] = byte(u8)
+	}
+	return bs
+}
+func BytesToUint8s(bs []byte) []uint8{
+	u8s := make([]uint8, len(bs))
+	for idx, b := range bs{
+		u8s[idx] = uint8(b)
+	}
+	return u8s
+}
 
 func BytesToReader(b []byte) io.Reader {
 	return bytes.NewBuffer(b)
