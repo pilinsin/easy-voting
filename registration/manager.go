@@ -8,7 +8,7 @@ import (
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	//"EasyVoting/util"
-	"EasyVoting/util/crypto/encrypt"
+	"EasyVoting/util/crypto"
 )
 
 type IManager interface {
@@ -19,7 +19,7 @@ type IManager interface {
 type manager struct {
 	is          *ipfs.IPFS
 	sub         iface.PubSubSubscription
-	priKey      *encrypt.PriKey
+	priKey      crypto.IPriKey
 	keyFile     *ipfs.KeyFile
 	salt2       string
 	chmCid      string

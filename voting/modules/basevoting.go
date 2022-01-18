@@ -4,7 +4,7 @@ import (
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
-	"EasyVoting/util/crypto/encrypt"
+	"EasyVoting/util/crypto"
 	vutil "EasyVoting/voting/util"
 )
 
@@ -15,7 +15,7 @@ type voting struct {
 	tInfo      *util.TimeInfo
 	salt2      string
 	cands      []vutil.Candidate
-	manPubKey  *encrypt.PubKey
+	manPubKey  crypto.IPubKey
 	chmCid     string
 	nimCid     string
 	ivmCid     string

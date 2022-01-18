@@ -1,5 +1,5 @@
-package encrypt
-/*
+package crypto
+
 import (
 	"crypto/rand"
 
@@ -16,27 +16,27 @@ const (
 	sharedSize = sntrup.SharedKeySize
 )
 
-type KeyPair struct{
-	pubKey *PubKey
-	priKey *PriKey
+type sntrupKeyPair struct{
+	pubKey *sntrupPubKey
+	priKey *sntrupPriKey
 }
-func NewKeyPair() *KeyPair{
+func newSntrupKeyPair() IEncryptKeyPair{
 	pub, pri, _ := sntrup.GenerateKey(rand.Reader)
-	pubKey := &PubKey{pub}
-	priKey := &PriKey{pri}
-	return &KeyPair{pubKey, priKey}
+	pubKey := &sntrupPubKey{pub}
+	priKey := &sntrupPriKey{pri}
+	return &sntrupKeyPair{pubKey, priKey}
 }
-func (kp *KeyPair) Private() *PriKey{
+func (kp *sntrupKeyPair) Private() IPriKey{
 	return kp.priKey
 }
-func (kp *KeyPair) Public() *PubKey{
+func (kp *sntrupKeyPair) Public() IPubKey{
 	return kp.pubKey
 }
 
-type PriKey struct{
+type sntrupPriKey struct{
 	priKey *[priKeySize]byte
 }
-func (pri *PriKey) Decrypt(m []byte) ([]byte, error){
+func (pri *sntrupPriKey) Decrypt(m []byte) ([]byte, error){
 	if len(m) <= cipherSize{return nil, util.NewError("decrypt fail: len(m) <= cipherSize")}
 	cipher := new([cipherSize]byte)
 	copy(cipher[:], m[:cipherSize])
@@ -56,19 +56,19 @@ func (pri *PriKey) Decrypt(m []byte) ([]byte, error){
 		return data, nil
 	}
 }
-func (pri *PriKey) Public() *PubKey{
+func (pri *sntrupPriKey) Public() IPubKey{
 	pub := new([pubKeySize]byte)
 	copy(pub[:], pri.priKey[382:])
-	return &PubKey{pub}
+	return &sntrupPubKey{pub}
 }
-func (pri *PriKey) Equals(pri2 *PriKey) bool{
-	return util.ConstTimeBytesEqual(pri.priKey[:], pri2.priKey[:])
+func (pri *sntrupPriKey) Equals(pri2 IPriKey) bool{
+	return util.ConstTimeBytesEqual(pri.Marshal(), pri2.Marshal())
 }
-func (pri *PriKey) Marshal() []byte{
+func (pri *sntrupPriKey) Marshal() []byte{
 	m, _ := util.Marshal(pri.priKey)
 	return m
 }
-func (pri *PriKey) Unmarshal(m []byte) error{
+func (pri *sntrupPriKey) Unmarshal(m []byte) error{
 	priKey := new([priKeySize]byte)
 	if err := util.Unmarshal(m, priKey); err != nil{
 		return err
@@ -77,10 +77,10 @@ func (pri *PriKey) Unmarshal(m []byte) error{
 	return nil
 }
 
-type PubKey struct{
+type sntrupPubKey struct{
 	pubKey *[pubKeySize]byte
 }
-func (pub *PubKey) Encrypt(data []byte) ([]byte, error){
+func (pub *sntrupPubKey) Encrypt(data []byte) ([]byte, error){
 	cipher, share, err := sntrup.Encapsulate(rand.Reader, pub.pubKey)
 	if err != nil{return nil, err}
 	
@@ -91,14 +91,14 @@ func (pub *PubKey) Encrypt(data []byte) ([]byte, error){
 	enc := aead.Seal(nonce, nonce, data, nil)
 	return append(cipher[:], enc...), nil
 }
-func (pub *PubKey) Equals(pub2 *PubKey) bool{
-	return util.ConstTimeBytesEqual(pub.pubKey[:], pub2.pubKey[:])
+func (pub *sntrupPubKey) Equals(pub2 IPubKey) bool{
+	return util.ConstTimeBytesEqual(pub.Marshal(), pub2.Marshal())
 }
-func (pub *PubKey) Marshal() []byte{
+func (pub *sntrupPubKey) Marshal() []byte{
 	m, _ := util.Marshal(pub.pubKey)
 	return m
 }
-func (pub *PubKey) Unmarshal(m []byte) error{
+func (pub *sntrupPubKey) Unmarshal(m []byte) error{
 	pubKey := new([pubKeySize]byte)
 	if err := util.Unmarshal(m, pubKey); err != nil{
 		return err
@@ -106,4 +106,3 @@ func (pub *PubKey) Unmarshal(m []byte) error{
 	pub.pubKey = pubKey
 	return nil
 }
-*/

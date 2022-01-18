@@ -3,22 +3,21 @@ package registrationutil
 import (
 	"EasyVoting/ipfs"
 	"EasyVoting/util"
-	"EasyVoting/util/crypto/encrypt"
-	"EasyVoting/util/crypto/sign"
+	"EasyVoting/util/crypto"
 )
 
 type registrationBox struct {
-	userPubKey  *encrypt.PubKey
-	userVerfKey *sign.VerfKey
+	userPubKey  crypto.IPubKey
+	userVerfKey crypto.IVerfKey
 }
 
-func NewRegistrationBox(pubKey *encrypt.PubKey, verfKey *sign.VerfKey) *registrationBox {
+func NewRegistrationBox(pubKey crypto.IPubKey, verfKey crypto.IVerfKey) *registrationBox {
 	return &registrationBox{pubKey, verfKey}
 }
-func (rb registrationBox) Public() *encrypt.PubKey {
+func (rb registrationBox) Public() crypto.IPubKey {
 	return rb.userPubKey
 }
-func (rb registrationBox) Verify() *sign.VerfKey {
+func (rb registrationBox) Verify() crypto.IVerfKey {
 	return rb.userVerfKey
 }
 func RBoxFromName(rIpnsName string, is *ipfs.IPFS) (*registrationBox, error) {
@@ -52,12 +51,12 @@ func (rb *registrationBox) Unmarshal(m []byte) error {
 		return err
 	}
 
-	pubKey := &encrypt.PubKey{}
-	if err := pubKey.Unmarshal(mrb.PubKey); err != nil {
+	pubKey, err := crypto.UnmarshalPubKey(mrb.PubKey)
+	if  err != nil {
 		return err
 	}
-	verfKey := &sign.VerfKey{}
-	if err := verfKey.Unmarshal(mrb.VerfKey); err != nil {
+	verfKey, err := crypto.UnmarshalVerfKey(mrb.VerfKey)
+	if err != nil {
 		return err
 	}
 	rb.userPubKey = pubKey
@@ -68,11 +67,11 @@ func (rb *registrationBox) Unmarshal(m []byte) error {
 type UserIdentity struct {
 	userHash    UserHash
 	rKeyFile    *ipfs.KeyFile
-	userPriKey  *encrypt.PriKey
-	userSignKey *sign.SignKey
+	userPriKey  crypto.IPriKey
+	userSignKey crypto.ISignKey
 }
 
-func NewUserIdentity(uhHash UserHash, kf *ipfs.KeyFile, pri *encrypt.PriKey, sign *sign.SignKey) *UserIdentity {
+func NewUserIdentity(uhHash UserHash, kf *ipfs.KeyFile, pri crypto.IPriKey, sign crypto.ISignKey) *UserIdentity {
 	return &UserIdentity{uhHash, kf, pri, sign}
 }
 func (ui UserIdentity) UserHash() UserHash {
@@ -81,10 +80,10 @@ func (ui UserIdentity) UserHash() UserHash {
 func (ui UserIdentity) KeyFile() *ipfs.KeyFile {
 	return ui.rKeyFile
 }
-func (ui UserIdentity) Private() *encrypt.PriKey {
+func (ui UserIdentity) Private() crypto.IPriKey {
 	return ui.userPriKey
 }
-func (ui UserIdentity) Sign() *sign.SignKey {
+func (ui UserIdentity) Sign() crypto.ISignKey {
 	return ui.userSignKey
 }
 func (ui UserIdentity) Marshal() []byte {
@@ -112,12 +111,12 @@ func (ui *UserIdentity) Unmarshal(m []byte) error {
 	if err := kf.Unmarshal(mui.RKeyFile); err != nil {
 		return err
 	}
-	priKey := &encrypt.PriKey{}
-	if err := priKey.Unmarshal(mui.UserPriKey); err != nil {
+	priKey, err := crypto.UnmarshalPriKey(mui.UserPriKey)
+	if err != nil {
 		return err
 	}
-	signKey := &sign.SignKey{}
-	if err := signKey.Unmarshal(mui.UserSignKey); err != nil {
+	signKey, err := crypto.UnmarshalSignKey(mui.UserSignKey)
+	if err != nil {
 		return err
 	}
 

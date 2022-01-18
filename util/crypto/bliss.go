@@ -1,42 +1,42 @@
-package sign
-/*
+package crypto
+
 import (
 	"github.com/LoCCS/bliss"
 	"github.com/LoCCS/bliss/sampler"
 	"EasyVoting/util"
 )
 
-type KeyPair struct{
-	signKey *SignKey
-	verfKey *VerfKey
+type blissKeyPair struct{
+	signKey *blissSignKey
+	verfKey *blissVerfKey
 }
-func NewKeyPair() *KeyPair{
+func newBlissKeyPair() ISignKeyPair{
 	seedSize := int(sampler.SHA_512_DIGEST_LENGTH)
 	seed := util.BytesToUint8s(util.GenRandomBytes(seedSize))
 	e, _ := sampler.NewEntropy(seed)
 
 	priKey, _ := bliss.GeneratePrivateKey(4, e)
-	signKey := &SignKey{priKey, seed}
+	signKey := &blissSignKey{priKey, seed}
 	pubKey := priKey.PublicKey()
-	verfKey := &VerfKey{pubKey}
+	verfKey := &blissVerfKey{pubKey}
 
-	return &KeyPair{signKey, verfKey}
+	return &blissKeyPair{signKey, verfKey}
 }
-func (kp *KeyPair) Sign() *SignKey{
+func (kp *blissKeyPair) Sign() ISignKey{
 	return kp.signKey
 }
-func (kp *KeyPair) Verify() *VerfKey{
+func (kp *blissKeyPair) Verify() IVerfKey{
 	return kp.verfKey
 }
 
-type SignKey struct{
+type blissSignKey struct{
 	signKey *bliss.PrivateKey
 	seed []uint8
 }
-func (sk *SignKey) Close(){
+func (sk *blissSignKey) Close(){
 	sk.signKey.Destroy()
 }
-func (sk *SignKey) Sign(data []byte) []byte{
+func (sk *blissSignKey) Sign(data []byte) []byte{
 	e, _ := sampler.NewEntropy(sk.seed)
 	if signature, err := sk.signKey.Sign(data, e); err != nil{
 		return nil
@@ -44,16 +44,16 @@ func (sk *SignKey) Sign(data []byte) []byte{
 		return signature.Encode()
 	}
 }
-func (sk *SignKey) Verify() *VerfKey{
+func (sk *blissSignKey) Verify() IVerfKey{
 	verfKey := sk.signKey.PublicKey()
-	return &VerfKey{verfKey}
+	return &blissVerfKey{verfKey}
 }
-func (sk *SignKey) Equals(sk2 *SignKey) bool{
+func (sk *blissSignKey) Equals(sk2 ISignKey) bool{
 	m := sk.Marshal()
 	m2 := sk2.Marshal()
 	return util.ConstTimeBytesEqual(m, m2)
 }
-func (sk *SignKey) Marshal() []byte{
+func (sk *blissSignKey) Marshal() []byte{
 	marshalSignKey := &struct{
 		Sign []byte
 		Seed []uint8
@@ -61,7 +61,7 @@ func (sk *SignKey) Marshal() []byte{
 	m, _ := util.Marshal(marshalSignKey)
 	return m
 }
-func (sk *SignKey) Unmarshal(m []byte) error{
+func (sk *blissSignKey) Unmarshal(m []byte) error{
 	marshalSignKey := &struct{
 		Sign []byte
 		Seed []uint8
@@ -79,10 +79,10 @@ func (sk *SignKey) Unmarshal(m []byte) error{
 	return nil
 }
 
-type VerfKey struct{
+type blissVerfKey struct{
 	verfKey *bliss.PublicKey
 }
-func (vk *VerfKey) Verify(data, sign []byte) bool{
+func (vk *blissVerfKey) Verify(data, sign []byte) bool{
 	if signature, err := bliss.DecodeSignature(sign); err != nil{
 		return false
 	}else{
@@ -90,15 +90,15 @@ func (vk *VerfKey) Verify(data, sign []byte) bool{
 		return ok
 	}
 }
-func (vk *VerfKey) Equals(vk2 *VerfKey) bool{
+func (vk *blissVerfKey) Equals(vk2 IVerfKey) bool{
 	m := vk.Marshal()
 	m2 := vk2.Marshal()
 	return util.ConstTimeBytesEqual(m, m2)
 }
-func (vk *VerfKey) Marshal() []byte{
+func (vk *blissVerfKey) Marshal() []byte{
 	return vk.verfKey.Encode()
 }
-func (vk *VerfKey) Unmarshal(m []byte) error{
+func (vk *blissVerfKey) Unmarshal(m []byte) error{
 	if verfKey, err := bliss.DecodePublicKey(m); err != nil{
 		return nil
 	}else{
@@ -106,4 +106,3 @@ func (vk *VerfKey) Unmarshal(m []byte) error{
 		return nil
 	}
 }
-*/

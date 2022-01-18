@@ -5,8 +5,7 @@ import (
 
 	"EasyVoting/ipfs"
 	"EasyVoting/util"
-	"EasyVoting/util/crypto/encrypt"
-	"EasyVoting/util/crypto/sign"
+	"EasyVoting/util/crypto"
 )
 
 type hashNameData struct {
@@ -20,11 +19,11 @@ func NewHashNameData(uInfo *UserInfo) *hashNameData {
 		rIpnsName: uInfo.rIpnsName,
 	}
 }
-func (hnd hashNameData) Public(is *ipfs.IPFS) *encrypt.PubKey {
+func (hnd hashNameData) Public(is *ipfs.IPFS) crypto.IPubKey {
 	rb, _ := RBoxFromName(hnd.rIpnsName, is)
 	return rb.Public()
 }
-func (hnd hashNameData) Verify(is *ipfs.IPFS) *sign.VerfKey {
+func (hnd hashNameData) Verify(is *ipfs.IPFS) crypto.IVerfKey {
 	rb, _ := RBoxFromName(hnd.rIpnsName, is)
 	return rb.Verify()
 }

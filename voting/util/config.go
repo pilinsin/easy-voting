@@ -4,7 +4,7 @@ import (
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
-	"EasyVoting/util/crypto/encrypt"
+	"EasyVoting/util/crypto"
 )
 
 type VotingType int
@@ -86,7 +86,7 @@ type config struct {
 	salt1          string
 	salt2          string
 	candidates     []Candidate
-	manPubKey      *encrypt.PubKey
+	manPubKey      crypto.IPubKey
 	vParam         VoteParams
 	vType          VotingType
 	chmCid         string
@@ -96,7 +96,7 @@ type config struct {
 	userDataLabels []string
 }
 func NewConfigs(title, begin, end, loc, rCfgCid string, cands []Candidate, vParam VoteParams, vType VotingType, is *ipfs.IPFS) (*ManIdentity, *config, error) {
-	encKeyPair := encrypt.NewKeyPair()
+	encKeyPair := crypto.NewEncryptKeyPair()
 	pub := encKeyPair.Public()
 	pri := encKeyPair.Private()
 	kf := ipfs.NewKeyFile()
@@ -112,7 +112,7 @@ func NewConfigs(title, begin, end, loc, rCfgCid string, cands []Candidate, vPara
 	}
 	return mId, vCfg, nil
 }
-func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey *encrypt.PubKey, vParam VoteParams, vType VotingType, rCfgCid string, resMapName string, is *ipfs.IPFS) (*config, error) {
+func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypto.IPubKey, vParam VoteParams, vType VotingType, rCfgCid string, resMapName string, is *ipfs.IPFS) (*config, error) {
 	rCfg, err := rutil.ConfigFromCid(rCfgCid, is)
 	if err != nil {
 		return nil, util.AddError(err, "invalid rCfgCid")
@@ -172,7 +172,7 @@ func (cfg config) TimeInfo() *util.TimeInfo { return cfg.tInfo }
 func (cfg config) Salt1() string            { return cfg.salt1 }
 func (cfg config) Salt2() string            { return cfg.salt2 }
 func (cfg config) Candidates() []Candidate  { return cfg.candidates }
-func (cfg config) ManPubKey() *encrypt.PubKey { return cfg.manPubKey }
+func (cfg config) ManPubKey() crypto.IPubKey { return cfg.manPubKey }
 func (cfg config) VParam() VoteParams       { return cfg.vParam }
 func (cfg config) VType() VotingType        { return cfg.vType }
 func (cfg config) UchmCid() string          { return cfg.chmCid }
@@ -256,8 +256,7 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		return nil, err
 	}
 
-	pub := &encrypt.PubKey{}
-	err = pub.Unmarshal(mCfg.ManPubKey)
+	pub, err := crypto.UnmarshalPubKey(mCfg.ManPubKey)
 	if err != nil {
 		return nil, err
 	}

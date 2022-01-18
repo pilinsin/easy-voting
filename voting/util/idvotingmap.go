@@ -6,14 +6,13 @@ import (
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
-	"EasyVoting/util/crypto/encrypt"
-	"EasyVoting/util/crypto/sign"
+	"EasyVoting/util/crypto"
 )
 
 type votingData struct {
 	encKeyFile  []byte
 	name        string
-	userVerfKey *sign.VerfKey
+	userVerfKey crypto.IVerfKey
 }
 
 func NewVotingData(rIpnsName string, is *ipfs.IPFS) *votingData {
@@ -73,22 +72,24 @@ func (vd *votingData) Unmarshal(m []byte) error {
 
 	vd.encKeyFile = mvd.EncKeyFile
 	vd.name = mvd.Name
-	if err := vd.userVerfKey.Unmarshal(mvd.VerfKey); err != nil {
+	verfKey, err := crypto.UnmarshalVerfKey(mvd.VerfKey)
+	if err != nil {
 		return err
 	}
+	vd.userVerfKey = verfKey
 	return nil
 }
 
 type keyValue struct {
 	uvHash  UidVidHash
 	vb      *VotingBox
-	verfKey *sign.VerfKey
+	verfKey crypto.IVerfKey
 }
 
 func (kv keyValue) Key() UidVidHash {
 	return kv.uvHash
 }
-func (kv keyValue) Value() (*VotingBox, *sign.VerfKey) {
+func (kv keyValue) Value() (*VotingBox, crypto.IVerfKey) {
 	return kv.vb, kv.verfKey
 }
 
@@ -151,7 +152,7 @@ func (ivm idVotingMap) NextKeyValue(is *ipfs.IPFS) <-chan *keyValue {
 	}()
 	return ch
 }
-func (ivm *idVotingMap) Vote(hash UidVidHash, vote VoteInt, id *rutil.UserIdentity, manPubKey *encrypt.PubKey, is *ipfs.IPFS) {
+func (ivm *idVotingMap) Vote(hash UidVidHash, vote VoteInt, id *rutil.UserIdentity, manPubKey crypto.IPubKey, is *ipfs.IPFS) {
 	if m, ok := ivm.sm.ContainKey(string(hash), is); !ok {
 		return
 	} else if ok := ivm.withinTime(); !ok {
@@ -188,7 +189,7 @@ func (ivm *idVotingMap) Append(hash UidVidHash, rIpnsName string, is *ipfs.IPFS)
 }
 
 //*votingBox, *verfKey, bool
-func (ivm idVotingMap) ContainHash(hash UidVidHash, is *ipfs.IPFS) (*VotingBox, *sign.VerfKey, bool) {
+func (ivm idVotingMap) ContainHash(hash UidVidHash, is *ipfs.IPFS) (*VotingBox, crypto.IVerfKey, bool) {
 	if m, ok := ivm.sm.ContainKey(hash, is); !ok {
 		return nil, nil, false
 	} else {

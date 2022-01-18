@@ -8,8 +8,7 @@ import (
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
-	"EasyVoting/util/crypto/encrypt"
-	"EasyVoting/util/crypto/sign"
+	"EasyVoting/util/crypto"
 )
 
 type IRegistration interface {
@@ -23,7 +22,7 @@ type registration struct {
 	is          *ipfs.IPFS
 	psTopic     string
 	hnmCid      string
-	rPubKey     *encrypt.PubKey
+	rPubKey     crypto.IPubKey
 	salt1       string
 	salt2       string
 	chmCid      string
@@ -115,12 +114,11 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 	}
 
 	rKeyFile := ipfs.NewKeyFile()
-	userEncKeyPair := encrypt.NewKeyPair()
-	userSignKeyPair := sign.NewKeyPair()
+	userEncKeyPair := crypto.NewEncryptKeyPair()
+	userSignKeyPair := crypto.NewSignKeyPair()
 
 	rb := rutil.NewRegistrationBox(userEncKeyPair.Public(), userSignKeyPair.Verify())
-	rIpnsName, _ := rKeyFile.Name()
-	go func(){ipfs.ToNameWithKeyFile(rb.Marshal(), rKeyFile, r.is)}()
+	rIpnsName := ipfs.ToNameWithKeyFile(rb.Marshal(), rKeyFile, r.is)
 
 	id := rutil.NewUserIdentity(userHash, rKeyFile, userEncKeyPair.Private(), userSignKeyPair.Sign())
 	uInfo := rutil.NewUserInfo(userHash, rIpnsName)

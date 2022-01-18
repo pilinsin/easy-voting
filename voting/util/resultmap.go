@@ -3,7 +3,7 @@ package votingutil
 import (
 	"EasyVoting/ipfs"
 	"EasyVoting/util"
-	"EasyVoting/util/crypto/encrypt"
+	"EasyVoting/util/crypto"
 )
 
 type resultMap struct {
@@ -12,7 +12,7 @@ type resultMap struct {
 	nVoters int
 }
 
-func NewResultMap(capacity int, ivm *idVotingMap, manPriKey *encrypt.PriKey, is *ipfs.IPFS) (*resultMap, error) {
+func NewResultMap(capacity int, ivm *idVotingMap, manPriKey crypto.IPriKey, is *ipfs.IPFS) (*resultMap, error) {
 	resMap := &resultMap{
 		sm:      ipfs.NewScalableMap(capacity),
 		tInfo:   ivm.tInfo,

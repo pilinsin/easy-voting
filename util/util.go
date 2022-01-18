@@ -2,7 +2,6 @@ package util
 
 import (
 	"bytes"
-	"golang.org/x/crypto/argon2"
 	"strconv"
 	"os"
 	"path/filepath"
@@ -59,15 +58,6 @@ func MapContainMap(m1, m2 map[string][]byte) bool {
 		}
 	}
 	return true
-}
-
-func Hash(txt []byte, salt []byte) []byte {
-	keyLen := uint32(len(txt) + len(salt))
-	if keyLen <= 64 {
-		keyLen = 64
-	}
-
-	return argon2.IDKey(txt, salt, 1, 64*1024, 4, keyLen)
 }
 
 func Arange(start, stop, step int) []int {
