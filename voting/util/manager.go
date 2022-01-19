@@ -8,21 +8,23 @@ import (
 
 type ManIdentity struct {
 	manPriKey     crypto.IPriKey
+	verfMapKeyFile *ipfs.KeyFile
 	resMapKeyFile *ipfs.KeyFile
 }
 
 func (mi ManIdentity) Private() crypto.IPriKey { return mi.manPriKey }
-func (mi ManIdentity) KeyFile() *ipfs.KeyFile { return mi.resMapKeyFile }
+func (mi ManIdentity) VerfMapKeyFile() *ipfs.KeyFile { return mi.verfMapKeyFile }
+func (mi ManIdentity) ResMapKeyFile() *ipfs.KeyFile { return mi.resMapKeyFile }
 
 func (mi ManIdentity) Marshal() []byte {
 	mManId := &struct {
-		Pri, Kf []byte
-	}{mi.manPriKey.Marshal(), mi.resMapKeyFile.Marshal()}
+		Pri, VerfKf, ResKf []byte
+	}{mi.manPriKey.Marshal(), mi.verfMapKeyFile.Marshal(), mi.resMapKeyFile.Marshal()}
 	m, _ := util.Marshal(mManId)
 	return m
 }
 func (mi *ManIdentity) Unmarshal(m []byte) error {
-	mManId := &struct{ Pri, Kf []byte }{}
+	mManId := &struct{ Pri, VerfKf, ResKf []byte }{}
 	if err := util.Unmarshal(m, mManId); err != nil {
 		return err
 	}
@@ -31,12 +33,17 @@ func (mi *ManIdentity) Unmarshal(m []byte) error {
 	if err != nil {
 		return err
 	}
-	kf := &ipfs.KeyFile{}
-	if err := kf.Unmarshal(mManId.Kf); err != nil {
+	verfKf := &ipfs.KeyFile{}
+	if err := verfKf.Unmarshal(mManId.VerfKf); err != nil {
+		return err
+	}
+	resKf := &ipfs.KeyFile{}
+	if err := resKf.Unmarshal(mManId.ResKf); err != nil {
 		return err
 	}
 
 	mi.manPriKey = priKey
-	mi.resMapKeyFile = kf
+	mi.verfMapKeyFile = verfKf
+	mi.resMapKeyFile = resKf
 	return nil
 }

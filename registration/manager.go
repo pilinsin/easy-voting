@@ -62,7 +62,7 @@ func (m *manager) Registrate() error {
 
 	//it takes 5~6 mins
 	subs := m.is.PubSubNextAll(m.sub)
-	fmt.Println("data group: ", subs)
+	fmt.Println("data list: ", subs)
 	if len(subs) <= 0 {
 		return nil
 	}

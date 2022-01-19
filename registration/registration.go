@@ -117,7 +117,7 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 	userEncKeyPair := crypto.NewEncryptKeyPair()
 	userSignKeyPair := crypto.NewSignKeyPair()
 
-	rb := rutil.NewRegistrationBox(userEncKeyPair.Public(), userSignKeyPair.Verify())
+	rb := rutil.NewRegistrationBox(userEncKeyPair.Public())
 	rIpnsName := ipfs.ToNameWithKeyFile(rb.Marshal(), rKeyFile, r.is)
 
 	id := rutil.NewUserIdentity(userHash, rKeyFile, userEncKeyPair.Private(), userSignKeyPair.Sign())

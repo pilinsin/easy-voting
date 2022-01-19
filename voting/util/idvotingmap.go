@@ -12,10 +12,9 @@ import (
 type votingData struct {
 	encKeyFile  []byte
 	name        string
-	userVerfKey crypto.IVerfKey
 }
 
-func NewVotingData(rIpnsName string, is *ipfs.IPFS) *votingData {
+func newVotingData(rIpnsName string, is *ipfs.IPFS) *votingData {
 	kf := ipfs.NewKeyFile()
 	name, _ := kf.Name()
 	rb, _ := rutil.RBoxFromName(rIpnsName, is)
@@ -23,7 +22,6 @@ func NewVotingData(rIpnsName string, is *ipfs.IPFS) *votingData {
 	return &votingData{
 		encKeyFile:  encKf,
 		name:        name,
-		userVerfKey: rb.Verify(),
 	}
 }
 func (vd votingData) verifyIdentity(identity *rutil.UserIdentity) bool {
@@ -42,7 +40,7 @@ func (vd votingData) verifyIdentity(identity *rutil.UserIdentity) bool {
 	if err := kf.Unmarshal(m); err != nil {
 		return false
 	}
-	return identity.Sign().Verify().Equals(vd.userVerfKey)
+	return identity.KeyFile().Equals(kf)
 }
 func (vd votingData) keyFile(identity *rutil.UserIdentity) *ipfs.KeyFile {
 	m, _ := identity.Private().Decrypt(vd.encKeyFile)
@@ -54,8 +52,7 @@ func (vd votingData) Marshal() []byte {
 	mvd := &struct {
 		EncKeyFile []byte
 		Name       string
-		VerfKey    []byte
-	}{vd.encKeyFile, vd.name, vd.userVerfKey.Marshal()}
+	}{vd.encKeyFile, vd.name}
 	m, _ := util.Marshal(mvd)
 	return m
 }
@@ -63,7 +60,6 @@ func (vd *votingData) Unmarshal(m []byte) error {
 	mvd := &struct {
 		EncKeyFile []byte
 		Name       string
-		VerfKey    []byte
 	}{}
 	err := util.Unmarshal(m, mvd)
 	if err != nil {
@@ -72,25 +68,19 @@ func (vd *votingData) Unmarshal(m []byte) error {
 
 	vd.encKeyFile = mvd.EncKeyFile
 	vd.name = mvd.Name
-	verfKey, err := crypto.UnmarshalVerfKey(mvd.VerfKey)
-	if err != nil {
-		return err
-	}
-	vd.userVerfKey = verfKey
 	return nil
 }
 
 type keyValue struct {
 	uvHash  UidVidHash
 	vb      *VotingBox
-	verfKey crypto.IVerfKey
 }
 
 func (kv keyValue) Key() UidVidHash {
 	return kv.uvHash
 }
-func (kv keyValue) Value() (*VotingBox, crypto.IVerfKey) {
-	return kv.vb, kv.verfKey
+func (kv keyValue) Value() *VotingBox {
+	return kv.vb
 }
 
 type idVotingMap struct {
@@ -132,7 +122,7 @@ func (ivm idVotingMap) Next(is *ipfs.IPFS) <-chan *VotingBox {
 	return ch
 }
 
-//{uvHash, VotingBox, VerfKey}
+//{uvHash, VotingBox}
 func (ivm idVotingMap) NextKeyValue(is *ipfs.IPFS) <-chan *keyValue {
 	ch := make(chan *keyValue)
 	go func() {
@@ -146,14 +136,14 @@ func (ivm idVotingMap) NextKeyValue(is *ipfs.IPFS) <-chan *keyValue {
 			vb := &VotingBox{}
 			err = vb.FromName(vd.name, is)
 			if err == nil {
-				ch <- &keyValue{UidVidHash(kv.Key()), vb, vd.userVerfKey}
+				ch <- &keyValue{UidVidHash(kv.Key()), vb}
 			}
 		}
 	}()
 	return ch
 }
 func (ivm *idVotingMap) Vote(hash UidVidHash, vote VoteInt, id *rutil.UserIdentity, manPubKey crypto.IPubKey, is *ipfs.IPFS) {
-	if m, ok := ivm.sm.ContainKey(string(hash), is); !ok {
+	if m, ok := ivm.sm.ContainKey(hash, is); !ok {
 		return
 	} else if ok := ivm.withinTime(); !ok {
 		return
@@ -183,27 +173,27 @@ func (ivm *idVotingMap) Vote(hash UidVidHash, vote VoteInt, id *rutil.UserIdenti
 func (ivm *idVotingMap) Append(hash UidVidHash, rIpnsName string, is *ipfs.IPFS) {
 	_, err := rutil.RBoxFromName(rIpnsName, is)
 	if err == nil {
-		data := NewVotingData(rIpnsName, is)
-		ivm.sm.Append(string(hash), data.Marshal(), is)
+		data := newVotingData(rIpnsName, is)
+		ivm.sm.Append(hash, data.Marshal(), is)
 	}
 }
 
-//*votingBox, *verfKey, bool
-func (ivm idVotingMap) ContainHash(hash UidVidHash, is *ipfs.IPFS) (*VotingBox, crypto.IVerfKey, bool) {
+//*votingBox, bool
+func (ivm idVotingMap) ContainHash(hash UidVidHash, is *ipfs.IPFS) (*VotingBox, bool) {
 	if m, ok := ivm.sm.ContainKey(hash, is); !ok {
-		return nil, nil, false
+		return nil, false
 	} else {
 		vd := &votingData{}
 		err := vd.Unmarshal(m)
 		if err != nil {
-			return nil, nil, false
+			return nil, false
 		}
 		vb := &VotingBox{}
 		err = vb.FromName(vd.name, is)
 		if err != nil {
-			return nil, nil, false
+			return nil, false
 		}
-		return vb, vd.userVerfKey, true
+		return vb, true
 	}
 }
 func (ivm idVotingMap) Marshal() []byte {

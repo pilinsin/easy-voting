@@ -20,23 +20,23 @@ func NewResultMap(capacity int, ivm *idVotingMap, manPriKey crypto.IPriKey, is *
 	}
 	for kv := range ivm.NextKeyValue(is) {
 		uvHash := kv.Key()
-		vb, _ := kv.Value()
-		msv, err := vb.GetVote(manPriKey)
+		vb := kv.Value()
+		sv, err := vb.GetVote(manPriKey)
 		if err != nil {
 			return nil, err
 		}
-		resMap.sm.Append(uvHash, msv, is)
+		resMap.sm.Append(uvHash, sv.Marshal(), is)
 	}
 	return resMap, nil
 }
 func (resMap resultMap) NumVoters() int { return resMap.nVoters }
-func (resMap resultMap) VerifyVotes(ivm *idVotingMap, is *ipfs.IPFS) bool {
+func (resMap resultMap) VerifyVotes(ivm *idVerfKeyMap, is *ipfs.IPFS) bool {
 	for kv := range resMap.sm.NextKeyValue(is) {
 		sv, err := UnmarshalSignedVote(kv.Value())
 		if err != nil {
 			return false
 		}
-		_, verfKey, ok := ivm.ContainHash(UidVidHash(kv.Key()), is)
+		verfKey, ok := ivm.ContainHash(UidVidHash(kv.Key()), is)
 		if !ok {
 			return false
 		}

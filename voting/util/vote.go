@@ -18,7 +18,7 @@ func NewVotingBox() *VotingBox {
 	return &VotingBox{}
 }
 func (vb *VotingBox) Vote(vi VoteInt, manPubKey crypto.IPubKey, identity *rutil.UserIdentity) {
-	sv := newSignedVote(vi, identity).marshal()
+	sv := newSignedVote(vi, identity).Marshal()
 	mev, err := manPubKey.Encrypt(sv)
 	if err != nil {
 		return
@@ -31,27 +31,27 @@ func (vb *VotingBox) Vote(vi VoteInt, manPubKey crypto.IPubKey, identity *rutil.
 	vb.manEncVote = mev
 	vb.userEncVote = uev
 }
-func (vb VotingBox) GetVote(manPriKey crypto.IPriKey) ([]byte, error) {
+func (vb VotingBox) GetVote(manPriKey crypto.IPriKey) (*signedVote, error) {
 	mSignedVote, err := manPriKey.Decrypt(vb.manEncVote)
 	if err != nil {
 		return nil, err
 	}
-
-	if _, err := UnmarshalSignedVote(mSignedVote); err != nil {
+	sv, err := UnmarshalSignedVote(mSignedVote)
+	if err != nil {
 		return nil, err
 	}
-	return mSignedVote, nil
+	return sv, nil
 }
-func (vb VotingBox) GetMyVote(identity *rutil.UserIdentity) ([]byte, error) {
+func (vb VotingBox) GetMyVote(identity *rutil.UserIdentity) (*signedVote, error) {
 	mSignedVote, err := identity.Private().Decrypt(vb.userEncVote)
 	if err != nil {
 		return nil, err
 	}
-
-	if _, err := UnmarshalSignedVote(mSignedVote); err != nil {
+	sv, err := UnmarshalSignedVote(mSignedVote)
+	if err != nil {
 		return nil, err
 	}
-	return mSignedVote, nil
+	return sv, nil
 }
 func (vb *VotingBox) FromName(vdName string, is *ipfs.IPFS) error {
 	m, err := ipfs.FromName(vdName, is)
@@ -103,7 +103,7 @@ func newSignedVote(vi VoteInt, identity *rutil.UserIdentity) *signedVote {
 func (sv signedVote) Verify(verfKey crypto.IVerfKey) bool {
 	return verfKey.Verify(sv.vote.marshal(), sv.sv)
 }
-func (sv signedVote) marshal() []byte {
+func (sv signedVote) Marshal() []byte {
 	msv := &struct{ V, S []byte }{sv.vote.marshal(), sv.sv}
 	m, _ := util.Marshal(msv)
 	return m

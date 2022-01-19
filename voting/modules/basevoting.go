@@ -1,6 +1,10 @@
 package votingmodule
 
 import (
+	"fmt"
+	"time"
+	"strings"
+
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
 	"EasyVoting/util"
@@ -20,10 +24,17 @@ type voting struct {
 	nimCid     string
 	ivmCid     string
 	resMapName string
+	psTopic string
+	verfMapCid string
+	verfMapName string
 }
 
 func (v *voting) init(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPFS) {
 	vCfg, err := vutil.ConfigFromCid(vCfgCid, is)
+	if err != nil {
+		return
+	}
+	verfCid, err := ipfs.CidFromName(vCfg.VerfMapName(), is)
 	if err != nil {
 		return
 	}
@@ -39,6 +50,9 @@ func (v *voting) init(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPF
 	v.nimCid = vCfg.UnimCid()
 	v.ivmCid = vCfg.UivmCid()
 	v.resMapName = vCfg.ResMapName()
+	v.psTopic = "voting_pubsub/" + vCfgCid
+	v.verfMapCid = verfCid
+	v.verfMapName = vCfg.VerfMapName()
 }
 func (v *voting) Close() {
 	v.is = nil
@@ -101,8 +115,24 @@ func (v *voting) baseVote(data vutil.VoteInt) error {
 		if err != nil {
 			return err
 		}
-
 		ivm.Vote(uvHash, data, v.identity, v.manPubKey, v.is)
+
+		uInfo := vutil.NewUserInfo(uvHash, v.identity.Sign().Verify())
+		v.is.PubSubPublish(uInfo.Marshal(), v.psTopic)
+		ticker := time.NewTicker(30*time.Second)
+		defer ticker.Stop()
+		for {
+			verfMap, err := vutil.IdVerfKeyMapFromName(v.verfMapName, v.is)
+			if err != nil {
+				return err
+			}
+			if verfMap.VerifyUserInfo(uInfo, v.is) {
+				fmt.Println("uInfo verified")
+				return nil
+			}
+			//fmt.Println("wait for registration")
+			<-ticker.C
+		}
 		return nil
 	}
 }
@@ -116,11 +146,10 @@ func (v voting) baseGetMyVote() (*vutil.VoteInt, error) {
 		if err != nil {
 			return nil, err
 		}
-		if vb, _, ok := ivm.ContainHash(uvHash, v.is); !ok {
+		if vb, ok := ivm.ContainHash(uvHash, v.is); !ok {
 			return nil, util.NewError("invalid uvHash")
 		} else {
-			msv, _ := vb.GetMyVote(v.identity)
-			if sv, err := vutil.UnmarshalSignedVote(msv); err != nil {
+			if sv, err := vb.GetMyVote(v.identity); err != nil{
 				return nil, err
 			} else {
 				if ok := sv.Verify(v.identity.Sign().Verify()); !ok {
@@ -140,8 +169,40 @@ func (v voting) baseGetVotes() (<-chan *vutil.VoteInt, int, error) {
 
 	return resMap.Next(v.is), resMap.NumVoters(), nil
 }
-func (v voting) VerifyResultMap() (bool, error) {
+
+func (v *voting) VerifyIdVerfKeyMap() bool {
 	ivm, err := vutil.IdVotingMapFromCid(v.ivmCid, v.is)
+	if err != nil {
+		return false
+	}
+
+	pth, _ := v.is.NameResolve(v.verfMapName)
+	mVerfMap, err := v.is.FileGet(pth)
+	if err != nil {
+		fmt.Println("verfMapName error")
+		return false
+	}
+	verfMap, err := vutil.UnmarshalIdVerfKeyMap(mVerfMap)
+	if err != nil {
+		fmt.Println("verfMap unmarshal error")
+		return false
+	}
+
+	if ok := verfMap.VerifyIds(ivm, v.is); !ok {
+		fmt.Println("a verfKey corresponding to a uvHash is not registered")
+		return false
+	}
+	if verfMap.VerifyCid(v.verfMapCid, v.is) {
+		v.verfMapCid = strings.TrimPrefix(pth.String(), "/ipfs/")
+		return true
+	} else {
+		fmt.Println("invalid verfMap cid")
+		return false
+	}
+}
+
+func (v voting) VerifyResultMap() (bool, error) {
+	verfMap, err := vutil.IdVerfKeyMapFromName(v.verfMapName, v.is)
 	if err != nil {
 		return false, util.NewError("invalid ivmCid")
 	}
@@ -150,5 +211,5 @@ func (v voting) VerifyResultMap() (bool, error) {
 		return false, util.NewError("resMap does not exist")
 	}
 
-	return resMap.VerifyVotes(ivm, v.is), nil
+	return resMap.VerifyVotes(verfMap, v.is), nil
 }

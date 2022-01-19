@@ -23,10 +23,6 @@ func (hnd hashNameData) Public(is *ipfs.IPFS) crypto.IPubKey {
 	rb, _ := RBoxFromName(hnd.rIpnsName, is)
 	return rb.Public()
 }
-func (hnd hashNameData) Verify(is *ipfs.IPFS) crypto.IVerfKey {
-	rb, _ := RBoxFromName(hnd.rIpnsName, is)
-	return rb.Verify()
-}
 func (hnd hashNameData) Name() string {
 	return hnd.rIpnsName
 }
@@ -165,8 +161,7 @@ func (hnm HashNameMap) VerifyUserIdentity(identity *UserIdentity, salt string, i
 		name, err := identity.KeyFile().Name()
 		nm := name == hnd.rIpnsName
 		pub := identity.Private().Public().Equals(hnd.Public(is))
-		verf := identity.Sign().Verify().Equals(hnd.Verify(is))
-		return (err == nil) && nm && pub && verf
+		return (err == nil) && nm && pub
 	}
 }
 func (hnm HashNameMap) Marshal() []byte {

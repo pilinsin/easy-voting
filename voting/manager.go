@@ -1,7 +1,10 @@
 package voting
 
 import (
+	"fmt"
 	"time"
+
+	iface "github.com/ipfs/interface-go-ipfs-core"
 
 	"EasyVoting/ipfs"
 	rutil "EasyVoting/registration/util"
@@ -12,12 +15,14 @@ import (
 
 type manager struct {
 	is            *ipfs.IPFS
+	sub         iface.PubSubSubscription
 	tInfo         *util.TimeInfo
 	salt1         string
 	salt2         string
 	chmCid        string
 	ivmCid        string
 	manPriKey     crypto.IPriKey
+	verfMapKeyFile *ipfs.KeyFile
 	resMapKeyFile *ipfs.KeyFile
 }
 
@@ -29,17 +34,21 @@ func NewManager(vCfgCid string, manIdentity *vutil.ManIdentity, is *ipfs.IPFS) (
 
 	man := &manager{
 		is:            is,
+		sub:         is.PubSubSubscribe("voting_pubsub/" + vCfgCid),
 		tInfo:         vCfg.TimeInfo(),
 		salt1:         vCfg.Salt1(),
 		salt2:         vCfg.Salt2(),
 		chmCid:        vCfg.UchmCid(),
 		ivmCid:        vCfg.UivmCid(),
 		manPriKey:     manIdentity.Private(),
-		resMapKeyFile: manIdentity.KeyFile(),
+		verfMapKeyFile: manIdentity.VerfMapKeyFile(),
+		resMapKeyFile: manIdentity.ResMapKeyFile(),
 	}
 	return man, nil
 }
 func (m *manager) Close() {
+	m.sub.Close()
+	m.sub = nil
 	m.is = nil
 }
 
@@ -53,6 +62,50 @@ func (m manager) IsValidUser(userData ...string) bool {
 	userHash := rutil.NewUserHash(m.is, m.salt1, userData...)
 	uhHash := rutil.NewUhHash(m.is, m.salt2, userHash)
 	return chm.ContainHash(uhHash, m.is)
+}
+
+func (m *manager) Registrate() error {
+	ivm, err := vutil.IdVotingMapFromCid(m.ivmCid, m.is)
+	if err != nil {
+		return err
+	}
+	verfName, err := m.verfMapKeyFile.Name()
+	if err != nil {
+		return util.NewError("invalid verfMapKeyFile")
+	}
+	verfMap, err := vutil.IdVerfKeyMapFromName(verfName, m.is)
+	if err != nil {
+		return util.NewError("resMap does not exist")
+	}
+
+	//it takes 5~6 mins
+	subs := m.is.PubSubNextAll(m.sub)
+	fmt.Println("data list: ", subs)
+	if len(subs) <= 0 {
+		return nil
+	}
+	isVerfMapUpdated := false
+	for _, encUInfo := range subs {
+		mUInfo, err := m.manPriKey.Decrypt(encUInfo)
+		if err != nil {
+			fmt.Println("decrypt uInfo error")
+			continue
+		}
+		uInfo := &vutil.UserInfo{}
+		if err := uInfo.Unmarshal(mUInfo); err != nil {
+			fmt.Println("uInfo unmarshal error")
+			continue
+		}
+		if err := verfMap.Append(uInfo.UvHash(), uInfo.Verify(), ivm, m.manPriKey, m.is); err == nil{
+			isVerfMapUpdated = true
+			fmt.Println("uInfo appended")
+		}
+	}
+	if isVerfMapUpdated{
+		name := ipfs.ToNameWithKeyFile(verfMap.Marshal(), m.verfMapKeyFile, m.is)
+		fmt.Println("ipnsPublished to ", name)
+	}
+	return nil
 }
 
 func (m manager) GetResultMap() error {
@@ -74,19 +127,22 @@ func (m manager) GetResultMap() error {
 }
 
 func (m manager) VerifyResultMap() (bool, error) {
-	ivm, err := vutil.IdVotingMapFromCid(m.ivmCid, m.is)
+	verfName, err := m.verfMapKeyFile.Name()
 	if err != nil {
-		return false, util.NewError("invalid ivmCid")
+		return false, util.NewError("invalid verfMapKeyFile")
 	}
-
-	name, err := m.resMapKeyFile.Name()
+	verfMap, err := vutil.IdVerfKeyMapFromName(verfName, m.is)
+	if err != nil {
+		return false, util.NewError("resMap does not exist")
+	}
+	resName, err := m.resMapKeyFile.Name()
 	if err != nil {
 		return false, util.NewError("invalid resMapKeyFile")
 	}
-	resMap, err := vutil.ResultMapFromName(name, m.is)
+	resMap, err := vutil.ResultMapFromName(resName, m.is)
 	if err != nil {
 		return false, util.NewError("resMap does not exist")
 	}
 
-	return resMap.VerifyVotes(ivm, m.is), nil
+	return resMap.VerifyVotes(verfMap, m.is), nil
 }

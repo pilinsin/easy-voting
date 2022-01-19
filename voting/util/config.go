@@ -92,6 +92,7 @@ type config struct {
 	chmCid         string
 	nimCid         string
 	ivmCid         string
+	verfMapName string
 	resMapName     string
 	userDataLabels []string
 }
@@ -99,20 +100,22 @@ func NewConfigs(title, begin, end, loc, rCfgCid string, cands []Candidate, vPara
 	encKeyPair := crypto.NewEncryptKeyPair()
 	pub := encKeyPair.Public()
 	pri := encKeyPair.Private()
-	kf := ipfs.NewKeyFile()
-	name, _ := kf.Name()
+	verfKf := ipfs.NewKeyFile()
+	resKf := ipfs.NewKeyFile()
+	resName, _ := resKf.Name()
 
-	vCfg, err := newConfig(title, begin, end, loc, cands, pub, vParam, vType, rCfgCid, name, is)
+	vCfg, err := newConfig(title, begin, end, loc, cands, pub, vParam, vType, rCfgCid, verfKf, resName, is)
 	if err != nil {
 		return nil, nil, err
 	}
 	mId := &ManIdentity{
 		manPriKey:     pri,
-		resMapKeyFile: kf,
+		verfMapKeyFile: verfKf,
+		resMapKeyFile: resKf,
 	}
 	return mId, vCfg, nil
 }
-func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypto.IPubKey, vParam VoteParams, vType VotingType, rCfgCid string, resMapName string, is *ipfs.IPFS) (*config, error) {
+func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypto.IPubKey, vParam VoteParams, vType VotingType, rCfgCid string, verfMapKeyFile *ipfs.KeyFile, resMapName string, is *ipfs.IPFS) (*config, error) {
 	rCfg, err := rutil.ConfigFromCid(rCfgCid, is)
 	if err != nil {
 		return nil, util.AddError(err, "invalid rCfgCid")
@@ -152,7 +155,7 @@ func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypt
 		for {
 			uid = util.GenUniqueID(30, 6)
 			uvHash = NewUidVidHash(uid, cfg.votingID)
-			if _, _, ok := ivm.ContainHash(uvHash, is); !ok {
+			if _, ok := ivm.ContainHash(uvHash, is); !ok {
 				break
 			}
 		}
@@ -164,6 +167,8 @@ func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypt
 	cfg.nimCid = ipfs.ToCidWithAdd(nim.Marshal(), is)
 	cfg.ivmCid = ipfs.ToCidWithAdd(ivm.Marshal(), is)
 
+	idVerfKeyMap := NewIdVerfKeyMap(100000)
+	cfg.verfMapName = ipfs.ToNameWithKeyFile(idVerfKeyMap.Marshal(), verfMapKeyFile, is)
 	return cfg, nil
 }
 func (cfg config) Title() string            { return cfg.title }
@@ -178,14 +183,17 @@ func (cfg config) VType() VotingType        { return cfg.vType }
 func (cfg config) UchmCid() string          { return cfg.chmCid }
 func (cfg config) UnimCid() string          { return cfg.nimCid }
 func (cfg config) UivmCid() string          { return cfg.ivmCid }
+func (cfg config) VerfMapName() string { return cfg.verfMapName}
 func (cfg config) ResMapName() string       { return cfg.resMapName }
 func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
 
 func (cfg config) IsCompatible(mi *ManIdentity) bool{
 	pub := cfg.manPubKey.Equals(mi.manPriKey.Public())
-	name, err := mi.resMapKeyFile.Name()
-	nm := cfg.resMapName == name
-	return pub && nm && (err == nil)
+	verfName, vErr := mi.verfMapKeyFile.Name()
+	vnm := cfg.verfMapName == verfName
+	resName, rErr := mi.resMapKeyFile.Name()
+	rnm := cfg.resMapName == resName
+	return pub && vnm && (vErr == nil) && rnm && (rErr == nil)
 }
 
 func ConfigFromCid(vCfgCid string, is *ipfs.IPFS) (*config, error) {
@@ -213,6 +221,7 @@ func (cfg config) Marshal() []byte {
 		ChmCid         string
 		NimCid         string
 		IvmCid         string
+		VerfMapName string
 		ResMapName     string
 		UserDataLabels []string
 	}{
@@ -228,6 +237,7 @@ func (cfg config) Marshal() []byte {
 		ChmCid:         cfg.chmCid,
 		NimCid:         cfg.nimCid,
 		IvmCid:         cfg.ivmCid,
+		VerfMapName: cfg.verfMapName,
 		ResMapName:     cfg.resMapName,
 		UserDataLabels: cfg.userDataLabels,
 	}
@@ -248,6 +258,7 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		ChmCid         string
 		NimCid         string
 		IvmCid         string
+		VerfMapName string
 		ResMapName     string
 		UserDataLabels []string
 	}{}
@@ -273,6 +284,7 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		chmCid:         mCfg.ChmCid,
 		nimCid:         mCfg.NimCid,
 		ivmCid:         mCfg.IvmCid,
+		verfMapName: mCfg.VerfMapName,
 		resMapName:     mCfg.ResMapName,
 		userDataLabels: mCfg.UserDataLabels,
 	}

@@ -8,17 +8,13 @@ import (
 
 type registrationBox struct {
 	userPubKey  crypto.IPubKey
-	userVerfKey crypto.IVerfKey
 }
 
-func NewRegistrationBox(pubKey crypto.IPubKey, verfKey crypto.IVerfKey) *registrationBox {
-	return &registrationBox{pubKey, verfKey}
+func NewRegistrationBox(pubKey crypto.IPubKey) *registrationBox {
+	return &registrationBox{pubKey}
 }
 func (rb registrationBox) Public() crypto.IPubKey {
 	return rb.userPubKey
-}
-func (rb registrationBox) Verify() crypto.IVerfKey {
-	return rb.userVerfKey
 }
 func RBoxFromName(rIpnsName string, is *ipfs.IPFS) (*registrationBox, error) {
 	m, err := ipfs.FromName(rIpnsName, is)
@@ -37,14 +33,14 @@ func RBoxFromName(rIpnsName string, is *ipfs.IPFS) (*registrationBox, error) {
 }
 func (rb registrationBox) Marshal() []byte {
 	mrb := &struct {
-		PubKey, VerfKey []byte
-	}{rb.userPubKey.Marshal(), rb.userVerfKey.Marshal()}
+		PubKey []byte
+	}{rb.userPubKey.Marshal()}
 	m, _ := util.Marshal(mrb)
 	return m
 }
 func (rb *registrationBox) Unmarshal(m []byte) error {
 	mrb := &struct {
-		PubKey, VerfKey []byte
+		PubKey []byte
 	}{}
 	err := util.Unmarshal(m, mrb)
 	if err != nil {
@@ -55,12 +51,7 @@ func (rb *registrationBox) Unmarshal(m []byte) error {
 	if  err != nil {
 		return err
 	}
-	verfKey, err := crypto.UnmarshalVerfKey(mrb.VerfKey)
-	if err != nil {
-		return err
-	}
 	rb.userPubKey = pubKey
-	rb.userVerfKey = verfKey
 	return nil
 }
 

@@ -9,6 +9,7 @@ import (
 type iBaseVoting interface {
 	Close()
 	VerifyIdentity() bool
+	VerifyIdVerfKeyMap() bool
 	VerifyResultMap() (bool, error)
 }
 type IVoting interface {
@@ -23,6 +24,7 @@ type IVoting interface {
 type IManager interface {
 	Close()
 	IsValidUser(userData ...string) bool
+	Registrate() error
 	GetResultMap() error
 	VerifyResultMap() (bool, error)
 }
