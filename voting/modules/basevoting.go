@@ -5,11 +5,11 @@ import (
 	"time"
 	"strings"
 
-	"EasyVoting/ipfs"
-	rutil "EasyVoting/registration/util"
-	"EasyVoting/util"
-	"EasyVoting/util/crypto"
-	vutil "EasyVoting/voting/util"
+	"github.com/pilinsin/easy-voting/ipfs"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
+	"github.com/pilinsin/easy-voting/util"
+	"github.com/pilinsin/easy-voting/util/crypto"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type voting struct {

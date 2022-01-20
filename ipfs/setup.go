@@ -19,7 +19,7 @@ import (
 	unixfs "github.com/ipfs/go-unixfs"
 	options "github.com/ipfs/interface-go-ipfs-core/options"
 
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/util"
 )
 
 func newRepo(repoPath string) (repo.Repo, error) {

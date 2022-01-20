@@ -1,7 +1,7 @@
 package registrationutil
 
 import (
-	"EasyVoting/ipfs"
+	"github.com/pilinsin/easy-voting/ipfs"
 )
 
 type ConstHashMap struct {

@@ -3,7 +3,7 @@ package crypto
 import (
 	eciesgo "github.com/ecies/go"
 
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/util"
 )
 
 type eciesPubKey struct {

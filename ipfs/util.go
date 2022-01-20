@@ -9,7 +9,7 @@ import (
 	files "github.com/ipfs/go-ipfs-files"
 	path "github.com/ipfs/interface-go-ipfs-core/path"
 
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/util"
 )
 
 func bytesToIpfsFile(b []byte) files.File {

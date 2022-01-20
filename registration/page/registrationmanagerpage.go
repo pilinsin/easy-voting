@@ -9,11 +9,11 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"EasyVoting/ipfs"
-	rman "EasyVoting/registration"
-	rputil "EasyVoting/registration/page/util"
-	rutil "EasyVoting/registration/util"
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/ipfs"
+	rman "github.com/pilinsin/easy-voting/registration"
+	rputil "github.com/pilinsin/easy-voting/registration/page/util"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
+	"github.com/pilinsin/easy-voting/util"
 )
 
 func LoadManPage(rCfgCid string, manIdentity *rutil.ManIdentity, is *ipfs.IPFS) (fyne.CanvasObject, rputil.IPageCloser) {

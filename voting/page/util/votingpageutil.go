@@ -13,8 +13,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/theme"
 
-	"EasyVoting/util"
-	vutil "EasyVoting/voting/util"
+	"github.com/pilinsin/easy-voting/util"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 func ErrorPage(err error) fyne.CanvasObject {

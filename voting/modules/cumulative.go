@@ -8,11 +8,11 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"EasyVoting/ipfs"
-	rutil "EasyVoting/registration/util"
-	"EasyVoting/util"
-	viface "EasyVoting/voting/interface"
-	vutil "EasyVoting/voting/util"
+	"github.com/pilinsin/easy-voting/ipfs"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
+	"github.com/pilinsin/easy-voting/util"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type cumulativeVoting struct {

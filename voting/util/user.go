@@ -1,8 +1,8 @@
 package votingutil
 
 import(
-	"EasyVoting/util"
-	"EasyVoting/util/crypto"
+	"github.com/pilinsin/easy-voting/util"
+	"github.com/pilinsin/easy-voting/util/crypto"
 )
 
 type UserInfo struct{

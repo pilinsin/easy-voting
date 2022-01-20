@@ -9,14 +9,14 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"EasyVoting/util"
-	"EasyVoting/ipfs"
-	rputil "EasyVoting/registration/page/util"
-	rutil "EasyVoting/registration/util"
-	"EasyVoting/voting"
-	vputil "EasyVoting/voting/page/util"
-	vutil "EasyVoting/voting/util"
-	viface "EasyVoting/voting/interface"
+	"github.com/pilinsin/easy-voting/util"
+	"github.com/pilinsin/easy-voting/ipfs"
+	rputil "github.com/pilinsin/easy-voting/registration/page/util"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
+	"github.com/pilinsin/easy-voting/voting"
+	vputil "github.com/pilinsin/easy-voting/voting/page/util"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 func LoadPage(vCfgCid string, userIdentity *rutil.UserIdentity, is *ipfs.IPFS) (fyne.CanvasObject, rputil.IPageCloser) {

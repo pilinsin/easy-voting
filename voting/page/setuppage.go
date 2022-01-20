@@ -7,11 +7,11 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"EasyVoting/ipfs"
-	"EasyVoting/util"
-	rutil "EasyVoting/registration/util"
-	vputil "EasyVoting/voting/page/util"
-	vutil "EasyVoting/voting/util"
+	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/easy-voting/util"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
+	vputil "github.com/pilinsin/easy-voting/voting/page/util"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 func NewSetupPage(w fyne.Window, is *ipfs.IPFS) fyne.CanvasObject {

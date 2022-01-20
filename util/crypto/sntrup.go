@@ -6,7 +6,7 @@ import (
 	chacha "golang.org/x/crypto/chacha20poly1305"
 	sntrup "github.com/companyzero/sntrup4591761"
 
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/util"
 )
 
 const (

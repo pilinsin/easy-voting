@@ -4,7 +4,7 @@ import (
 	sed "crypto/ed25519"
 	ced "golang.org/x/crypto/ed25519"
 
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/util"
 )
 
 type ed25519SignKey struct {

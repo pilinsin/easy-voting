@@ -1,10 +1,10 @@
 package votingutil
 
 import (
-	"EasyVoting/ipfs"
-	rutil "EasyVoting/registration/util"
-	"EasyVoting/util"
-	"EasyVoting/util/crypto"
+	"github.com/pilinsin/easy-voting/ipfs"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
+	"github.com/pilinsin/easy-voting/util"
+	"github.com/pilinsin/easy-voting/util/crypto"
 )
 
 type VotingType int

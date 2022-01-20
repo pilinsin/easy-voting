@@ -1,9 +1,9 @@
 package votingutil
 
 import (
-	"EasyVoting/ipfs"
-	rutil "EasyVoting/registration/util"
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/ipfs"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
+	"github.com/pilinsin/easy-voting/util"
 )
 
 type NameIdMap struct {

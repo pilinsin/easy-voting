@@ -1,7 +1,7 @@
 package ipfs
 
 import (
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/util"
 	"fmt"
 )
 

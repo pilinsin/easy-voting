@@ -3,7 +3,7 @@ package crypto
 import (
 	"github.com/LoCCS/bliss"
 	"github.com/LoCCS/bliss/sampler"
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/util"
 )
 
 type blissKeyPair struct{

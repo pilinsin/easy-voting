@@ -3,7 +3,7 @@ package registrationutil
 import(
 	"os"
 
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/util"
 )
 
 func identityStorePath() string{

@@ -7,13 +7,13 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"EasyVoting/util"
-	"EasyVoting/ipfs"
-	rpage "EasyVoting/registration/page"
-	rputil "EasyVoting/registration/page/util"
-	rutil "EasyVoting/registration/util"
-	vpage "EasyVoting/voting/page"
-	vutil "EasyVoting/voting/util"
+	"github.com/pilinsin/easy-voting/util"
+	"github.com/pilinsin/easy-voting/ipfs"
+	rpage "github.com/pilinsin/easy-voting/registration/page"
+	rputil "github.com/pilinsin/easy-voting/registration/page/util"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
+	vpage "github.com/pilinsin/easy-voting/voting/page"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type GUI struct {

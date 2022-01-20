@@ -3,7 +3,7 @@ package interfacevoting
 import (
 	"fyne.io/fyne/v2"
 
-	vutil "EasyVoting/voting/util"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type iBaseVoting interface {

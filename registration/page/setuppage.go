@@ -6,9 +6,9 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"EasyVoting/ipfs"
-	rputil "EasyVoting/registration/page/util"
-	rutil "EasyVoting/registration/util"
+	"github.com/pilinsin/easy-voting/ipfs"
+	rputil "github.com/pilinsin/easy-voting/registration/page/util"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
 )
 
 func NewSetupPage(w fyne.Window, is *ipfs.IPFS) fyne.CanvasObject {

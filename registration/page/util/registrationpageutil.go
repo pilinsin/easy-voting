@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 
-	//"EasyVoting/util"
 )
 
 

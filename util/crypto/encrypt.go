@@ -1,7 +1,7 @@
 package crypto
 
 import(
-	"EasyVoting/util"
+	"github.com/pilinsin/easy-voting/util"
 )
 
 type encryptMode int

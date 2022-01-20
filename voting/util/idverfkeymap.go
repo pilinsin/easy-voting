@@ -3,9 +3,9 @@ package votingutil
 import (
 	"fmt"
 
-	"EasyVoting/ipfs"
-	"EasyVoting/util"
-	"EasyVoting/util/crypto"
+	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/easy-voting/util"
+	"github.com/pilinsin/easy-voting/util/crypto"
 )
 
 type idVerfKeyMap struct {

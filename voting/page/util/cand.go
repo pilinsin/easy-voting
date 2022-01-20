@@ -1,7 +1,6 @@
 package votingpageutil
 
 import (
-	//"fmt"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -10,8 +9,8 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"EasyVoting/util"
-	vutil "EasyVoting/voting/util"
+	"github.com/pilinsin/easy-voting/util"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 func CandCards(cands []vutil.Candidate) fyne.CanvasObject {

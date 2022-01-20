@@ -1,7 +1,7 @@
 package main
 
-import (
-	"EasyVoting/gui"
+import (	
+	"github.com/pilinsin/easy-voting/gui"
 )
 
 //sudo sysctl -w net.core.rmem_max=2500000

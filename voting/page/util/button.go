@@ -8,7 +8,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	viface "EasyVoting/voting/interface"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 func VotingBtn(v viface.IVoting, candNameGroups []string, label *widget.Label) fyne.CanvasObject {
