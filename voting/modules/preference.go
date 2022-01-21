@@ -112,14 +112,14 @@ func (pv *preferenceVoting) Vote(data vutil.VoteInt) error {
 		return util.NewError("invalid vote")
 	}
 }
-func (pv preferenceVoting) GetMyVote() (vutil.VoteInt, error) {
+func (pv preferenceVoting) GetMyVote() (string, error) {
 	vi, err := pv.baseGetMyVote()
 	if err != nil {
-		return pv.newDefaultVoteInt(), err
+		return "", err
 	} else if vi != nil && pv.isValidData(*vi) {
-		return *vi, nil
+		return ipfs.ToCidWithAdd(vi.Marshal(), pv.is), nil
 	} else {
-		return pv.newDefaultVoteInt(), util.NewError("invalid vote")
+		return "", util.NewError("invalid vote")
 	}
 }
 
@@ -139,12 +139,12 @@ func (pv preferenceVoting) addVote2Result(vi vutil.VoteInt, result map[string]ma
 	}
 	return result
 }
-func (pv preferenceVoting) Count() (map[string]map[string]int, int, int, error) {
+func (pv preferenceVoting) Count() (string, error) {
 	result := pv.newResult()
 
 	viChan, nVoters, err := pv.baseGetVotes()
 	if err != nil {
-		return make(map[string]map[string]int), -1, -1, err
+		return "", err
 	}
 
 	nVoted := 0
@@ -154,5 +154,6 @@ func (pv preferenceVoting) Count() (map[string]map[string]int, int, int, error) 
 			nVoted++
 		}
 	}
-	return result, nVoted, nVoters, nil
+	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
+	return ipfs.ToCidWithAdd(m, pv.is), nil
 }

@@ -31,6 +31,7 @@ func LoadPage(vCfgCid string, userIdentity *rutil.UserIdentity, is *ipfs.IPFS) (
 	}
 
 	titleLabel := widget.NewLabel(vCfg.Title() + " (" + vCfgCid + ")")
+	resCidEntry := widget.NewEntry()
 	noteLabel := widget.NewLabel("")
 
 	vCfg.ShuffleCandidates()
@@ -41,7 +42,7 @@ func LoadPage(vCfgCid string, userIdentity *rutil.UserIdentity, is *ipfs.IPFS) (
 		idPage = nil
 	} else {
 		voteBtn := vputil.VotingBtn(v, vCfg.CandNameGroups(), noteLabel)
-		checkBtn := vputil.CheckMyVoteBtn(v, noteLabel)
+		checkBtn := vputil.CheckMyVoteBtn(v, resCidEntry, noteLabel)
 		idPage = container.NewVBox(voteBtn, checkBtn)
 	}
 
@@ -50,9 +51,9 @@ func LoadPage(vCfgCid string, userIdentity *rutil.UserIdentity, is *ipfs.IPFS) (
 	newVerifyVerfMapGoRoutine(ctx, v, verfMapVerifyLabel)
 	closer := rputil.NewPageCloser(v.Close, cancel)
 
-	counter := vputil.CountBtn(v, noteLabel)
+	counter := vputil.CountBtn(v, resCidEntry, noteLabel)
 
-	page := container.NewVBox(contents, idPage, counter, noteLabel, verfMapVerifyLabel)
+	page := container.NewVBox(contents, idPage, counter, resCidEntry, noteLabel, verfMapVerifyLabel)
 	page = container.NewBorder(titleLabel, nil, nil, nil, page)
 	return page, closer
 }

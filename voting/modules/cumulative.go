@@ -127,14 +127,14 @@ func (cv *cumulativeVoting) Vote(data vutil.VoteInt) error {
 		return util.NewError("invalid vote")
 	}
 }
-func (cv cumulativeVoting) GetMyVote() (vutil.VoteInt, error) {
+func (cv cumulativeVoting) GetMyVote() (string, error) {
 	vi, err := cv.baseGetMyVote()
 	if err != nil {
-		return cv.newDefaultVoteInt(), err
+		return "", err
 	} else if vi != nil && cv.isValidData(*vi) {
-		return *vi, nil
+		return ipfs.ToCidWithAdd(vi.Marshal(), cv.is), nil
 	} else {
-		return cv.newDefaultVoteInt(), util.NewError("invalid vote")
+		return "", util.NewError("invalid vote")
 	}
 }
 
@@ -151,12 +151,12 @@ func (cv cumulativeVoting) addVote2Result(vi vutil.VoteInt, result map[string]ma
 	}
 	return result
 }
-func (cv cumulativeVoting) Count() (map[string]map[string]int, int, int, error) {
+func (cv cumulativeVoting) Count() (string, error) {
 	result := cv.newResult()
 
 	viChan, nVoters, err := cv.baseGetVotes()
 	if err != nil {
-		return make(map[string]map[string]int), -1, -1, err
+		return "", err
 	}
 
 	nVoted := 0
@@ -166,5 +166,6 @@ func (cv cumulativeVoting) Count() (map[string]map[string]int, int, int, error) 
 			nVoted++
 		}
 	}
-	return result, nVoted, nVoters, nil
+	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
+	return ipfs.ToCidWithAdd(m, cv.is), nil
 }

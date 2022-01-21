@@ -109,14 +109,14 @@ func (bv *blockVoting) Vote(data vutil.VoteInt) error {
 	}
 }
 
-func (bv blockVoting) GetMyVote() (vutil.VoteInt, error) {
+func (bv blockVoting) GetMyVote() (string, error) {
 	vi, err := bv.baseGetMyVote()
 	if err != nil {
-		return bv.newDefaultVoteInt(), err
+		return "", err
 	} else if vi != nil && bv.isValidData(*vi) {
-		return *vi, nil
+		return ipfs.ToCidWithAdd(vi.Marshal(), bv.is), nil
 	} else {
-		return bv.newDefaultVoteInt(), util.NewError("invalid vote")
+		return "", util.NewError("invalid vote")
 	}
 }
 
@@ -135,12 +135,12 @@ func (bv blockVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[str
 	}
 	return result
 }
-func (bv blockVoting) Count() (map[string]map[string]int, int, int, error) {
+func (bv blockVoting) Count() (string, error) {
 	result := bv.newResult()
 
 	viChan, nVoters, err := bv.baseGetVotes()
 	if err != nil {
-		return make(map[string]map[string]int), -1, -1, err
+		return "", err
 	}
 
 	nVoted := 0
@@ -150,5 +150,6 @@ func (bv blockVoting) Count() (map[string]map[string]int, int, int, error) {
 			nVoted++
 		}
 	}
-	return result, nVoted, nVoters, nil
+	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
+	return ipfs.ToCidWithAdd(m, bv.is), nil
 }

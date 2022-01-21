@@ -17,8 +17,8 @@ type IVoting interface {
 	NewVotingForm(ngs []string) IVotingForm
 	Type() string
 	Vote(data vutil.VoteInt) error
-	GetMyVote() (vutil.VoteInt, error)
-	Count() (map[string]map[string]int, int, int, error)
+	GetMyVote() (string, error)
+	Count() (string, error)
 }
 
 type IManager interface {

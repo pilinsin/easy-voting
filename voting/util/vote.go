@@ -161,3 +161,7 @@ func unmarshalVote(m []byte) (*vote, error) {
 }
 
 type VoteInt map[string]int
+func (vi *VoteInt) Marshal() []byte{
+	m, _ := util.Marshal(vi)
+	return m
+}

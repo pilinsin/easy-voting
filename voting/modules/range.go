@@ -114,14 +114,14 @@ func (rv *rangeVoting) Vote(data vutil.VoteInt) error {
 		return util.NewError("invalid vote")
 	}
 }
-func (rv rangeVoting) GetMyVote() (vutil.VoteInt, error) {
+func (rv rangeVoting) GetMyVote() (string, error) {
 	vi, err := rv.baseGetMyVote()
 	if err != nil {
-		return rv.newDefaultVoteInt(), err
+		return "", err
 	} else if vi != nil && rv.isValidData(*vi) {
-		return *vi, nil
+		return ipfs.ToCidWithAdd(vi.Marshal(), rv.is), nil
 	} else {
-		return rv.newDefaultVoteInt(), util.NewError("invalid vote")
+		return "", util.NewError("invalid vote")
 	}
 }
 
@@ -138,12 +138,12 @@ func (rv rangeVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[str
 	}
 	return result
 }
-func (rv rangeVoting) Count() (map[string]map[string]int, int, int, error) {
+func (rv rangeVoting) Count() (string, error) {
 	result := rv.newResult()
 
 	viChan, nVoters, err := rv.baseGetVotes()
 	if err != nil {
-		return make(map[string]map[string]int), -1, -1, err
+		return "", err
 	}
 
 	nVoted := 0
@@ -153,5 +153,6 @@ func (rv rangeVoting) Count() (map[string]map[string]int, int, int, error) {
 			nVoted++
 		}
 	}
-	return result, nVoted, nVoters, nil
+	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
+	return ipfs.ToCidWithAdd(m, rv.is), nil
 }
