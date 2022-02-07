@@ -5,10 +5,10 @@ import (
 	"time"
 	"strings"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/ipfs-util"
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/util/crypto"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
 )
 
 type IRegistration interface {
@@ -21,11 +21,11 @@ type IRegistration interface {
 type registration struct {
 	is          *ipfs.IPFS
 	psTopic     string
-	hnmCid      string
 	rPubKey     crypto.IPubKey
 	salt1       string
 	salt2       string
-	chmCid      string
+	uhmCid      string
+	hnmCid      string
 	hnmIpnsName string
 }
 
@@ -34,7 +34,7 @@ func NewRegistration(rCfgCid string, is *ipfs.IPFS) (*registration, error) {
 	if err != nil {
 		return nil, err
 	}
-	hnmCid, err := ipfs.CidFromName(rCfg.HnmIpnsName(), is)
+	hnmCid, err := ipfs.Name.GetCid(rCfg.HnmIpnsName(), is)
 	if err != nil {
 		return nil, err
 	}
@@ -42,11 +42,11 @@ func NewRegistration(rCfgCid string, is *ipfs.IPFS) (*registration, error) {
 	r := &registration{
 		is:          is,
 		psTopic:     "registration_pubsub/" + rCfgCid,
-		hnmCid:      hnmCid,
 		rPubKey:     rCfg.RPubKey(),
 		salt1:       rCfg.Salt1(),
 		salt2:       rCfg.Salt2(),
-		chmCid:      rCfg.ChMapCid(),
+		uhmCid:      rCfg.UhmCid(),
+		hnmCid:      hnmCid,
 		hnmIpnsName: rCfg.HnmIpnsName(),
 	}
 	return r, nil
@@ -55,27 +55,19 @@ func (r *registration) Close() {
 	r.is = nil
 }
 func (r *registration) VerifyHashNameMap() bool {
-	chm := &rutil.ConstHashMap{}
-	err := chm.FromCid(r.chmCid, r.is)
-	if err != nil {
-		fmt.Println("chm unmarshal error")
-		return false
-	}
-
-	hnm := &rutil.HashNameMap{}
-	pth, _ := r.is.NameResolve(r.hnmIpnsName)
-	mhnm, err := r.is.FileGet(pth)
+	pth, _ := r.is.Name.Resolve(r.hnmIpnsName)
+	mhnm, err := r.is.File.Get(pth)
 	if err != nil {
 		fmt.Println("hnmName error")
 		return false
 	}
-	err = hnm.Unmarshal(mhnm)
+	hnm, err = UnmarshalHashNameMap(mhnm)
 	if err != nil {
 		fmt.Println("hnm unmarshal error")
 		return false
 	}
 
-	if ok := hnm.VerifyHashes(chm, r.is); !ok {
+	if ok := hnm.VerifyHashes(r.uhmCid, r.is); !ok {
 		fmt.Println("invalid uhHash is contained in hnm")
 		return false
 	}
@@ -88,37 +80,37 @@ func (r *registration) VerifyHashNameMap() bool {
 	}
 }
 func (r *registration) VerifyUserIdentity(identity *rutil.UserIdentity) bool {
-	hnm := &rutil.HashNameMap{}
-	if err := hnm.FromName(r.hnmIpnsName, r.is); err != nil {
+	if hnm, err := HashNameMapFromName(r.hnmIpnsName, r.is); err != nil {
 		return false
+	}else{
+		return hnm.VerifyUserIdentity(identity, r.salt2, r.is)
 	}
-	return hnm.VerifyUserIdentity(identity, r.salt2, r.is)
 }
 func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, error) {
-	userHash := rutil.NewUserHash(r.is, r.salt1, userData...)
-	uhHash := rutil.NewUhHash(r.is, r.salt2, userHash)
+	userHash := rutil.NewUserHash(r.salt1, userData...)
+	uhHash := rutil.NewUhHash(r.salt2, userHash)
 
-	chm := &rutil.ConstHashMap{}
-	if err := chm.FromCid(r.chmCid, r.is); err != nil {
+	uhm, err := UhHashMapFromCid(r.uhmCid, r.is)
+	if err != nil {
 		return nil, err
 	}
-	if ok := chm.ContainHash(uhHash, r.is); !ok {
+	if ok := uhm.ContainHash(uhHash, r.is); !ok {
 		return nil, util.NewError("uhHash is not contained")
 	}
-	hnm := &rutil.HashNameMap{}
-	if err := hnm.FromName(r.hnmIpnsName, r.is); err != nil {
+	hnm, err := HashNameMapFromName(r.hnmIpnsName, r.is)
+	if err != nil {
 		return nil, err
 	}
 	if _, ok := hnm.ContainHash(uhHash, r.is); ok {
 		return nil, util.NewError("uhHash is already registrated")
 	}
 
-	rKeyFile := ipfs.NewKeyFile()
-	userEncKeyPair := crypto.NewEncryptKeyPair()
+	rKeyFile := ipfs.Name.NewKeyFile()
+	userEncKeyPair := crypto.NewPubEncryptKeyPair()
 	userSignKeyPair := crypto.NewSignKeyPair()
 
 	rb := rutil.NewRegistrationBox(userEncKeyPair.Public())
-	rIpnsName := ipfs.ToNameWithKeyFile(rb.Marshal(), rKeyFile, r.is)
+	rIpnsName := ipfs.Name.PublishWithKeyfile(rb.Marshal(), rKeyFile, r.is)
 
 	id := rutil.NewUserIdentity(userHash, rKeyFile, userEncKeyPair.Private(), userSignKeyPair.Sign())
 	uInfo := rutil.NewUserInfo(userHash, rIpnsName)
@@ -127,14 +119,13 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 	if err != nil {
 		return nil, util.AddError(err, "encUInfo err in r.Registrate")
 	}
-	r.is.PubSubPublish(encInfo, r.psTopic)
-	//return id, nil
+	r.is.PubSub().Publish(encInfo, r.psTopic)
 	
 	ticker := time.NewTicker(30*time.Second)
 	defer ticker.Stop()
 	for {
-		hnm := &rutil.HashNameMap{}
-		if err := hnm.FromName(r.hnmIpnsName, r.is); err != nil {
+		hnm, err := HashNameMapFromName(r.hnmIpnsName, r.is)
+		if err != nil {
 			return nil, err
 		}
 		if hnm.VerifyUserInfo(uInfo, r.salt2, r.is) {

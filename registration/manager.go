@@ -5,9 +5,9 @@ import (
 
 	iface "github.com/ipfs/interface-go-ipfs-core"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/ipfs-util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
+	"github.com/pilinsin/util/crypto"
 )
 
 type IManager interface {
@@ -21,7 +21,7 @@ type manager struct {
 	priKey      crypto.IPriKey
 	keyFile     *ipfs.KeyFile
 	salt2       string
-	chmCid      string
+	uhmCid      string
 	hnmIpnsName string
 }
 
@@ -37,7 +37,7 @@ func NewManager(rCfgCid string, manIdentity *rutil.ManIdentity, is *ipfs.IPFS) (
 		priKey:      manIdentity.Private(),
 		keyFile:    	manIdentity.KeyFile(),
 		salt2:       rCfg.Salt2(),
-		chmCid:      rCfg.ChMapCid(),
+		chmCid:      rCfg.UhmCid(),
 		hnmIpnsName: rCfg.HnmIpnsName(),
 	}
 	return man, nil
@@ -48,19 +48,18 @@ func (m *manager) Close() {
 	m.is = nil
 }
 func (m *manager) Registrate() error {
-	chm := &rutil.ConstHashMap{}
-	if err := chm.FromCid(m.chmCid, m.is); err != nil {
+	uhm, err := UhHashMapFromCid(r.uhmCid, r.is)
+	if err != nil {
 		fmt.Println("m.Registrate FromCid error", err)
 		return err
 	}
-	hnm := &rutil.HashNameMap{}
-	if err := hnm.FromName(m.hnmIpnsName, m.is); err != nil {
+	hnm, err := HashNameMapFromName(r.hnmIpnsName, r.is)
+	if err != nil {
 		fmt.Println("hnm.FromName error", err)
 		return err
 	}
 
-	//it takes 5~6 mins
-	subs := m.is.PubSubNextAll(m.sub)
+	subs := m.is.PubSub().NextAll(m.sub)
 	fmt.Println("data list: ", subs)
 	if len(subs) <= 0 {
 		return nil
@@ -77,8 +76,8 @@ func (m *manager) Registrate() error {
 			fmt.Println("uInfo unmarshal error")
 			continue
 		}
-		uhHash := rutil.NewUhHash(m.is, m.salt2, uInfo.UserHash())
-		if ok := chm.ContainHash(uhHash, m.is); !ok {
+		uhHash := rutil.NewUhHash(m.salt2, uInfo.UserHash())
+		if ok := uhm.ContainHash(uhHash, m.is); !ok {
 			fmt.Println("the uhHash is not contained")
 			continue
 		}
@@ -93,7 +92,7 @@ func (m *manager) Registrate() error {
 		}
 	}
 	if isHnmUpdated{
-		name := ipfs.ToNameWithKeyFile(hnm.Marshal(), m.keyFile, m.is)
+		name := ipfs.Name.PublishWithKeyFile(hnm.Marshal(), m.keyFile, m.is)
 		fmt.Println("ipnsPublished to ", name)
 	}
 	return nil
