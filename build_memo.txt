@@ -1,0 +1,8 @@
+setup Icon.png
+go get fyne.io/fyne/v2/cmd/fyne
+${GOBIN}/fyne package -os ${OS}
+
+for desktoop test:
+go run .
+for mobile test:
+go run -tags mobile .
