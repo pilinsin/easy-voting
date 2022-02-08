@@ -12,7 +12,7 @@ type config struct {
 	salt1          string
 	salt2          string
 	uhmCid         string
-	hnmIpnsName    string
+	hbmIpnsName    string
 	userDataLabels []string
 }
 
@@ -22,7 +22,7 @@ func NewConfigs(title string, userDataset <-chan []string, userDataLabels []stri
 	rCfg := newConfig(title, userDataset, userDataLabels, encKeyPair.Public(), is, kf)
 	mi := &ManIdentity{
 		rPriKey:    encKeyPair.Private(),
-		hnmKeyFile: kf,
+		hbmKeyFile: kf,
 	}
 	return mi, rCfg
 }
@@ -46,8 +46,8 @@ func newConfig(title string, userDataset <-chan []string, userDataLabels []strin
 	uhm := NewUhHashMap(uhHashes, 100000, is)
 	cfg.uhmCid = ipfs.File.Add(uhm.Marshal(), is)
 
-	hnm := NewHashNameMap(100000)
-	cfg.hnmIpnsName = ipfs.Name.PublishWithKeyFile(hnm.Marshal(), kf, is)
+	hbm := NewHashBoxMap(100000)
+	cfg.hbmIpnsName = ipfs.Name.PublishWithKeyFile(hbm.Marshal(), kf, is)
 
 	return cfg
 }
@@ -56,7 +56,7 @@ func (cfg config) RPubKey() crypto.IPubKey   { return cfg.rPubKey }
 func (cfg config) Salt1() string            { return cfg.salt1 }
 func (cfg config) Salt2() string            { return cfg.salt2 }
 func (cfg config) UhmCid() string         { return cfg.uhmCid }
-func (cfg config) HnmIpnsName() string      { return cfg.hnmIpnsName }
+func (cfg config) HbmIpnsName() string      { return cfg.hbmIpnsName }
 func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
 
 func (cfg config) IsCompatible(mi *ManIdentity) bool{
@@ -64,8 +64,8 @@ func (cfg config) IsCompatible(mi *ManIdentity) bool{
 	enc, err  := cfg.rPubKey.Encrypt(txt)
 	dec, err2 := mi.rPriKey.Decrypt(enc)
 	pub := util.ConstTimeBytesEqual(txt, dec) && (err == nil) && (err2 == nil)
-	name, err3 := mi.hnmKeyFile.Name()
-	nm := (cfg.hnmIpnsName == name) && (err3 == nil)
+	name, err3 := mi.hbmKeyFile.Name()
+	nm := (cfg.hbmIpnsName == name) && (err3 == nil)
 	return pub && nm
 }
 
@@ -87,9 +87,9 @@ func (cfg config) Marshal() []byte {
 		Salt1          string
 		Salt2          string
 		UhmCid         string
-		HnmIpnsName    string
+		HbmIpnsName    string
 		UserDataLabels []string
-	}{cfg.title, cfg.rPubKey.Marshal(), cfg.salt1, cfg.salt2, cfg.uhmCid, cfg.hnmIpnsName, cfg.userDataLabels}
+	}{cfg.title, cfg.rPubKey.Marshal(), cfg.salt1, cfg.salt2, cfg.uhmCid, cfg.hbmIpnsName, cfg.userDataLabels}
 	m, _ := util.Marshal(mCfg)
 	return m
 }
@@ -100,7 +100,7 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		Salt1          string
 		Salt2          string
 		UhmCid         string
-		HnmIpnsName    string
+		HbmIpnsName    string
 		UserDataLabels []string
 	}{}
 	err := util.Unmarshal(m, mCfg)
@@ -118,7 +118,7 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		salt1:          mCfg.Salt1,
 		salt2:          mCfg.Salt2,
 		uhmCid:         mCfg.UhmCid,
-		hnmIpnsName:    mCfg.HnmIpnsName,
+		hbmIpnsName:    mCfg.HbmIpnsName,
 		userDataLabels: mCfg.UserDataLabels,
 	}
 	return cfg, nil

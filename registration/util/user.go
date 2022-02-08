@@ -15,21 +15,6 @@ func NewRegistrationBox(pubKey crypto.IPubKey) *registrationBox {
 func (rb registrationBox) Public() crypto.IPubKey {
 	return rb.userPubKey
 }
-func RBoxFromName(rIpnsName string, is *ipfs.IPFS) (*registrationBox, error) {
-	m, err := ipfs.Name.Get(rIpnsName, is)
-	if err != nil {
-		return nil, err
-	}
-	rb := &registrationBox{}
-	err = rb.Unmarshal(m)
-	if err != nil {
-		return nil, err
-	}
-	if rb.userPubKey == nil {
-		return nil, util.NewError("userPubKey is nil")
-	}
-	return rb, nil
-}
 func (rb registrationBox) Marshal() []byte {
 	mrb := &struct {
 		PubKey []byte
@@ -37,38 +22,34 @@ func (rb registrationBox) Marshal() []byte {
 	m, _ := util.Marshal(mrb)
 	return m
 }
-func (rb *registrationBox) Unmarshal(m []byte) error {
+func UnmarshalRegistrationBox(m []byte) (*registrationBox, error) {
 	mrb := &struct {
 		PubKey []byte
 	}{}
 	err := util.Unmarshal(m, mrb)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
 	pubKey, err := crypto.UnmarshalPubKey(mrb.PubKey)
 	if  err != nil {
-		return err
+		return nil, err
 	}
-	rb.userPubKey = pubKey
-	return nil
+
+	return &registrationBox{pubKey}, nil
 }
 
 type UserIdentity struct {
 	userHash    UserHash
-	rKeyFile    *ipfs.KeyFile
 	userPriKey  crypto.IPriKey
 	userSignKey crypto.ISignKey
+	userVerfKey crypto.IVerfKey
 }
 
-func NewUserIdentity(uhHash UserHash, kf *ipfs.KeyFile, pri crypto.IPriKey, sign crypto.ISignKey) *UserIdentity {
-	return &UserIdentity{uhHash, kf, pri, sign}
+func NewUserIdentity(uhHash UserHash, pri crypto.IPriKey, sign crypto.ISignKey, verf crypto.IVerfKey) *UserIdentity {
+	return &UserIdentity{uhHash, pri, sign, verf}
 }
 func (ui UserIdentity) UserHash() UserHash {
 	return ui.userHash
-}
-func (ui UserIdentity) KeyFile() *ipfs.KeyFile {
-	return ui.rKeyFile
 }
 func (ui UserIdentity) Private() crypto.IPriKey {
 	return ui.userPriKey
@@ -76,13 +57,16 @@ func (ui UserIdentity) Private() crypto.IPriKey {
 func (ui UserIdentity) Sign() crypto.ISignKey {
 	return ui.userSignKey
 }
+func (ui UserIdentity) Verf() crypto.IVerfKey {
+	return ui.userVerfKey
+}
 func (ui UserIdentity) Marshal() []byte {
 	mui := &struct {
 		UserHash    UserHash
-		RKeyFile    []byte
 		UserPriKey  []byte
 		UserSignKey []byte
-	}{ui.userHash, ui.rKeyFile.Marshal(), ui.userPriKey.Marshal(), ui.userSignKey.Marshal()}
+		UserVerfKey []byte
+	}{ui.userHash, ui.userPriKey.Marshal(), ui.userSignKey.Marshal(), ui.userVerfKey.Marshal()}
 	m, _ := util.Marshal(mui)
 	return m
 }
@@ -92,15 +76,12 @@ func (ui *UserIdentity) Unmarshal(m []byte) error {
 		RKeyFile    []byte
 		UserPriKey  []byte
 		UserSignKey []byte
+		UserVerfKey []byte
 	}{}
 	if err := util.Unmarshal(m, mui); err != nil {
 		return err
 	}
 
-	kf := &ipfs.KeyFile{}
-	if err := kf.Unmarshal(mui.RKeyFile); err != nil {
-		return err
-	}
 	priKey, err := crypto.UnmarshalPriKey(mui.UserPriKey)
 	if err != nil {
 		return err
@@ -109,48 +90,55 @@ func (ui *UserIdentity) Unmarshal(m []byte) error {
 	if err != nil {
 		return err
 	}
+	verfKey, err := crypto.UnmarshalVerfKey(mui.UserVerfKey)
+	if err != nil {
+		return err
+	}
 
 	ui.userHash = mui.UserHash
-	ui.rKeyFile = kf
 	ui.userPriKey = priKey
 	ui.userSignKey = signKey
+	ui.userVerfKey = verfKey
 	return nil
 }
 
 //sent for registration
 type UserInfo struct {
 	userHash  UserHash
-	rIpnsName string
+	rBox *registrationBox
 }
-
-func NewUserInfo(uhHash UserHash, rIpnsName string) *UserInfo {
-	return &UserInfo{uhHash, rIpnsName}
+func NewUserInfo(uhHash UserHash, rBox *registrationBox) *UserInfo {
+	return &UserInfo{uhHash, rBox}
 }
 func (ui UserInfo) UserHash() UserHash {
 	return ui.userHash
 }
-func (ui UserInfo) Name() string {
-	return ui.rIpnsName
+func (ui UserInfo) RegistrationBox() *registrationBox {
+	return ui.rBox
 }
 func (ui UserInfo) Marshal() []byte {
 	mui := &struct {
 		UserHash  UserHash
-		RIpnsName string
-	}{ui.userHash, ui.rIpnsName}
+		MRBox []byte
+	}{ui.userHash, ui.rBox.Marshal()}
 	m, _ := util.Marshal(mui)
 	return m
 }
 func (ui *UserInfo) Unmarshal(m []byte) error {
 	mui := &struct {
 		UserHash  UserHash
-		RIpnsName string
+		MRBox []byte
 	}{}
 	err := util.Unmarshal(m, mui)
 	if err != nil {
 		return err
 	}
+	rBox, err := UnmarshalRegistrationBox(mui.MRBox)
+	if err != nil {
+		return err
+	}
 
 	ui.userHash = mui.UserHash
-	ui.rIpnsName = mui.RIpnsName
+	ui.rBox = mui.rBox
 	return nil
 }

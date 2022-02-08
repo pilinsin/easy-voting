@@ -22,7 +22,7 @@ type manager struct {
 	keyFile     *ipfs.KeyFile
 	salt2       string
 	uhmCid      string
-	hnmIpnsName string
+	hbmIpnsName string
 }
 
 func NewManager(rCfgCid string, manIdentity *rutil.ManIdentity, is *ipfs.IPFS) (*manager, error) {
@@ -38,7 +38,7 @@ func NewManager(rCfgCid string, manIdentity *rutil.ManIdentity, is *ipfs.IPFS) (
 		keyFile:    	manIdentity.KeyFile(),
 		salt2:       rCfg.Salt2(),
 		chmCid:      rCfg.UhmCid(),
-		hnmIpnsName: rCfg.HnmIpnsName(),
+		hbmIpnsName: rCfg.HbmIpnsName(),
 	}
 	return man, nil
 }
@@ -53,9 +53,9 @@ func (m *manager) Registrate() error {
 		fmt.Println("m.Registrate FromCid error", err)
 		return err
 	}
-	hnm, err := HashNameMapFromName(r.hnmIpnsName, r.is)
+	hbm, err := HashBoxMapFromName(r.hbmIpnsName, r.is)
 	if err != nil {
-		fmt.Println("hnm.FromName error", err)
+		fmt.Println("hbm.FromName error", err)
 		return err
 	}
 
@@ -81,18 +81,18 @@ func (m *manager) Registrate() error {
 			fmt.Println("the uhHash is not contained")
 			continue
 		}
-		if _, ok := hnm.ContainHash(uhHash, m.is); ok {
+		if _, ok := hbm.ContainHash(uhHash, m.is); ok {
 			fmt.Println("the uhHash is already registrated")
 			continue
 		}
 
-		if err := hnm.Append(uInfo, m.salt2, m.is); err == nil{
-			isHnmUpdated = true
+		if err := hbm.Append(uInfo, m.salt2, m.is); err == nil{
+			isHbmUpdated = true
 			fmt.Println("uInfo appended")
 		}
 	}
-	if isHnmUpdated{
-		name := ipfs.Name.PublishWithKeyFile(hnm.Marshal(), m.keyFile, m.is)
+	if isHbmUpdated{
+		name := ipfs.Name.PublishWithKeyFile(hbm.Marshal(), m.keyFile, m.is)
 		fmt.Println("ipnsPublished to ", name)
 	}
 	return nil

@@ -13,7 +13,7 @@ import (
 
 type IRegistration interface {
 	Close()
-	VerifyHashNameMap() bool
+	VerifyHashBoxMap() bool
 	VerifyUserIdentity(identity *rutil.UserIdentity) bool
 	Registrate(userData ...string) (*rutil.UserIdentity, error)
 }
@@ -25,8 +25,8 @@ type registration struct {
 	salt1       string
 	salt2       string
 	uhmCid      string
-	hnmCid      string
-	hnmIpnsName string
+	hbmCid      string
+	hbmIpnsName string
 }
 
 func NewRegistration(rCfgCid string, is *ipfs.IPFS) (*registration, error) {
@@ -34,7 +34,7 @@ func NewRegistration(rCfgCid string, is *ipfs.IPFS) (*registration, error) {
 	if err != nil {
 		return nil, err
 	}
-	hnmCid, err := ipfs.Name.GetCid(rCfg.HnmIpnsName(), is)
+	hbmCid, err := ipfs.Name.GetCid(rCfg.HbmIpnsName(), is)
 	if err != nil {
 		return nil, err
 	}
@@ -46,33 +46,33 @@ func NewRegistration(rCfgCid string, is *ipfs.IPFS) (*registration, error) {
 		salt1:       rCfg.Salt1(),
 		salt2:       rCfg.Salt2(),
 		uhmCid:      rCfg.UhmCid(),
-		hnmCid:      hnmCid,
-		hnmIpnsName: rCfg.HnmIpnsName(),
+		hbmCid:      hbmCid,
+		hbmIpnsName: rCfg.HbmIpnsName(),
 	}
 	return r, nil
 }
 func (r *registration) Close() {
 	r.is = nil
 }
-func (r *registration) VerifyHashNameMap() bool {
-	pth, _ := r.is.Name.Resolve(r.hnmIpnsName)
-	mhnm, err := r.is.File.Get(pth)
+func (r *registration) VerifyHashBoxMap() bool {
+	pth, _ := r.is.Name.Resolve(r.hbmIpnsName)
+	mhbm, err := r.is.File.Get(pth)
 	if err != nil {
-		fmt.Println("hnmName error")
+		fmt.Println("hbmName error")
 		return false
 	}
-	hnm, err = UnmarshalHashNameMap(mhnm)
+	hbm, err = UnmarshalHashBoxMap(mhbm)
 	if err != nil {
-		fmt.Println("hnm unmarshal error")
+		fmt.Println("hbm unmarshal error")
 		return false
 	}
 
-	if ok := hnm.VerifyHashes(r.uhmCid, r.is); !ok {
-		fmt.Println("invalid uhHash is contained in hnm")
+	if ok := hbm.VerifyHashes(r.uhmCid, r.is); !ok {
+		fmt.Println("invalid uhHash is contained in hbm")
 		return false
 	}
-	if hnm.VerifyCid(r.hnmCid, r.is) {
-		r.hnmCid = strings.TrimPrefix(pth.String(), "/ipfs/")
+	if hbm.VerifyCid(r.hbmCid, r.is) {
+		r.hbmCid = pth.Cid().String()
 		return true
 	} else {
 		fmt.Println("invalid hnm cid")
@@ -80,10 +80,10 @@ func (r *registration) VerifyHashNameMap() bool {
 	}
 }
 func (r *registration) VerifyUserIdentity(identity *rutil.UserIdentity) bool {
-	if hnm, err := HashNameMapFromName(r.hnmIpnsName, r.is); err != nil {
+	if hbm, err := HashBoxMapFromName(r.hnmIpnsName, r.is); err != nil {
 		return false
 	}else{
-		return hnm.VerifyUserIdentity(identity, r.salt2, r.is)
+		return hbm.VerifyUserIdentity(identity, r.salt2, r.is)
 	}
 }
 func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, error) {
@@ -97,23 +97,20 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 	if ok := uhm.ContainHash(uhHash, r.is); !ok {
 		return nil, util.NewError("uhHash is not contained")
 	}
-	hnm, err := HashNameMapFromName(r.hnmIpnsName, r.is)
+	hbm, err := HashBoxMapFromName(r.hbmIpnsName, r.is)
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := hnm.ContainHash(uhHash, r.is); ok {
+	if _, ok := hbm.ContainHash(uhHash, r.is); ok {
 		return nil, util.NewError("uhHash is already registrated")
 	}
 
-	rKeyFile := ipfs.Name.NewKeyFile()
 	userEncKeyPair := crypto.NewPubEncryptKeyPair()
 	userSignKeyPair := crypto.NewSignKeyPair()
-
 	rb := rutil.NewRegistrationBox(userEncKeyPair.Public())
-	rIpnsName := ipfs.Name.PublishWithKeyfile(rb.Marshal(), rKeyFile, r.is)
 
-	id := rutil.NewUserIdentity(userHash, rKeyFile, userEncKeyPair.Private(), userSignKeyPair.Sign())
-	uInfo := rutil.NewUserInfo(userHash, rIpnsName)
+	id := rutil.NewUserIdentity(userHash, userEncKeyPair.Private(), userSignKeyPair.Sign(), userSignKeyPair.Verify())
+	uInfo := rutil.NewUserInfo(userHash, rb)
 
 	encInfo, err := r.rPubKey.Encrypt(uInfo.Marshal())
 	if err != nil {
@@ -124,11 +121,11 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 	ticker := time.NewTicker(30*time.Second)
 	defer ticker.Stop()
 	for {
-		hnm, err := HashNameMapFromName(r.hnmIpnsName, r.is)
+		hbm, err := HashBoxMapFromName(r.hbmIpnsName, r.is)
 		if err != nil {
 			return nil, err
 		}
-		if hnm.VerifyUserInfo(uInfo, r.salt2, r.is) {
+		if hbm.VerifyUserInfo(uInfo, r.salt2, r.is) {
 			fmt.Println("uInfo verified")
 			return id, nil
 		}

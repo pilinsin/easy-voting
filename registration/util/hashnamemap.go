@@ -10,129 +10,126 @@ import (
 
 type keyValue struct {
 	keyHash   string
-	rIpnsName string
+	rBox *registrationBox
 }
 func (kv keyValue) Key() string {
 	return kv.keyHash
 }
 func (kv keyValue) Value() string {
-	return kv.rIpnsName
+	return kv.rBox
 }
 
-type hashNameMap struct {
+type hashBoxMap struct {
 	sm ipfs.IScalableMap
 }
-func NewHashNameMap(capacity int) *hashNameMap {
-	return &hashNameMap{
+func NewHashBoxMap(capacity int) *hashBoxMap {
+	return &hashBoxMap{
 		sm: ipfs.NewScalableMap("const", capacity),
 	}
 }
-func (hnm hashNameMap) Next(is *ipfs.IPFS) <-chan string {
-	ch := make(chan string)
+func (hbm hashBoxMap) Next(is *ipfs.IPFS) <-chan *registrationBox {
+	ch := make(chan *registrationBox)
 	go func() {
 		defer close(ch)
-		for m := range hnm.sm.Next(is) {
-			ch <- util.Bytes64ToAnyStr(m)
+		for m := range hbm.sm.Next(is) {
+			rBox, err := UnmarshalRegistrationBox(m)
+			if err == nil{
+				ch <- rBox
+			}
 		}
 	}()
 	return ch
 }
-func (hnm hashNameMap) NextKeyValue(is *ipfs.IPFS) <-chan *keyValue {
+func (hbm hashBoxMap) NextKeyValue(is *ipfs.IPFS) <-chan *keyValue {
 	ch := make(chan *keyValue)
 	go func() {
 		defer close(ch)
-		for kv := range hnm.sm.NextKeyValue(is) {
-			name := util.Bytes64ToAnyStr(kv.Value())
-			ch <- &keyValue{kv.Key(), name}
+		for kv := range hbm.sm.NextKeyValue(is) {
+			rBox, err := UnmarshalRegistrationBox(kv.Value())
+			if err == nil{
+				ch <- &keyValue{kv.Key(), rBox}
+			}			
 		}
 	}()
 	return ch
 }
-func (hnm hashNameMap) ContainHash(hash UhHash, is *ipfs.IPFS) (string, bool) {
-	if m, ok := hnm.sm.ContainKey(hash, is); !ok {
-		return "", false
+func (hbm hashBoxMap) ContainHash(hash UhHash, is *ipfs.IPFS) (*registrationBox, bool) {
+	if m, ok := hbm.sm.ContainKey(hash, is); !ok {
+		return nil, false
 	} else {
-		return util.Bytes64ToAnyStr(m), true
+		rBox, err := UnmarshalRegistrationBox(m)
+		return rBox, err == nil
 	}
 }
-func (hnm *hashNameMap) Append(uInfo *UserInfo, salt, uhmCid string, is *ipfs.IPFS) error{
-	if _, err := RBoxFromName(uInfo.Name(), is); err != nil{
-		fmt.Println("hnm.Append err: ", err)
-		return err
-	}else{
-		uhm, err := UhHashMapFromCid(uhmCid, is)
-		if err != nil{return err}
-
-		hash := NewUhHash(salt, uInfo.UserHash())
-		if ok := uhm.ContainHash(hash, is); !ok{
-			return util.NewError("hnm.Append err: not contain hash")
-		}
-
-		data := util.AnyStrToBytes64(uInfo.Name())
-		return hnm.sm.Append(hash, data, is)
+func (hbm *hashBoxMap) Append(uInfo *UserInfo, salt, uhmCid string, is *ipfs.IPFS) error{
+	uhm, err := UhHashMapFromCid(uhmCid, is)
+	if err != nil{return err}
+	hash := NewUhHash(salt, uInfo.UserHash())
+	if ok := uhm.ContainHash(hash, is); !ok{
+		return util.NewError("Append: not contain hash")
 	}
+
+	data := uInfo.RegistrationBox().Marshal()
+	return hbm.sm.Append(hash, data, is)
 }
 //Verify no falsification
-func (hnm hashNameMap) VerifyCid(cid string, is *ipfs.IPFS) bool {
-	mhnm, err := ipfs.File.Get(cid, is)
+func (hbm hashBoxMap) VerifyCid(cid string, is *ipfs.IPFS) bool {
+	mhbm, err := ipfs.File.Get(cid, is)
 	if err != nil {
 		return false
 	}
-	hnm2, err := UnmarshalHashNameMap(mhnm)
+	hnm2, err := UnmarshalHashNameMap(mhbm)
 	if err != nil {
 		return false
 	}
-	return hnm.sm.ContainCid(hnm2.sm, is)
+	return hbm.sm.ContainCid(hnm2.sm, is)
 }
-func (hnm hashNameMap) VerifyHashes(uhmCid string, is *ipfs.IPFS) bool {
+func (hbm hashBoxMap) VerifyHashes(uhmCid string, is *ipfs.IPFS) bool {
 	uhm, err := UhHashMapFromCid(uhmCid, is)
 	if err != nil{return false}
 
 	if uhm.Len(is) == 0 {
 		return true
 	}
-	for hn := range hnm.NextKeyValue(is) {
+	for hn := range hbm.NextKeyValue(is) {
 		if ok := uhm.ContainHash(hn.Key(), is); !ok {
 			return false
 		}
 	}
 	return true
 }
-func (hnm hashNameMap) VerifyUserInfo(uInfo *UserInfo, salt string, is *ipfs.IPFS) bool {
+func (hbm hashBoxMap) VerifyUserInfo(uInfo *UserInfo, salt string, is *ipfs.IPFS) bool {
 	uhHash := NewUhHash(salt, uInfo.userHash)
-	if name, ok := hnm.ContainHash(uhHash, is); !ok {
+	if rBox, ok := hbm.ContainHash(uhHash, is); !ok {
 		fmt.Println("verifyUserInfo: not contain uhHash")
 		return false
 	} else {
-		rn := uInfo.rIpnsName == name
-		uInfoCid, err1 := ipfs.Name.GetCid(uInfo.rIpnsName, is)
-		hndCid, err2 := ipfs.Name.GetCid(name, is)
-		cid := (uInfoCid == hndCid)
-		return rn && cid && (err1 == nil) && (err2 == nil)
+		return uInfo.RegistrationBox().Public().Equals(rBox.Public())
 	}
 }
-func (hnm hashNameMap) VerifyUserIdentity(identity *UserIdentity, salt string, is *ipfs.IPFS) bool {
+func (hbm hashBoxMap) VerifyUserIdentity(identity *UserIdentity, salt string, is *ipfs.IPFS) bool {
 	uhHash := NewUhHash(salt, identity.userHash)
-	if name, ok := hnm.ContainHash(uhHash, is); !ok {
+	if rBox, ok := hbm.ContainHash(uhHash, is); !ok {
 		fmt.Println("verifyUserIdentity: not contain uhHash")
 		return false
 	} else {
-		kfName, err := identity.KeyFile().Name()
-		nm := kfName == name
-		return (err == nil) && nm
+		mes := "test message"
+		enc, err := rBox.Public().Encrypt([]byte(mes))
+		dec, err2 := identity.Private().Decrypt(enc)
+		return (err == nil) && (err2 == nil) && mes == string(dec) 
 	}
 }
-func (hnm hashNameMap) Marshal() []byte {
-	return hnm.sm.Marshal()
+func (hbm hashBoxMap) Marshal() []byte {
+	return hbm.sm.Marshal()
 }
-func UnmarshalHashNameMap(m []byte) (*hashNameMap, error) {
+func UnmarshalHashBoxMap(m []byte) (*hashBoxMap, error) {
 	sm, err := ipfs.UnmarshalScalableMap("const", m)
-	return &hashNameMap{sm}, err
+	return &hashBoxMap{sm}, err
 }
-func HashNameMapFromName(hnmName string, is *ipfs.IPFS) (*hashNameMap, error) {
-	mhnm, err := ipfs.FromName(hnmName, is)
+func HashBoxMapFromName(hnmName string, is *ipfs.IPFS) (*hashBoxMap, error) {
+	mhbm, err := ipfs.Name.Get(hnmName, is)
 	if err != nil {
 		return nil, err
 	}
-	return UnmarshalHashNameMap(mhnm), nil
+	return UnmarshalHashNameMap(mhbm), nil
 }

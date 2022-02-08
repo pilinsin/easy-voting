@@ -8,23 +8,23 @@ import (
 
 type ManIdentity struct {
 	rPriKey    crypto.IPriKey
-	hnmKeyFile *ipfs.KeyFile
+	hbmKeyFile *ipfs.KeyFile
 }
 func (mi ManIdentity) Private() crypto.IPriKey { return mi.rPriKey }
-func (mi ManIdentity) KeyFile() *ipfs.KeyFile { return mi.hnmKeyFile }
+func (mi ManIdentity) KeyFile() *ipfs.KeyFile { return mi.hbmKeyFile }
 
 func (mi ManIdentity) Marshal() []byte {
 	mManIdentity := &struct {
 		RPriKey    []byte
-		HnmKeyFile []byte
-	}{mi.rPriKey.Marshal(), mi.hnmKeyFile.Marshal()}
+		HbmKeyFile []byte
+	}{mi.rPriKey.Marshal(), mi.hbmKeyFile.Marshal()}
 	m, _ := util.Marshal(mManIdentity)
 	return m
 }
 func (mi *ManIdentity) Unmarshal(m []byte) error {
 	mManIdentity := &struct {
 		RPriKey    []byte
-		HnmKeyFile []byte
+		HbmKeyFile []byte
 	}{}
 	if err := util.Unmarshal(m, mManIdentity); err != nil {
 		return err
@@ -35,11 +35,11 @@ func (mi *ManIdentity) Unmarshal(m []byte) error {
 		return err
 	}
 	kf := &ipfs.KeyFile{}
-	if err := kf.Unmarshal(mManIdentity.HnmKeyFile); err != nil {
+	if err := kf.Unmarshal(mManIdentity.HbmKeyFile); err != nil {
 		return err
 	}
 		
 	mi.rPriKey = priKey
-	mi.hnmKeyFile = kf
+	mi.hbmKeyFile = kf
 	return nil
 }
