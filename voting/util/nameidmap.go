@@ -1,24 +1,24 @@
 package votingutil
 
 import (
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/ipfs-util"
+	scmap "github.com/pilinsin/ipfs-util/scalablemap"
+	"github.com/pilinsin/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
 )
 
-type NameIdMap struct {
-	sm  *ipfs.ScalableMap
+type boxIdMap struct {
+	sm  ipfs.IScalableMap
 	vid string
 }
-
-func NewNameIdMap(capacity int, vid string) *NameIdMap {
-	return &NameIdMap{
-		sm:  ipfs.NewScalableMap(capacity),
+func NewBoxIdMap(capacity int, vid string) *boxIdMap {
+	return &boxIdMap{
+		sm:  ipfs.NewScalableMap("const", capacity),
 		vid: vid,
 	}
 }
-func (nim *NameIdMap) Append(rIpnsName, uid string, is *ipfs.IPFS) {
-	rb, err := rutil.RBoxFromName(rIpnsName, is)
+func (bim *boxIdMap) Append(mRBox []byte, uid string, is *ipfs.IPFS) error{
+	rb, err := rutil.UnmarshalRegistrationBox(mRBox)
 	if err != nil {
 		return
 	}
@@ -26,17 +26,12 @@ func (nim *NameIdMap) Append(rIpnsName, uid string, is *ipfs.IPFS) {
 	if err != nil {
 		return
 	}
-
-	nvHash := NewNameVidHash(rIpnsName, nim.vid)
-	nim.sm.Append(nvHash, encUid, is)
+	bvHash := NewBoxVidHash(rb.Public().Marshal(), bim.vid)
+	bim.sm.Append(bvHash, encUid, is)
 }
-func (nim NameIdMap) ContainIdentity(identity *rutil.UserIdentity, is *ipfs.IPFS) (string, bool) {
-	name, err := identity.KeyFile().Name()
-	if err != nil {
-		return "", false
-	}
-	nvHash := NewNameVidHash(name, nim.vid)
-	if encUid, ok := nim.sm.ContainKey(nvHash, is); ok {
+func (bim boxIdMap) ContainIdentity(identity *rutil.UserIdentity, is *ipfs.IPFS) (string, bool) {
+	bvHash := NewBoxVidHash(identity.Public().Marshal(), bim.vid)
+	if encUid, ok := bim.sm.ContainKey(bvHash, is); ok {
 		bUid, err := identity.Private().Decrypt(encUid)
 		if err != nil {
 			return "", false
@@ -46,46 +41,36 @@ func (nim NameIdMap) ContainIdentity(identity *rutil.UserIdentity, is *ipfs.IPFS
 		return "", false
 	}
 }
-
 //login verification
-func (nim NameIdMap) VerifyIdentity(identity *rutil.UserIdentity, is *ipfs.IPFS) bool {
-	name, err := identity.KeyFile().Name()
-	if err != nil {
-		return false
-	}
-	nvHash := NewNameVidHash(name, nim.vid)
-	_, ok := nim.sm.ContainKey(nvHash, is)
+func (bim boxIdMap) VerifyIdentity(identity *rutil.UserIdentity, is *ipfs.IPFS) bool {
+	bvHash := NewBoxVidHash(identity.Public().Marshal(), bim.vid)
+	_, ok := bim.sm.ContainKey(bvHash, is)
 	return ok
 }
-func (nim NameIdMap) Marshal() []byte {
-	mnim := &struct {
-		N []byte
+func (bim boxIdMap) Marshal() []byte {
+	mbim := &struct {
+		M []byte
 		V string
-	}{nim.sm.Marshal(), nim.vid}
-	m, _ := util.Marshal(mnim)
+	}{bim.sm.Marshal(), bim.vid}
+	m, _ := util.Marshal(mbim)
 	return m
 }
-func (nim *NameIdMap) Unmarshal(m []byte) error {
-	mnim := &struct {
-		N []byte
+func UnmarshalBoxIdMap(m []byte) (*boxIdMap, error) {
+	mbim := &struct {
+		M []byte
 		V string
 	}{}
-	if err := util.Unmarshal(m, mnim); err != nil {
-		return err
+	if err := util.Unmarshal(m, mbim); err != nil {
+		return nil, err
 	}
 
-	sm := &ipfs.ScalableMap{}
-	if err := sm.Unmarshal(mnim.N); err != nil {
-		return err
-	}
-	nim.sm = sm
-	nim.vid = mnim.V
-	return nil
+	sm, err := scmap.UnmarshalScalableMap(mbim.M)
+	return &boxIdMap{sm, mbim.V}, err
 }
-func (nim *NameIdMap) FromCid(nimCid string, is *ipfs.IPFS) error {
-	m, err := ipfs.FromCid(nimCid, is)
+func (bim *boxIdMap) BoxIdMapFromCid(nimCid string, is *ipfs.IPFS) (*boxIdMap, error) {
+	m, err := ipfs.File.Get(nimCid, is)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nim.Unmarshal(m)
+	return UnmarshalBoxIdMap(m)
 }

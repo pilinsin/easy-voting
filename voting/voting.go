@@ -1,12 +1,12 @@
 package voting
 
 import (
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/ipfs-util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 	module "github.com/pilinsin/easy-voting/voting/modules"
-	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 func NewVoting(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPFS) (viface.IVoting, error) {

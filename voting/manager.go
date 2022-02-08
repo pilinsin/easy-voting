@@ -6,20 +6,22 @@ import (
 
 	iface "github.com/ipfs/interface-go-ipfs-core"
 
-	"github.com/pilinsin/easy-voting/ipfs"
-	rutil "github.com/pilinsin/easy-voting/registration/util"
+	"github.com/pilinsin/ipfs-util"
 	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
+	"github.com/pilinsin/util/crypto"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type manager struct {
 	is            *ipfs.IPFS
-	sub         iface.PubSubSubscription
 	tInfo         *util.TimeInfo
 	salt1         string
 	salt2         string
-	chmCid        string
+	verfSub         iface.PubSubSubscription
+	voteSub         iface.PubSubSubscription
+	logSub         iface.PubSubSubscription
+	uhmCid        string
 	ivmCid        string
 	manPriKey     crypto.IPriKey
 	verfMapKeyFile *ipfs.KeyFile

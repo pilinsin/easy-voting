@@ -3,165 +3,90 @@ package votingutil
 import (
 	"time"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/ipfs-util"
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/util/crypto"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
 )
 
-type VotingBox struct {
+type votingBox struct {
 	manEncVote  []byte
-	userEncVote []byte
+	t time.Time
+	sign []byte
 }
-
-func NewVotingBox() *VotingBox {
-	return &VotingBox{}
+func NewVotingBox() *votingBox {
+	return &votingBox{}
 }
-func (vb *VotingBox) Vote(vi VoteInt, manPubKey crypto.IPubKey, identity *rutil.UserIdentity) {
-	sv := newSignedVote(vi, identity).Marshal()
-	mev, err := manPubKey.Encrypt(sv)
+func (vb *votingBox) Vote(vi VoteInt, identity *rutil.UserIdentity, manPubKey crypto.IPubKey) {
+	mev, err := manPubKey.Encrypt(vi.Marshal())
 	if err != nil {
 		return
 	}
-	uev, err := identity.Private().Public().Encrypt(sv)
+	tm := time.Now()
+	vt := &struct{
+		V: []byte
+		T: time.Time
+	}{mev, tm}
+
+	mvt, _ := util.Marshal(vt)
+	sgn, err := identity.Sign().Sign(mvt)
 	if err != nil {
 		return
 	}
 
 	vb.manEncVote = mev
-	vb.userEncVote = uev
+	vb.t = tm
+	vb.sign = sgn
 }
-func (vb VotingBox) GetVote(manPriKey crypto.IPriKey) (*signedVote, error) {
-	mSignedVote, err := manPriKey.Decrypt(vb.manEncVote)
-	if err != nil {
-		return nil, err
+func (vb votingBox) GetVote(tInfo *util.TimeInfo, manPriKey crypto.IPriKey) (VoteInt, error) {
+	vi := VoteInt{}
+	if ok := tInfo.WithinTime(vb.t); !ok{
+		return vi, util.NewError("the time of this vote is invalid")
 	}
-	sv, err := UnmarshalSignedVote(mSignedVote)
-	if err != nil {
-		return nil, err
-	}
-	return sv, nil
+	mvi, err := manPriKey.Decrypt(vb.manEncVote)
+	if err != nil{return vi, err}
+	err := vi.Unmarshal(mvi)
+	return vi, err
 }
-func (vb VotingBox) GetMyVote(identity *rutil.UserIdentity) (*signedVote, error) {
-	mSignedVote, err := identity.Private().Decrypt(vb.userEncVote)
-	if err != nil {
-		return nil, err
-	}
-	sv, err := UnmarshalSignedVote(mSignedVote)
-	if err != nil {
-		return nil, err
-	}
-	return sv, nil
+func (vb votingBox) Verify(verfKey crypto.IVerfKey) (bool, error) {
+	vt := &struct{
+		V: []byte
+		T: time.Time
+	}{vb.manEncVote, vb.t}
+	mvt, _ := util.Marshal(vt)
+	return verfKey.Verify(mvt, vb.sign)
 }
-func (vb *VotingBox) FromName(vdName string, is *ipfs.IPFS) error {
-	m, err := ipfs.FromName(vdName, is)
-	if err != nil {
-		return err
-	}
-	err = vb.Unmarshal(m)
-	if err != nil {
-		return err
-	}
-	return nil
+func (vb votingBox) WithinTime(tInfo *util.TimeInfo) bool{
+	return tInfo.WithinTime(vb.t)
 }
-func (vb VotingBox) Marshal() []byte {
+func (vb votingBox) Marshal() []byte {
 	mvb := &struct {
-		Mev []byte
-		Uev []byte
-	}{vb.manEncVote, vb.userEncVote}
+		M []byte
+		T time.Time
+		S []byte
+	}{vb.manEncVote, vb.t, vb.sign}
 	m, _ := util.Marshal(mvb)
 	return m
 }
-func (vb *VotingBox) Unmarshal(m []byte) error {
+func UnmarshalVotingBox(m []byte) (*votingBox, error) {
 	mvb := &struct {
-		Mev []byte
-		Uev []byte
+		M []byte
+		T time.Time
+		S []byte
 	}{}
 	err := util.Unmarshal(m, mvb)
 	if err != nil {
 		return err
 	}
 
-	vb.manEncVote = mvb.Mev
-	vb.userEncVote = mvb.Uev
-	return nil
-}
-
-type signedVote struct {
-	*vote
-	sv []byte
-}
-
-func newSignedVote(vi VoteInt, identity *rutil.UserIdentity) *signedVote {
-	vote := newVote(vi)
-	sv := identity.Sign().Sign(vote.marshal())
-	return &signedVote{
-		vote: vote,
-		sv: sv,
-	}
-}
-func (sv signedVote) Verify(verfKey crypto.IVerfKey) bool {
-	return verfKey.Verify(sv.vote.marshal(), sv.sv)
-}
-func (sv signedVote) Marshal() []byte {
-	msv := &struct{ V, S []byte }{sv.vote.marshal(), sv.sv}
-	m, _ := util.Marshal(msv)
-	return m
-}
-func UnmarshalSignedVote(m []byte) (*signedVote, error) {
-	msv := &struct{ V, S []byte }{}
-	if err := util.Unmarshal(m, msv); err != nil {
-		return nil, err
-	}
-
-	V, err := unmarshalVote(msv.V)
-	if err != nil {
-		return nil, err
-	}
-	return &signedVote{V, msv.S}, nil
-}
-
-type vote struct {
-	vote VoteInt
-	t    time.Time
-}
-
-//todo: timezone
-func newVote(vi VoteInt) *vote {
-	return &vote{
-		vote: vi,
-		t:    time.Now(),
-	}
-}
-func (vt vote) Vote(tInfo *util.TimeInfo) (*VoteInt, error) {
-	if ok := tInfo.WithinTime(vt.t); ok {
-		return &vt.vote, nil
-	} else {
-		return nil, util.NewError("invalid time error")
-	}
-}
-func (vt vote) marshal() []byte {
-	mvt := &struct {
-		V VoteInt
-		T time.Time
-	}{vt.vote, vt.t}
-	m, _ := util.Marshal(mvt)
-	return m
-}
-func unmarshalVote(m []byte) (*vote, error) {
-	mvt := &struct {
-		V VoteInt
-		T time.Time
-	}{}
-	err := util.Unmarshal(m, mvt)
-	if err != nil {
-		return nil, err
-	}
-	return &vote{mvt.V, mvt.T}, nil
+	return &votingBox{mvb.M, mvb.T, mvb.S}, nil
 }
 
 type VoteInt map[string]int
 func (vi *VoteInt) Marshal() []byte{
 	m, _ := util.Marshal(vi)
 	return m
+}
+func (vi *VoteInt) Unmarshal(m []byte) error{
+	return util.Unmarshal(m)
 }

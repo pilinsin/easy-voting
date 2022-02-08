@@ -6,8 +6,8 @@ import (
 	iface "github.com/ipfs/interface-go-ipfs-core"
 
 	"github.com/pilinsin/ipfs-util"
-	rutil "github.com/pilinsin/easy-voting/registration/util"
 	"github.com/pilinsin/util/crypto"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
 )
 
 type IManager interface {

@@ -1,10 +1,10 @@
 package votingutil
 
 import (
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/ipfs-util"
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/util/crypto"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
 )
 
 type VotingType int
@@ -89,19 +89,17 @@ type config struct {
 	manPubKey      crypto.IPubKey
 	vParam         VoteParams
 	vType          VotingType
-	chmCid         string
 	nimCid         string
-	ivmCid         string
 	verfMapName string
 	resMapName     string
 	userDataLabels []string
 }
 func NewConfigs(title, begin, end, loc, rCfgCid string, cands []Candidate, vParam VoteParams, vType VotingType, is *ipfs.IPFS) (*ManIdentity, *config, error) {
-	encKeyPair := crypto.NewEncryptKeyPair()
+	encKeyPair := crypto.NewPubEncryptKeyPair()
 	pub := encKeyPair.Public()
 	pri := encKeyPair.Private()
-	verfKf := ipfs.NewKeyFile()
-	resKf := ipfs.NewKeyFile()
+	verfKf := ipfs.Name.NewKeyFile()
+	resKf := ipfs.Name.NewKeyFile()
 	resName, _ := resKf.Name()
 
 	vCfg, err := newConfig(title, begin, end, loc, cands, pub, vParam, vType, rCfgCid, verfKf, resName, is)
@@ -138,37 +136,28 @@ func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypt
 	cfg.resMapName = resMapName
 	cfg.userDataLabels = rCfg.UserDataLabels()
 
-	hnm := &rutil.HashNameMap{}
-	err = hnm.FromName(rCfg.HnmIpnsName(), is)
+	hbm, err = rutil.HashBoxMapFromName(rCfg.HbmIpnsName(), is)
 	if err != nil {
 		return nil, util.AddError(err, "hnm unmarshal error")
 	}
-	chm := rutil.NewConstHashMap([]rutil.UhHash{}, 100000, is)
 	nim := NewNameIdMap(100000, cfg.votingID)
-	ivm := NewIdVotingMap(100000, tInfo)
-	for kv := range hnm.NextKeyValue(is) {
-		uhHash := kv.Key()
-		chm.Append(uhHash, is)
-
+	uidCheckMap := scmap.NewScalableMap("const", 100000)
+	for kv := range hbm.NextKeyValue(is) {
 		var uid string
 		var uvHash UidVidHash
 		for {
 			uid = util.GenUniqueID(30, 6)
 			uvHash = NewUidVidHash(uid, cfg.votingID)
-			if _, ok := ivm.ContainHash(uvHash, is); !ok {
+			if _, ok := uidCheckMap.ContainHash(uvHash, is); !ok {
 				break
 			}
 		}
-		rIpnsName := kv.Value().Name()
-		nim.Append(rIpnsName, uid, is)
-		ivm.Append(uvHash, rIpnsName, is)
+		nim.Append(kv.Value().Marshal(), uid, is)
+		uidCheckMap.Append(uvHash, nil, is)
 	}
-	cfg.chmCid = ipfs.ToCidWithAdd(chm.Marshal(), is)
-	cfg.nimCid = ipfs.ToCidWithAdd(nim.Marshal(), is)
-	cfg.ivmCid = ipfs.ToCidWithAdd(ivm.Marshal(), is)
-
+	cfg.nimCid = ipfs.File.Add(nim.Marshal(), is)
 	idVerfKeyMap := NewIdVerfKeyMap(100000)
-	cfg.verfMapName = ipfs.ToNameWithKeyFile(idVerfKeyMap.Marshal(), verfMapKeyFile, is)
+	cfg.verfMapName = ipfs.Name.PublishWithKeyFile(idVerfKeyMap.Marshal(), verfMapKeyFile, is)
 	return cfg, nil
 }
 func (cfg config) Title() string            { return cfg.title }
@@ -180,15 +169,16 @@ func (cfg config) Candidates() []Candidate  { return cfg.candidates }
 func (cfg config) ManPubKey() crypto.IPubKey { return cfg.manPubKey }
 func (cfg config) VParam() VoteParams       { return cfg.vParam }
 func (cfg config) VType() VotingType        { return cfg.vType }
-func (cfg config) UchmCid() string          { return cfg.chmCid }
-func (cfg config) UnimCid() string          { return cfg.nimCid }
-func (cfg config) UivmCid() string          { return cfg.ivmCid }
+func (cfg config) NimCid() string          { return cfg.nimCid }
 func (cfg config) VerfMapName() string { return cfg.verfMapName}
 func (cfg config) ResMapName() string       { return cfg.resMapName }
 func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
 
 func (cfg config) IsCompatible(mi *ManIdentity) bool{
-	pub := cfg.manPubKey.Equals(mi.manPriKey.Public())
+	txt := "test pubKey message"
+	enc, err  := cfg.manPubKey.Encrypt([]byte(txt))
+	dec, err2 := mi.manPriKey.Decrypt(enc)
+	pub := (txt == string(dec)) && (err == nil) && (err2 == nil)
 	verfName, vErr := mi.verfMapKeyFile.Name()
 	vnm := cfg.verfMapName == verfName
 	resName, rErr := mi.resMapKeyFile.Name()
@@ -197,7 +187,7 @@ func (cfg config) IsCompatible(mi *ManIdentity) bool{
 }
 
 func ConfigFromCid(vCfgCid string, is *ipfs.IPFS) (*config, error) {
-	m, err := ipfs.FromCid(vCfgCid, is)
+	m, err := ipfs.File.Get(vCfgCid, is)
 	if err != nil {
 		return nil, util.NewError("from vCfgCid error")
 	}
@@ -218,9 +208,7 @@ func (cfg config) Marshal() []byte {
 		ManPubKey      []byte
 		VParam         VoteParams
 		VType          VotingType
-		ChmCid         string
 		NimCid         string
-		IvmCid         string
 		VerfMapName string
 		ResMapName     string
 		UserDataLabels []string
@@ -234,9 +222,7 @@ func (cfg config) Marshal() []byte {
 		ManPubKey:      cfg.manPubKey.Marshal(),
 		VParam:         cfg.vParam,
 		VType:          cfg.vType,
-		ChmCid:         cfg.chmCid,
 		NimCid:         cfg.nimCid,
-		IvmCid:         cfg.ivmCid,
 		VerfMapName: cfg.verfMapName,
 		ResMapName:     cfg.resMapName,
 		UserDataLabels: cfg.userDataLabels,
@@ -255,9 +241,7 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		ManPubKey      []byte
 		VParam         VoteParams
 		VType          VotingType
-		ChmCid         string
 		NimCid         string
-		IvmCid         string
 		VerfMapName string
 		ResMapName     string
 		UserDataLabels []string
@@ -281,9 +265,7 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		manPubKey:      pub,
 		vParam:         mCfg.VParam,
 		vType:          mCfg.VType,
-		chmCid:         mCfg.ChmCid,
 		nimCid:         mCfg.NimCid,
-		ivmCid:         mCfg.IvmCid,
 		verfMapName: mCfg.VerfMapName,
 		resMapName:     mCfg.ResMapName,
 		userDataLabels: mCfg.UserDataLabels,

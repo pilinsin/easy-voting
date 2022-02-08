@@ -105,11 +105,21 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 		return nil, util.NewError("uhHash is already registrated")
 	}
 
-	userEncKeyPair := crypto.NewPubEncryptKeyPair()
+	var userEncKeyPair IPubEncryptKeyPair
+	for{
+		userEncKeyPair = crypto.NewPubEncryptKeyPair()
+		if ng := hbm.ContainRBox(userEncKeyPair.Public()); !ng{break}
+	}
 	userSignKeyPair := crypto.NewSignKeyPair()
 	rb := rutil.NewRegistrationBox(userEncKeyPair.Public())
 
-	id := rutil.NewUserIdentity(userHash, userEncKeyPair.Private(), userSignKeyPair.Sign(), userSignKeyPair.Verify())
+	id := rutil.NewUserIdentity(
+		userHash,
+		userEncKeyPair.Public(),
+		userEncKeyPair.Private(),
+		userSignKeyPair.Sign(),
+		userSignKeyPair.Verify(),
+	)
 	uInfo := rutil.NewUserInfo(userHash, rb)
 
 	encInfo, err := r.rPubKey.Encrypt(uInfo.Marshal())

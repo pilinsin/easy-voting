@@ -1,9 +1,9 @@
 package votingutil
 
 import (
-	"github.com/pilinsin/easy-voting/ipfs"
-	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
+	"github.com/pilinsin/ipfs-util"
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/util/crypto"
 )
 
 type ManIdentity struct {

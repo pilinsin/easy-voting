@@ -1,7 +1,7 @@
 package votingutil
 
 import(
-	"github.com/pilinsin/easy-voting/util"
+	"github.com/pilinsin/util"
 )
 
 type result struct{
@@ -20,4 +20,14 @@ func (r *result) Marshal() []byte{
 	}{r.res, r.nVoted, r.nVoters}
 	m, _ := util.Marshal(mResult)
 	return m
+}
+func UnmarshalResult(m []byte) (*result, error){
+	mResult := &struct{
+		Res map[string]map[string]int
+		NVoted int
+		NVoters int
+	}{}
+	err := util.Unmarshal(m, mResult)
+
+	return &result{mResult.Res, mResult.NVoted, mResult.NVoters}, err
 }

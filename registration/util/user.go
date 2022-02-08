@@ -40,16 +40,20 @@ func UnmarshalRegistrationBox(m []byte) (*registrationBox, error) {
 
 type UserIdentity struct {
 	userHash    UserHash
+	userPubKey crypto.IPubKey
 	userPriKey  crypto.IPriKey
 	userSignKey crypto.ISignKey
 	userVerfKey crypto.IVerfKey
 }
 
-func NewUserIdentity(uhHash UserHash, pri crypto.IPriKey, sign crypto.ISignKey, verf crypto.IVerfKey) *UserIdentity {
-	return &UserIdentity{uhHash, pri, sign, verf}
+func NewUserIdentity(uhHash UserHash, pub crypto.IPubKey, pri crypto.IPriKey, sign crypto.ISignKey, verf crypto.IVerfKey) *UserIdentity {
+	return &UserIdentity{uhHash, pub, pri, sign, verf}
 }
 func (ui UserIdentity) UserHash() UserHash {
 	return ui.userHash
+}
+func (ui UserIdentity) Public() crypto.IPubKey {
+	return ui.userPubKey
 }
 func (ui UserIdentity) Private() crypto.IPriKey {
 	return ui.userPriKey
@@ -63,17 +67,18 @@ func (ui UserIdentity) Verf() crypto.IVerfKey {
 func (ui UserIdentity) Marshal() []byte {
 	mui := &struct {
 		UserHash    UserHash
+		UserPubKey  []byte
 		UserPriKey  []byte
 		UserSignKey []byte
 		UserVerfKey []byte
-	}{ui.userHash, ui.userPriKey.Marshal(), ui.userSignKey.Marshal(), ui.userVerfKey.Marshal()}
+	}{ui.userHash, ui.userPubKey.Marshal(), ui.userPriKey.Marshal(), ui.userSignKey.Marshal(), ui.userVerfKey.Marshal()}
 	m, _ := util.Marshal(mui)
 	return m
 }
 func (ui *UserIdentity) Unmarshal(m []byte) error {
 	mui := &struct {
 		UserHash    UserHash
-		RKeyFile    []byte
+		UserPubKey  []byte
 		UserPriKey  []byte
 		UserSignKey []byte
 		UserVerfKey []byte
@@ -82,6 +87,10 @@ func (ui *UserIdentity) Unmarshal(m []byte) error {
 		return err
 	}
 
+	pubKey, err := crypto.UnmarshalPubKey(mui.UserPubKey)
+	if err != nil {
+		return err
+	}
 	priKey, err := crypto.UnmarshalPriKey(mui.UserPriKey)
 	if err != nil {
 		return err
@@ -96,6 +105,7 @@ func (ui *UserIdentity) Unmarshal(m []byte) error {
 	}
 
 	ui.userHash = mui.UserHash
+	ui.userPubKey = pubKey
 	ui.userPriKey = priKey
 	ui.userSignKey = signKey
 	ui.userVerfKey = verfKey

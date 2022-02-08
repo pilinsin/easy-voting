@@ -61,6 +61,12 @@ func (hbm hashBoxMap) ContainHash(hash UhHash, is *ipfs.IPFS) (*registrationBox,
 		return rBox, err == nil
 	}
 }
+func (hbm hashBoxMap) ContainPubKey(pub crypto.IPubKey, is *ipfs.IPFS) bool{
+	for rBox := range hbm.Next(r.is){
+		if rBox.Public().Equals(pub){return true}
+	}
+	return false
+}
 func (hbm *hashBoxMap) Append(uInfo *UserInfo, salt, uhmCid string, is *ipfs.IPFS) error{
 	uhm, err := UhHashMapFromCid(uhmCid, is)
 	if err != nil{return err}
@@ -113,10 +119,7 @@ func (hbm hashBoxMap) VerifyUserIdentity(identity *UserIdentity, salt string, is
 		fmt.Println("verifyUserIdentity: not contain uhHash")
 		return false
 	} else {
-		mes := "test message"
-		enc, err := rBox.Public().Encrypt([]byte(mes))
-		dec, err2 := identity.Private().Decrypt(enc)
-		return (err == nil) && (err2 == nil) && mes == string(dec) 
+		return rBox.Public().Equals(identity.Public())
 	}
 }
 func (hbm hashBoxMap) Marshal() []byte {

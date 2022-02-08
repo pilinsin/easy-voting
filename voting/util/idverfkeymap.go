@@ -3,18 +3,20 @@ package votingutil
 import (
 	"fmt"
 
-	"github.com/pilinsin/easy-voting/ipfs"
-	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
+	"github.com/pilinsin/ipfs-util"
+	scmap "github.com/pilinsin/ipfs-util/scalablemap"
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/util/crypto"
 )
 
 type idVerfKeyMap struct {
-	sm *ipfs.ScalableMap
+	sm ipfs.IScalableMap
+	tInfo *util.TimeInfo
 }
-
-func NewIdVerfKeyMap(capacity int) *idVerfKeyMap {
+func NewIdVerfKeyMap(capacity int, tInfo *util.TimeInfo) *idVerfKeyMap {
 	return &idVerfKeyMap{
-		sm: ipfs.NewScalableMap(capacity),
+		sm: ipfs.NewScalableMap("const", capacity),
+		tInfo: tInfo,
 	}
 }
 func (ivm idVerfKeyMap) ContainHash(hash UidVidHash, is *ipfs.IPFS) (crypto.IVerfKey, bool) {
@@ -22,26 +24,16 @@ func (ivm idVerfKeyMap) ContainHash(hash UidVidHash, is *ipfs.IPFS) (crypto.IVer
 		return nil, false
 	} else {
 		verfKey, err := crypto.UnmarshalVerfKey(m)
-		if err != nil {
-			return nil, false
-		} else {
-			return verfKey, true
-		}
+		return verfKey, err == nil
 	}
 }
-func (ivm *idVerfKeyMap) Append(hash UidVidHash, verfKey crypto.IVerfKey, votingMap *idVotingMap, manPriKey crypto.IPriKey, is *ipfs.IPFS) error{
-	vBox, ok := votingMap.ContainHash(hash, is)
-	if !ok{
-		err := util.NewError("idVerfKeyMap.Append err: not contain hash")
-		fmt.Println(err)
-		return err
+func (ivm *idVerfKeyMap) Append(hash UidVidHash, verfKey crypto.IVerfKey, mvb []byte, is *ipfs.IPFS) error{
+	vb, err := UnmarshalVotingBox(mvb)
+	if err != nil{return err}
+	if ok := vb.WithinTime(ivm.tInfo); !ok{
+		return util.NewError("votingBox.t is invalid")
 	}
-	sv, err := vBox.GetVote(manPriKey)
-	if err != nil{
-		fmt.Println("idVerfKeyMap.Append err:", err)
-		return err
-	}
-	if ok := sv.Verify(verfKey); ok{
+	if ok, err := vb.Verify(verfKey); ok && err == nil{
 		ivm.sm.Append(hash, verfKey.Marshal(), is)
 		return nil
 	}else{
@@ -49,14 +41,6 @@ func (ivm *idVerfKeyMap) Append(hash UidVidHash, verfKey crypto.IVerfKey, voting
 		fmt.Println(err)
 		return err
 	}
-}
-func (ivm idVerfKeyMap)VerifyIds(votingMap *idVotingMap, is *ipfs.IPFS) bool{
-	for kv := range votingMap.NextKeyValue(is){
-		if _, ok := ivm.ContainHash(kv.Key(), is); !ok{
-			return false
-		}
-	}
-	return true
 }
 //Verify no falsification
 func (ivm idVerfKeyMap) VerifyCid(cid string, is *ipfs.IPFS) bool {
@@ -74,14 +58,11 @@ func (ivm idVerfKeyMap) Marshal() []byte {
 	return ivm.sm.Marshal()
 }
 func UnmarshalIdVerfKeyMap(m []byte) (*idVerfKeyMap, error) {
-	sm := &ipfs.ScalableMap{}
-	if err := sm.Unmarshal(m); err != nil {
-		return nil, err
-	}
-	return &idVerfKeyMap{sm}, nil
+	sm, err := scmap.UnmarshalScalableMap("const", m)
+	return &idVerfKeyMap{sm}, err
 }
 func IdVerfKeyMapFromName(ivmName string, is *ipfs.IPFS) (*idVerfKeyMap, error){
-	mivm, err := ipfs.FromName(ivmName, is)
+	mivm, err := ipfs.Name.Get(ivmName, is)
 	if err != nil {
 		return nil, err
 	}
