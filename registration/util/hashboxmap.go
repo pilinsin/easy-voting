@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pilinsin/ipfs-util"
+	scmap "github.com/pilinsin/ipfs-util/scalablemap"
 	"github.com/pilinsin/util"
 	"github.com/pilinsin/util/crypto"
 )
@@ -20,11 +21,11 @@ func (kv keyValue) Value() string {
 }
 
 type hashBoxMap struct {
-	sm ipfs.IScalableMap
+	sm scmap.IScalableMap
 }
 func NewHashBoxMap(capacity int) *hashBoxMap {
 	return &hashBoxMap{
-		sm: ipfs.NewScalableMap("const", capacity),
+		sm: scmap.NewScalableMap("const", capacity),
 	}
 }
 func (hbm hashBoxMap) Next(is *ipfs.IPFS) <-chan *registrationBox {
@@ -126,7 +127,7 @@ func (hbm hashBoxMap) Marshal() []byte {
 	return hbm.sm.Marshal()
 }
 func UnmarshalHashBoxMap(m []byte) (*hashBoxMap, error) {
-	sm, err := ipfs.UnmarshalScalableMap("const", m)
+	sm, err := scmap.UnmarshalScalableMap("const", m)
 	return &hashBoxMap{sm}, err
 }
 func HashBoxMapFromName(hnmName string, is *ipfs.IPFS) (*hashBoxMap, error) {

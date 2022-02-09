@@ -89,7 +89,8 @@ type config struct {
 	manPubKey      crypto.IPubKey
 	vParam         VoteParams
 	vType          VotingType
-	nimCid         string
+	uhmCid string
+	pimCid         string
 	verfMapName string
 	resMapName     string
 	userDataLabels []string
@@ -140,22 +141,24 @@ func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypt
 	if err != nil {
 		return nil, util.AddError(err, "hnm unmarshal error")
 	}
-	nim := NewNameIdMap(100000, cfg.votingID)
-	uidCheckMap := scmap.NewScalableMap("const", 100000)
+	uhm := NewUvhHashMap(100000, is)
+	pim := NewNameIdMap(100000, cfg.votingID)
 	for kv := range hbm.NextKeyValue(is) {
 		var uid string
-		var uvHash UidVidHash
+		var uvhHash UvhHash
 		for {
 			uid = util.GenUniqueID(30, 6)
-			uvHash = NewUidVidHash(uid, cfg.votingID)
-			if _, ok := uidCheckMap.ContainHash(uvHash, is); !ok {
+			uvHash := NewUidVidHash(uid, cfg.votingID)
+			uvhHash = NewUvhHash(uvHash, cfg.votingID)
+			if _, exist := uhm.ContainHash(uvhHash, is); !exist {
 				break
 			}
 		}
-		nim.Append(kv.Value().Marshal(), uid, is)
-		uidCheckMap.Append(uvHash, nil, is)
+		uhm.append(uvhHash, nil, is)
+		pim.append(kv.Value().Public(), uid, is)
 	}
-	cfg.nimCid = ipfs.File.Add(nim.Marshal(), is)
+	cfg.uhmCid = ipfs.File.Add(uhm.Marshal(), is)
+	cfg.pimCid = ipfs.File.Add(pim.Marshal(), is)
 	idVerfKeyMap := NewIdVerfKeyMap(100000)
 	cfg.verfMapName = ipfs.Name.PublishWithKeyFile(idVerfKeyMap.Marshal(), verfMapKeyFile, is)
 	return cfg, nil
@@ -169,7 +172,8 @@ func (cfg config) Candidates() []Candidate  { return cfg.candidates }
 func (cfg config) ManPubKey() crypto.IPubKey { return cfg.manPubKey }
 func (cfg config) VParam() VoteParams       { return cfg.vParam }
 func (cfg config) VType() VotingType        { return cfg.vType }
-func (cfg config) NimCid() string          { return cfg.nimCid }
+func (cfg config) UhmCid() string          { return cfg.uhmCid }
+func (cfg config) PimCid() string          { return cfg.pimCid }
 func (cfg config) VerfMapName() string { return cfg.verfMapName}
 func (cfg config) ResMapName() string       { return cfg.resMapName }
 func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
@@ -208,7 +212,8 @@ func (cfg config) Marshal() []byte {
 		ManPubKey      []byte
 		VParam         VoteParams
 		VType          VotingType
-		NimCid         string
+		UhmCid string
+		PimCid         string
 		VerfMapName string
 		ResMapName     string
 		UserDataLabels []string
@@ -222,7 +227,8 @@ func (cfg config) Marshal() []byte {
 		ManPubKey:      cfg.manPubKey.Marshal(),
 		VParam:         cfg.vParam,
 		VType:          cfg.vType,
-		NimCid:         cfg.nimCid,
+		UhmCid: cfg.uhmCid,
+		PimCid:         cfg.pimCid,
 		VerfMapName: cfg.verfMapName,
 		ResMapName:     cfg.resMapName,
 		UserDataLabels: cfg.userDataLabels,
@@ -241,7 +247,8 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		ManPubKey      []byte
 		VParam         VoteParams
 		VType          VotingType
-		NimCid         string
+		UhmCid string
+		PimCid         string
 		VerfMapName string
 		ResMapName     string
 		UserDataLabels []string
@@ -265,7 +272,8 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		manPubKey:      pub,
 		vParam:         mCfg.VParam,
 		vType:          mCfg.VType,
-		nimCid:         mCfg.NimCid,
+		uhmCid: mCfg.UhmCid,
+		pimCid:         mCfg.PimCid,
 		verfMapName: mCfg.VerfMapName,
 		resMapName:     mCfg.ResMapName,
 		userDataLabels: mCfg.UserDataLabels,

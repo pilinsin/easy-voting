@@ -108,7 +108,7 @@ func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, erro
 	var userEncKeyPair IPubEncryptKeyPair
 	for{
 		userEncKeyPair = crypto.NewPubEncryptKeyPair()
-		if ng := hbm.ContainRBox(userEncKeyPair.Public()); !ng{break}
+		if ng := hbm.ContainPubKey(userEncKeyPair.Public()); !ng{break}
 	}
 	userSignKeyPair := crypto.NewSignKeyPair()
 	rb := rutil.NewRegistrationBox(userEncKeyPair.Public())
