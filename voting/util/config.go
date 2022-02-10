@@ -89,10 +89,11 @@ type config struct {
 	manPubKey      crypto.IPubKey
 	vParam         VoteParams
 	vType          VotingType
+	hbmCid string
 	uhmCid string
 	pimCid         string
 	verfMapName string
-	resMapName     string
+	resBoxName     string
 	userDataLabels []string
 }
 func NewConfigs(title, begin, end, loc, rCfgCid string, cands []Candidate, vParam VoteParams, vType VotingType, is *ipfs.IPFS) (*ManIdentity, *config, error) {
@@ -110,11 +111,11 @@ func NewConfigs(title, begin, end, loc, rCfgCid string, cands []Candidate, vPara
 	mId := &ManIdentity{
 		manPriKey:     pri,
 		verfMapKeyFile: verfKf,
-		resMapKeyFile: resKf,
+		resBoxKeyFile: resKf,
 	}
 	return mId, vCfg, nil
 }
-func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypto.IPubKey, vParam VoteParams, vType VotingType, rCfgCid string, verfMapKeyFile *ipfs.KeyFile, resMapName string, is *ipfs.IPFS) (*config, error) {
+func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypto.IPubKey, vParam VoteParams, vType VotingType, rCfgCid string, verfMapKeyFile *ipfs.KeyFile, resBoxName string, is *ipfs.IPFS) (*config, error) {
 	rCfg, err := rutil.ConfigFromCid(rCfgCid, is)
 	if err != nil {
 		return nil, util.AddError(err, "invalid rCfgCid")
@@ -134,7 +135,8 @@ func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypt
 	cfg.vType = vType
 	cfg.salt1 = rCfg.Salt1()
 	cfg.salt2 = rCfg.Salt2()
-	cfg.resMapName = resMapName
+	cfg.hbmCid = ipfs.Name.GetCid(rCfg.HbmIpnsName(), is)
+	cfg.resBoxName = resBoxName
 	cfg.userDataLabels = rCfg.UserDataLabels()
 
 	hbm, err = rutil.HashBoxMapFromName(rCfg.HbmIpnsName(), is)
@@ -172,10 +174,11 @@ func (cfg config) Candidates() []Candidate  { return cfg.candidates }
 func (cfg config) ManPubKey() crypto.IPubKey { return cfg.manPubKey }
 func (cfg config) VParam() VoteParams       { return cfg.vParam }
 func (cfg config) VType() VotingType        { return cfg.vType }
+func (cfg config) HbmCid() string          { return cfg.hbmCid }
 func (cfg config) UhmCid() string          { return cfg.uhmCid }
 func (cfg config) PimCid() string          { return cfg.pimCid }
 func (cfg config) VerfMapName() string { return cfg.verfMapName}
-func (cfg config) ResMapName() string       { return cfg.resMapName }
+func (cfg config) ResBoxName() string       { return cfg.resBoxName }
 func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
 
 func (cfg config) IsCompatible(mi *ManIdentity) bool{
@@ -186,7 +189,7 @@ func (cfg config) IsCompatible(mi *ManIdentity) bool{
 	verfName, vErr := mi.verfMapKeyFile.Name()
 	vnm := cfg.verfMapName == verfName
 	resName, rErr := mi.resMapKeyFile.Name()
-	rnm := cfg.resMapName == resName
+	rnm := cfg.resBoxName == resName
 	return pub && vnm && (vErr == nil) && rnm && (rErr == nil)
 }
 
@@ -212,10 +215,11 @@ func (cfg config) Marshal() []byte {
 		ManPubKey      []byte
 		VParam         VoteParams
 		VType          VotingType
+		HbmCid string
 		UhmCid string
 		PimCid         string
 		VerfMapName string
-		ResMapName     string
+		ResBoxName     string
 		UserDataLabels []string
 	}{
 		Title:          cfg.title,
@@ -227,10 +231,11 @@ func (cfg config) Marshal() []byte {
 		ManPubKey:      cfg.manPubKey.Marshal(),
 		VParam:         cfg.vParam,
 		VType:          cfg.vType,
+		HbmCid: cfg.hbmCid,
 		UhmCid: cfg.uhmCid,
 		PimCid:         cfg.pimCid,
 		VerfMapName: cfg.verfMapName,
-		ResMapName:     cfg.resMapName,
+		ResBoxName:     cfg.resBoxName,
 		UserDataLabels: cfg.userDataLabels,
 	}
 	m, _ := util.Marshal(mCfg)
@@ -247,10 +252,11 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		ManPubKey      []byte
 		VParam         VoteParams
 		VType          VotingType
+		HbmCid string
 		UhmCid string
 		PimCid         string
 		VerfMapName string
-		ResMapName     string
+		ResBoxName     string
 		UserDataLabels []string
 	}{}
 	err := util.Unmarshal(m, mCfg)
@@ -272,10 +278,11 @@ func UnmarshalConfig(m []byte) (*config, error) {
 		manPubKey:      pub,
 		vParam:         mCfg.VParam,
 		vType:          mCfg.VType,
+		hbmCid: mCfg.HbmCid,
 		uhmCid: mCfg.UhmCid,
 		pimCid:         mCfg.PimCid,
 		verfMapName: mCfg.VerfMapName,
-		resMapName:     mCfg.ResMapName,
+		resBoxName:     mCfg.ResBoxName,
 		userDataLabels: mCfg.UserDataLabels,
 	}
 	return cfg, nil

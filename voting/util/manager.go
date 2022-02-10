@@ -9,17 +9,17 @@ import (
 type ManIdentity struct {
 	manPriKey     crypto.IPriKey
 	verfMapKeyFile *ipfs.KeyFile
-	resMapKeyFile *ipfs.KeyFile
+	resBoxKeyFile *ipfs.KeyFile
 }
 
 func (mi ManIdentity) Private() crypto.IPriKey { return mi.manPriKey }
 func (mi ManIdentity) VerfMapKeyFile() *ipfs.KeyFile { return mi.verfMapKeyFile }
-func (mi ManIdentity) ResMapKeyFile() *ipfs.KeyFile { return mi.resMapKeyFile }
+func (mi ManIdentity) ResBoxKeyFile() *ipfs.KeyFile { return mi.resBoxKeyFile }
 
 func (mi ManIdentity) Marshal() []byte {
 	mManId := &struct {
 		Pri, VerfKf, ResKf []byte
-	}{mi.manPriKey.Marshal(), mi.verfMapKeyFile.Marshal(), mi.resMapKeyFile.Marshal()}
+	}{mi.manPriKey.Marshal(), mi.verfMapKeyFile.Marshal(), mi.resBoxKeyFile.Marshal()}
 	m, _ := util.Marshal(mManId)
 	return m
 }
@@ -44,6 +44,6 @@ func (mi *ManIdentity) Unmarshal(m []byte) error {
 
 	mi.manPriKey = priKey
 	mi.verfMapKeyFile = verfKf
-	mi.resMapKeyFile = resKf
+	mi.resBoxKeyFile = resKf
 	return nil
 }

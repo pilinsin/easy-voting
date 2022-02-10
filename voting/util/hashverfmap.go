@@ -26,7 +26,7 @@ func (hvkm *hashVerfMap) Append(uInfo *UserInfo, uhm *uvhHashMap, is *ipfs.IPFS)
 	if exist := uhm.ContainHash(uvhHash, is); exist{return util.NewError("already appended")}
 	return hvkm.sm.Append(uvhHash, uInfo.Verify().Marshal(), is)
 }
-func (hvkm hashVerfMap) ContainHash(hash UidVidHash, is *ipfs.IPFS) (crypto.IVerfKey, bool) {
+func (hvkm hashVerfMap) ContainHash(hash UvhHash, is *ipfs.IPFS) (crypto.IVerfKey, bool) {
 	if m, ok := hvkm.sm.ContainKey(hash, is); !ok {
 		return nil, false
 	} else {
@@ -39,7 +39,8 @@ func (hvkm hashVerfMap) VerifyCid(cid string, is *ipfs.IPFS) bool {
 	return hvkm.sm.ContainCid(cid, is)
 }
 func (hvkm hashVerfMap) VerifyUserInfo(uInfo *UserInfo, is *ipfs.IPFS) bool {
-	if verfKey, ok := hvkm.ContainHash(uInfo.UvHash(), is); !ok {
+	uvhHash := NewUvhHash(uInfo.UvHash(), hvkm.vid)
+	if verfKey, ok := hvkm.ContainHash(uvhHash, is); !ok {
 		fmt.Println("verifyUserIdentity: not contain uhHash")
 		return false
 	} else {

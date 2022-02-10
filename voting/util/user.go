@@ -40,3 +40,35 @@ func (ui *UserInfo) Unmarshal(m []byte) error{
 	return nil
 }
 
+
+type VoteInfo struct{
+	uvHash UidVidHash
+	vb *votingBox
+}
+func (vi VoteInfo) UvHash() UidVidHash {
+	return vi.uvHash
+}
+func (vi VoteInfo) VotingBox() *votingBox {
+	return vi.vb
+}
+func (vi *VoteInfo) marshal() []byte{
+	mvi := &struct{
+		H UidVidHash
+		M []byte
+	}{vi.uvhHash, vi.vb.Marshal()}
+	m, _ := util.Marshal(mvi)
+	return m
+}
+func (vi *VoteInfo) unmarshal(m []byte) error{
+	mvi:= &struct{
+		H UidVidHash
+		M []byte
+	}{}
+	if err := util.Unmarshal(m, mvi); err != nil{return err}
+	vb, err := UnmarshalVotingBox(mvi.M)
+	if err != nil{return err}
+
+	vi.uvHash = mvi.H
+	vi.vb = vb
+	return nil
+}

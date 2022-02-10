@@ -3,30 +3,34 @@ package interfacevoting
 import (
 	"fyne.io/fyne/v2"
 
+	"github.com/pilinsin/util/crypto"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type iBaseVoting interface {
 	Close()
 	VerifyIdentity() bool
-	VerifyIdVerfKeyMap() bool
-	VerifyResultMap() (bool, error)
+	VerifyHashVerfMap() bool
+	VerifyMyResult() (bool, error)
+	VerifyManResult() (bool, error)
 }
 type IVoting interface {
 	iBaseVoting
 	NewVotingForm(ngs []string) IVotingForm
 	Type() string
 	Vote(data vutil.VoteInt) error
-	GetMyVote() (string, error)
-	Count() (string, error)
+	CountMyResult(manPriKey crypto.IPriKey) (string, error)
+	CountManResult(manPriKey crypto.IPriKey) (string, error)
 }
 
 type IManager interface {
+	Load() error
 	Close()
 	IsValidUser(userData ...string) bool
 	Registrate() error
-	GetResultMap() error
-	VerifyResultMap() (bool, error)
+	Log()
+	UploadResultBox() error
+	VerifyResultBox() (bool, error)
 }
 
 type IVotingForm interface {

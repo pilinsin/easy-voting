@@ -20,7 +20,7 @@ func (uhm uvhHashMap) Len() int {
 func (uhm *uvhHashMap) append(hash UvhHash, is *ipfs.IPFS) error{
 	return uhm.sm.Append(hash, nil, is)
 }
-func (uhm uvhHashMap) ContainHash(hash UhHash, is *ipfs.IPFS) bool {
+func (uhm uvhHashMap) ContainHash(hash UvhHash, is *ipfs.IPFS) bool {
 	if ok := uhm.sm.Len() == 0; ok {
 		return true
 	}
@@ -30,14 +30,14 @@ func (uhm uvhHashMap) ContainHash(hash UhHash, is *ipfs.IPFS) bool {
 func (uhm uvhHashMap) Marshal() []byte {
 	return uhm.sm.Marshal()
 }
-func UnmarshalUhHashMap(m []byte) (*uvhHashMap, error) {
+func UnmarshalUvhHashMap(m []byte) (*uvhHashMap, error) {
 	sm, err := scmap.UnmarshalScalableMap("const", m)
 	return &uvhHashMap{sm}, err
 }
-func UhHashMapFromCid(uhmCid string, is *ipfs.IPFS) (*uvhHashMap, error) {
+func UvhHashMapFromCid(uhmCid string, is *ipfs.IPFS) (*uvhHashMap, error) {
 	muhm, err := ipfs.File.Get(uhmCid, is)
 	if err != nil {
 		return nil, err
 	}
-	return UnmarshalUhHashMap(muhm)
+	return UnmarshalUvhHashMap(muhm)
 }
