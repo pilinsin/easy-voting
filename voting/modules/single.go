@@ -5,11 +5,11 @@ import (
 
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/ipfs-util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 type singleVoting struct {
@@ -85,16 +85,6 @@ func (sv *singleVoting) Vote(data vutil.VoteInt) error {
 		return util.NewError("invalid vote")
 	}
 }
-func (sv singleVoting) GetMyVote() (string, error) {
-	vi, err := sv.baseGetMyVote()
-	if err != nil {
-		return "", err
-	} else if vi != nil && sv.isValidData(*vi) {
-		return ipfs.ToCidWithAdd(vi.Marshal(), sv.is), nil
-	} else {
-		return "", util.NewError("invalid vote")
-	}
-}
 
 func (sv singleVoting) newResult() map[string]map[string]int {
 	result := make(map[string]map[string]int, len(sv.cands))
@@ -111,10 +101,17 @@ func (sv singleVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[st
 	}
 	return result
 }
-func (sv singleVoting) Count() (string, error) {
+
+func (sv singleVoting) CountMyResult() (string, error){
+	return sv.countResult(sv.baseGetMyVotes)
+}
+func (sv singleVoting) CountManResult() (string, error){
+	return sv.countResult(sv.baseGetVotes)
+}
+func (sv singleVoting) countResult(gvf viface.GetVotesFunc) (string, error) {
 	result := sv.newResult()
 
-	viChan, nVoters, err := sv.baseGetVotes()
+	viChan, nVoters, err := gvf()
 	if err != nil {
 		return "", err
 	}
@@ -127,5 +124,5 @@ func (sv singleVoting) Count() (string, error) {
 		}
 	}
 	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
-	return ipfs.ToCidWithAdd(m, sv.is), nil
+	return ipfs.File.Add(m, sv.is), nil
 }

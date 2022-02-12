@@ -8,11 +8,11 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/ipfs-util"
+	"github.com/pilinsin/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 type cumulativeVoting struct {
@@ -151,10 +151,16 @@ func (cv cumulativeVoting) addVote2Result(vi vutil.VoteInt, result map[string]ma
 	}
 	return result
 }
-func (cv cumulativeVoting) Count() (string, error) {
+func (cv cumulativeVoting) CountMyResult() (string, error){
+	return cv.countResult(cv.baseGetMyVotes)
+}
+func (cv cumulativeVoting) CountManResult() (string, error){
+	return cv.countResult(cv.baseGetVotes)
+}
+func (cv cumulativeVoting) countResult(gvf viface.GetVotesFunc) (string, error) {
 	result := cv.newResult()
 
-	viChan, nVoters, err := cv.baseGetVotes()
+	viChan, nVoters, err := gvf()
 	if err != nil {
 		return "", err
 	}
@@ -167,5 +173,6 @@ func (cv cumulativeVoting) Count() (string, error) {
 		}
 	}
 	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
-	return ipfs.ToCidWithAdd(m, cv.is), nil
+	return ipfs.File.Add(m, cv.is), nil
 }
+

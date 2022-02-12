@@ -8,11 +8,11 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/ipfs-util"
+	"github.com/pilinsin/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 type rangeVoting struct {
@@ -138,10 +138,16 @@ func (rv rangeVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[str
 	}
 	return result
 }
-func (rv rangeVoting) Count() (string, error) {
+func (rv rangeVoting) CountMyResult() (string, error){
+	return rv.countResult(rv.baseGetMyVotes)
+}
+func (rv rangeVoting) CountManResult() (string, error){
+	return rv.countResult(rv.baseGetVotes)
+}
+func (rv rangeVoting) countResult(gvf viface.GetVotesFunc) (string, error) {
 	result := rv.newResult()
 
-	viChan, nVoters, err := rv.baseGetVotes()
+	viChan, nVoters, err := gvf()
 	if err != nil {
 		return "", err
 	}
@@ -154,5 +160,6 @@ func (rv rangeVoting) Count() (string, error) {
 		}
 	}
 	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
-	return ipfs.ToCidWithAdd(m, rv.is), nil
+	return ipfs.File.Add(m, rv.is), nil
 }
+

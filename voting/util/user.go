@@ -45,6 +45,9 @@ type VoteInfo struct{
 	uvHash UidVidHash
 	vb *votingBox
 }
+func NewVoteInfo(uvHash UidVidHash, vb *votingBox) *VoteInfo{
+	return &VoteInfo{uvHash, vb}
+}
 func (vi VoteInfo) UvHash() UidVidHash {
 	return vi.uvHash
 }

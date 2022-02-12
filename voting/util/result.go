@@ -12,6 +12,12 @@ type resultBox struct{
 func NewResultBox(hvtm *HashVoteMap, manPriKey crypto.IPriKey) *resultBox{
 	return &resultBox{hvtm, manPriKey}
 }
+func (res resultBox) HashVoteMap() *HashVoteMap{
+	return res.hvtm
+}
+func (res resultBox) ManPriKey() crypto.IPriKey{
+	return res.manPriKey
+}
 func (res *resultBox) Marshal() []byte{
 	mRes := &struct{
 		M []byte

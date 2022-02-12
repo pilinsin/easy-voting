@@ -51,6 +51,9 @@ func NewHashVoteMap(capacity int, tInfo *util.TimeInfo, vid string) *HashVoteMap
 		vid: vid,
 	}
 }
+func (hvtm HashVoteMap) Len() int{
+	return hvtm.sm.Len()
+}
 func (hvtm HashVoteMap) Next(is *ipfs.IPFS) <-chan *votingBox {
 	ch := make(chan *votingBox)
 	go func() {
@@ -85,8 +88,8 @@ func (hvtm *HashVoteMap) Append(vInfo *VoteInfo, hvkm *hashVerfMap, is *ipfs.IPF
 	if ok, err := vb.Verify(verfKey); !ok || err != nil{return util.NewError("invalid vote")}
 	if ok := vb.withinTime(hvtm.tInfo); !ok{return util.NewError("invalid vote")}
 	
-	nvb := &namedVBox{hash, vb}
-	return hvtm.sm.Append(hash, nvb.marshal(), is)
+	nvb := &namedVBox{uvhHash, vb}
+	return hvtm.sm.Append(uvhHash, nvb.marshal(), is)
 }
 func (hvtm HashVoteMap) ContainHash(hash UvhHash, is *ipfs.IPFS) (*votingBox, bool) {
 	if mnvb, ok := hvtm.sm.ContainKey(hash, is); !ok {
