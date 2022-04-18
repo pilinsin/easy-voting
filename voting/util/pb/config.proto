@@ -1,0 +1,38 @@
+syntax = "proto3";
+package pb;
+option go_package = "./";
+
+message Config{
+	string 		title 	= 1;
+	TimeInfo 	time 	= 2;
+	string		salt1 	= 3;
+	bytes		salt2 	= 4;
+	repeated Candidate candidates = 5;
+	string 		manPid	= 6;
+	bytes 		pubKey 	= 7;
+	Params 		params 	= 8;
+	int32 		type 	= 9;
+	string 		hkmAddr = 10;
+	string 		ivmAddr = 11;
+	repeated string labels = 12;
+}
+
+message TimeInfo{
+	string	begin	= 1;
+	string	end		= 2;
+	string	loc		= 3;
+}
+
+message Candidate{
+	string 	name 	= 1;
+	string	group	= 2;
+	string 	url		= 3;
+	bytes	image 	= 4;
+	string	imgName = 5;
+}
+
+message Params{
+	int32	min 	= 1;
+	int32	max		= 2;
+	int32	total	= 3;
+}

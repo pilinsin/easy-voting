@@ -1,0 +1,11 @@
+syntax = "proto3";
+package pb;
+option go_package = "./";
+
+message ManIdentity{
+	bytes	priv 	 = 1;
+	bytes	sign 	 = 2;
+	bytes 	verf 	 = 3;
+	string 	ipfsDir	 = 4;
+	string 	storeDir = 5;
+}

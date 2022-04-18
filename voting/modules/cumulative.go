@@ -8,11 +8,10 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 type cumulativeVoting struct {
@@ -21,13 +20,12 @@ type cumulativeVoting struct {
 	total int
 }
 
-func NewCumulativeVoting(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPFS) viface.IVoting {
-	vCfg, _ := vutil.ConfigFromCid(vCfgCid, is)
+func NewCumulativeVoting(vCfg *vutil.Config, idStr, bAddr string) viface.IVoting {
 	cv := &cumulativeVoting{
-		min:   vCfg.VParam().Min,
-		total: vCfg.VParam().Total,
+		min:   vCfg.Params.Min,
+		total: vCfg.Params.Total,
 	}
-	cv.init(vCfgCid, identity, is)
+	cv.init(vCfg, idStr, bAddr)
 	return cv
 }
 
@@ -127,45 +125,46 @@ func (cv *cumulativeVoting) Vote(data vutil.VoteInt) error {
 		return util.NewError("invalid vote")
 	}
 }
-func (cv cumulativeVoting) GetMyVote() (string, error) {
+func (cv cumulativeVoting) GetMyVote() (*vutil.VoteInt, error) {
 	vi, err := cv.baseGetMyVote()
 	if err != nil {
-		return "", err
+		return nil, err
 	} else if vi != nil && cv.isValidData(*vi) {
-		return ipfs.ToCidWithAdd(vi.Marshal(), cv.is), nil
+		return vi, nil
 	} else {
-		return "", util.NewError("invalid vote")
+		return nil, util.NewError("invalid vote")
 	}
 }
 
-func (cv cumulativeVoting) newResult() map[string]map[string]int {
-	result := make(map[string]map[string]int, len(cv.cands))
+func (cv cumulativeVoting) newResult() vutil.VoteResult {
+	result := make(vutil.VoteResult, len(cv.cands))
 	for _, name := range cv.candNameGroups() {
 		result[name] = map[string]int{"n_votes": 0}
 	}
 	return result
 }
-func (cv cumulativeVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[string]int) map[string]map[string]int {
+func (cv cumulativeVoting) addVoteToResult(vi vutil.VoteInt, result vutil.VoteResult) vutil.VoteResult {
 	for k, v := range vi {
 		result[k]["n_votes"] += v
 	}
 	return result
 }
-func (cv cumulativeVoting) Count() (string, error) {
+
+func (cv cumulativeVoting) GetResult() (*vutil.VoteResult, int, error) {
 	result := cv.newResult()
 
 	viChan, nVoters, err := cv.baseGetVotes()
 	if err != nil {
-		return "", err
+		return nil, -1, err
 	}
 
 	nVoted := 0
 	for vi := range viChan {
 		if cv.isValidData(*vi) {
-			result = cv.addVote2Result(*vi, result)
+			result = cv.addVoteToResult(*vi, result)
 			nVoted++
 		}
 	}
-	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
-	return ipfs.ToCidWithAdd(m, cv.is), nil
+	return &result, nVoted, nil
 }
+

@@ -1,118 +1,103 @@
 package registrationutil
 
 import (
-	"github.com/pilinsin/easy-voting/ipfs"
-	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
+	"errors"
+	"path/filepath"
+
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/util/crypto"
+	i2p "github.com/pilinsin/go-libp2p-i2p"
+	pv "github.com/pilinsin/p2p-verse"
+	crdt "github.com/pilinsin/p2p-verse/crdt"
+	ipfs "github.com/pilinsin/p2p-verse/ipfs"
+	evutil "github.com/pilinsin/easy-voting/util"
+	
+	pb "github.com/pilinsin/easy-voting/registration/util/pb"
+	proto "google.golang.org/protobuf/proto"
 )
 
-type config struct {
-	title          string
-	rPubKey        crypto.IPubKey
-	salt1          string
-	salt2          string
-	chmCid         string
-	hnmIpnsName    string
-	userDataLabels []string
+type Config struct{
+	Title string
+	Salt1 string
+	Salt2 []byte
+	UhmAddr string
+	Labels []string
 }
-
-func NewConfigs(title string, userDataset <-chan []string, userDataLabels []string, is *ipfs.IPFS) (*ManIdentity, *config) {
-	encKeyPair := crypto.NewEncryptKeyPair()
-	kf := ipfs.NewKeyFile()
-	rCfg := newConfig(title, userDataset, userDataLabels, encKeyPair.Public(), is, kf)
-	mi := &ManIdentity{
-		rPriKey:    encKeyPair.Private(),
-		hnmKeyFile: kf,
-	}
-	return mi, rCfg
-}
-func newConfig(title string, userDataset <-chan []string, userDataLabels []string, rPubKey crypto.IPubKey, is *ipfs.IPFS, kf *ipfs.KeyFile) *config {
-	cfg := &config{
-		title:          title,
-		rPubKey:        rPubKey,
-		salt1:          title + util.GenUniqueID(30, 30),
-		salt2:          title + "_:_" + util.GenUniqueID(30, 30),
-		userDataLabels: userDataLabels,
+func NewConfig(title string, userDataset <-chan []string, userDataLabels []string, bAddr string) (string, string, error) {
+	salt2 := crypto.HashWithSize([]byte(title), util.GenRandomBytes(30), 32)
+	cfg := &Config{
+		Title:          title,
+		Salt1:          title + util.GenUniqueID(30, 30),
+		Salt2:          salt2,
+		Labels: userDataLabels,
 	}
 
-	chm := NewConstHashMap([]UhHash{}, 100000, is)
-	for userData := range userDataset {
-		userHash := NewUserHash(is, cfg.salt1, userData...)
-		chm.Append(NewUhHash(is, cfg.salt2, userHash), is)
-	}
-	cfg.chmCid = ipfs.ToCidWithAdd(chm.Marshal(), is)
+	uhHashes := make(chan string)
+	go func(){
+		defer close(uhHashes)
+		for userData := range userDataset {
+			userHash := NewUserHash(cfg.Salt1, userData...)
+			uhHashes <- crdt.MakeHashKey(userHash, salt2)
+		}
+	}()
 
-	hnm := NewHashNameMap(100000)
-	cfg.hnmIpnsName = ipfs.ToNameWithKeyFile(hnm.Marshal(), kf, is)
+	bootstraps := pv.AddrInfosFromString(bAddr)
+	storeDir := filepath.Join(title, pv.RandString(8))
+	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, false, bootstraps...)
+	ac, err := v.NewAccessController(pv.RandString(8), uhHashes)
+	if err != nil{return "", "", err}
+	uhm, err := v.NewStore(pv.RandString(8), "hash", &crdt.StoreOpts{Salt:salt2, Ac:ac})
+	if err != nil{return "", "", err}
+	defer uhm.Close()
 
-	return cfg
+	cfg.UhmAddr = uhm.Address()
+
+	ipfsDir := filepath.Join(title, pv.RandString(8))
+	is, err := evutil.NewIpfs(i2p.NewI2pHost, bAddr, ipfsDir, true)
+	if err != nil{return "", "", err}
+	defer is.Close()
+	cid, err := cfg.toCid(is)
+	if err != nil{return "", "", err}
+
+	mi := &ManIdentity{ipfsDir, storeDir}
+
+	return "r/"+bAddr+"/"+cid, mi.toString(), nil
 }
-func (cfg config) Title() string            { return cfg.title }
-func (cfg config) RPubKey() crypto.IPubKey   { return cfg.rPubKey }
-func (cfg config) Salt1() string            { return cfg.salt1 }
-func (cfg config) Salt2() string            { return cfg.salt2 }
-func (cfg config) ChMapCid() string         { return cfg.chmCid }
-func (cfg config) HnmIpnsName() string      { return cfg.hnmIpnsName }
-func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
 
-func (cfg config) IsCompatible(mi *ManIdentity) bool{
-	pub := cfg.rPubKey.Equals(mi.rPriKey.Public())
-	name, err := mi.hnmKeyFile.Name()
-	nm := cfg.hnmIpnsName == name
-	return pub && nm && (err == nil)
-}
-
-func ConfigFromCid(rCfgCid string, is *ipfs.IPFS) (*config, error) {
-	m, err := ipfs.FromCid(rCfgCid, is)
-	if err != nil {
-		return nil, util.NewError("from rCfgCid error")
+func (cfg Config) Marshal() []byte{
+	pbCfg := &pb.Config{
+		Title: cfg.Title,
+		Salt1: cfg.Salt1,
+		Salt2: cfg.Salt2,
+		Labels: cfg.Labels,
+		UhmAddr: cfg.UhmAddr,
 	}
-	rCfg, err := UnmarshalConfig(m)
-	if err != nil {
-		return nil, util.NewError("unmarshal rCfgCid error")
-	}
-	return rCfg, nil
-}
-func (cfg config) Marshal() []byte {
-	mCfg := &struct {
-		Title          string
-		RPubKey        []byte
-		Salt1          string
-		Salt2          string
-		ChmCid         string
-		HnmIpnsName    string
-		UserDataLabels []string
-	}{cfg.title, cfg.rPubKey.Marshal(), cfg.salt1, cfg.salt2, cfg.chmCid, cfg.hnmIpnsName, cfg.userDataLabels}
-	m, _ := util.Marshal(mCfg)
+	m, _ := proto.Marshal(pbCfg)
 	return m
 }
-func UnmarshalConfig(m []byte) (*config, error) {
-	mCfg := &struct {
-		Title          string
-		RPubKey        []byte
-		Salt1          string
-		Salt2          string
-		ChmCid         string
-		HnmIpnsName    string
-		UserDataLabels []string
-	}{}
-	err := util.Unmarshal(m, mCfg)
+func (cfg *Config) Unmarshal(m []byte) error{
+	pbCfg := &pb.Config{}
+	if err := proto.Unmarshal(m, pbCfg); err != nil{return err}
+
+	cfg.Title = pbCfg.Title
+	cfg.Salt1 = pbCfg.Salt1
+	cfg.Salt2 = pbCfg.Salt2
+	cfg.Labels = pbCfg.Labels
+	cfg.UhmAddr = pbCfg.UhmAddr
+	return nil
+}
+
+func (cfg *Config) toCid(is ipfs.Ipfs) (string, error){
+	return is.Add(cfg.Marshal())
+}
+func (cfg *Config) FromCid(rCfgCid string, is ipfs.Ipfs) error {
+	m, err := is.Get(rCfgCid)
 	if err != nil {
-		return nil, err
+		return errors.New("get from rCfgCid error")
 	}
 
-	pubKey, err := crypto.UnmarshalPubKey(mCfg.RPubKey)
-	if err != nil {
-		return nil, err
+	if err := cfg.Unmarshal(m); err != nil {
+		return errors.New("unmarshal rCfg error")
 	}
-	cfg := &config{
-		title:          mCfg.Title,
-		rPubKey:        pubKey,
-		salt1:          mCfg.Salt1,
-		salt2:          mCfg.Salt2,
-		chmCid:         mCfg.ChmCid,
-		hnmIpnsName:    mCfg.HnmIpnsName,
-		userDataLabels: mCfg.UserDataLabels,
-	}
-	return cfg, nil
+	return nil
 }

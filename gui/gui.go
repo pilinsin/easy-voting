@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/ipfs"
 	rpage "github.com/pilinsin/easy-voting/registration/page"
 	rputil "github.com/pilinsin/easy-voting/registration/page/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
@@ -20,7 +19,6 @@ type GUI struct {
 	w    fyne.Window
 	size fyne.Size
 	page *fyne.Container
-	is   *ipfs.IPFS
 }
 
 func New(title string, width, height float32) *GUI {
@@ -30,8 +28,7 @@ func New(title string, width, height float32) *GUI {
 	win := a.NewWindow(title)
 	win.Resize(size)
 	page := container.NewMax()
-	is, _ := ipfs.New("." + title)
-	return &GUI{win, size, page, is}
+	return &GUI{win, size, page}
 }
 
 func (gui *GUI) withRemove(page fyne.CanvasObject, closer rputil.IPageCloser) fyne.CanvasObject {
@@ -51,42 +48,20 @@ func (gui *GUI) changePage(page fyne.CanvasObject) {
 	gui.w.Resize(gui.size)
 }
 
-func (gui *GUI) loadPage(cid, kw string) (fyne.CanvasObject, rputil.IPageCloser) {
-	idStore := rutil.NewIdentityStore()
-	mid, ok := idStore.Get(kw)
-	if !ok{
-		mid = util.StrToAnyBytes64(kw)
+func (gui *GUI) loadPage(addr string) (fyne.CanvasObject, rputil.IPageCloser) {
+	if ok := strings.HasPrefix(addr, "r/"); ok{
+		return rpage.LoadPage(strings.TrimPrefix(addr, "r/"))
 	}
-
-	if rCfg, err := rutil.ConfigFromCid(cid, gui.is); err == nil {
-		manIdentity := &rutil.ManIdentity{}
-		if err := manIdentity.Unmarshal(mid); err == nil{
-			if rCfg.IsCompatible(manIdentity){
-				return rpage.LoadManPage(cid, manIdentity, gui.is)
-			}
-		}
-		return rpage.LoadPage(cid, gui.is)
-	}
-	if vCfg, err := vutil.ConfigFromCid(cid, gui.is); err == nil {
-		manIdentity := &vutil.ManIdentity{}
-		if err := manIdentity.Unmarshal(mid); err == nil{
-			if vCfg.IsCompatible(manIdentity){
-				return vpage.LoadManPage(cid, manIdentity, gui.is)
-			}
-		}
-		userIdentity := &rutil.UserIdentity{}
-		userIdentity.Unmarshal(mid)
-		return vpage.LoadPage(cid, userIdentity, gui.is)
+	if ok := strings.HasPrefix(addr, "v/"); ok{
+		return vpage.LoadPage(strings.TrimPrefix(addr, "v/"))
 	}
 	return nil, nil
 }
 func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	cidEntry := widget.NewEntry()
-	cidEntry.PlaceHolder = "registration or voting config CID (Qm...)"
-	kwEntry := widget.NewEntry()
-	kwEntry.PlaceHolder = "keyword of UserIdentity or ManIdentity"
+	cidEntry.PlaceHolder = "registration/voting Config Address"
 	loadBtn := widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {
-		loadPage, closer := gui.loadPage(cidEntry.Text, kwEntry.Text)
+		loadPage, closer := gui.loadPage(cidEntry.Text)
 		if loadPage == nil {
 			cidEntry.SetText("")
 			return
@@ -95,7 +70,7 @@ func (gui *GUI) loadPageForm() fyne.CanvasObject {
 		//page.SetMinSize(fyne,NewSize(101.1,201.2))
 		gui.changePage(gui.withRemove(page, closer))
 	})
-	return container.NewBorder(nil, nil, nil, loadBtn, container.NewVBox(cidEntry, kwEntry))
+	return container.NewBorder(nil, nil, nil, loadBtn, cidEntry)
 }
 
 func (gui *GUI) newPageForm() fyne.CanvasObject {
@@ -131,6 +106,4 @@ func (gui *GUI) Run() {
 	gui.w.ShowAndRun()
 }
 
-func (gui *GUI) Close() {
-	gui.is.Close()
-}
+

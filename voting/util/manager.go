@@ -1,49 +1,64 @@
 package votingutil
 
 import (
-	"github.com/pilinsin/easy-voting/ipfs"
-	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
+	pb "github.com/pilinsin/easy-voting/voting/util/pb"
+	proto "google.golang.org/protobuf/proto"
+
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/util/crypto"
 )
 
 type ManIdentity struct {
-	manPriKey     crypto.IPriKey
-	verfMapKeyFile *ipfs.KeyFile
-	resMapKeyFile *ipfs.KeyFile
+	Priv	crypto.IPriKey
+	Sign	crypto.ISignKey
+	Verf	crypto.IVerfKey
+	IpfsDir string
+	StoreDir string
 }
 
-func (mi ManIdentity) Private() crypto.IPriKey { return mi.manPriKey }
-func (mi ManIdentity) VerfMapKeyFile() *ipfs.KeyFile { return mi.verfMapKeyFile }
-func (mi ManIdentity) ResMapKeyFile() *ipfs.KeyFile { return mi.resMapKeyFile }
-
 func (mi ManIdentity) Marshal() []byte {
-	mManId := &struct {
-		Pri, VerfKf, ResKf []byte
-	}{mi.manPriKey.Marshal(), mi.verfMapKeyFile.Marshal(), mi.resMapKeyFile.Marshal()}
-	m, _ := util.Marshal(mManId)
+	mManId := &pb.ManIdentity {
+		Priv: mi.Priv.Marshal(),
+		Sign: mi.Sign.Marshal(),
+		Verf: mi.Verf.Marshal(),
+		IpfsDir: mi.IpfsDir,
+		StoreDir: mi.StoreDir,
+	}
+	m, _ := proto.Marshal(mManId)
 	return m
 }
 func (mi *ManIdentity) Unmarshal(m []byte) error {
-	mManId := &struct{ Pri, VerfKf, ResKf []byte }{}
-	if err := util.Unmarshal(m, mManId); err != nil {
+	mManId := &pb.ManIdentity{}
+	if err := proto.Unmarshal(m, mManId); err != nil {
 		return err
 	}
 
-	priKey, err := crypto.UnmarshalPriKey(mManId.Pri)
+	priv, err := crypto.UnmarshalPriKey(mManId.GetPriv())
 	if err != nil {
 		return err
 	}
-	verfKf := &ipfs.KeyFile{}
-	if err := verfKf.Unmarshal(mManId.VerfKf); err != nil {
+	sign, err := crypto.UnmarshalSignKey(mManId.GetSign())
+	if err != nil {
 		return err
 	}
-	resKf := &ipfs.KeyFile{}
-	if err := resKf.Unmarshal(mManId.ResKf); err != nil {
+	verf, err := crypto.UnmarshalVerfKey(mManId.GetVerf())
+	if err != nil {
 		return err
 	}
 
-	mi.manPriKey = priKey
-	mi.verfMapKeyFile = verfKf
-	mi.resMapKeyFile = resKf
+	mi.Priv = priv
+	mi.Sign = sign
+	mi.Verf = verf
+	mi.IpfsDir = mManId.GetIpfsDir()
+	mi.StoreDir = mManId.GetStoreDir()
 	return nil
+}
+
+func (mi ManIdentity) toString() string{
+	return base64.URLEncoding.EncodeToString(mi.Marshal())
+}
+func (mi *ManIdentity) FromString(addr string) error{
+	m, err := base64.URLEncoding.DecodeString(addr)
+	if err != nil{return err}
+	return mi.Unmarshal(m)
 }

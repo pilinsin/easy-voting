@@ -8,11 +8,10 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 type rangeVoting struct {
@@ -21,13 +20,12 @@ type rangeVoting struct {
 	max int
 }
 
-func NewRangeVoting(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPFS) viface.IVoting {
-	vCfg, _ := vutil.ConfigFromCid(vCfgCid, is)
+func NewRangeVoting(vCfg *vutil.Config, idStr, bAddr string) viface.IVoting {
 	rv := &rangeVoting{
-		min: vCfg.VParam().Min,
-		max: vCfg.VParam().Max,
+		min: vCfg.Params.Min,
+		max: vCfg.Params.Max,
 	}
-	rv.init(vCfgCid, identity, is)
+	rv.init(vCfg, idStr, bAddr)
 	return rv
 }
 
@@ -114,45 +112,46 @@ func (rv *rangeVoting) Vote(data vutil.VoteInt) error {
 		return util.NewError("invalid vote")
 	}
 }
-func (rv rangeVoting) GetMyVote() (string, error) {
+func (rv rangeVoting) GetMyVote() (*vutil.VoteInt, error) {
 	vi, err := rv.baseGetMyVote()
 	if err != nil {
-		return "", err
+		return nil, err
 	} else if vi != nil && rv.isValidData(*vi) {
-		return ipfs.ToCidWithAdd(vi.Marshal(), rv.is), nil
+		return vi, nil
 	} else {
-		return "", util.NewError("invalid vote")
+		return nil, util.NewError("invalid vote")
 	}
 }
 
-func (rv rangeVoting) newResult() map[string]map[string]int {
-	result := make(map[string]map[string]int, len(rv.cands))
+func (rv rangeVoting) newResult() vutil.VoteResult {
+	result := make(vutil.VoteResult, len(rv.cands))
 	for _, name := range rv.candNameGroups() {
 		result[name] = map[string]int{"score": 0}
 	}
 	return result
 }
-func (rv rangeVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[string]int) map[string]map[string]int {
+func (rv rangeVoting) addVoteToResult(vi vutil.VoteInt, result vutil.VoteResult) vutil.VoteResult {
 	for k, v := range vi {
 		result[k]["score"] += v
 	}
 	return result
 }
-func (rv rangeVoting) Count() (string, error) {
+
+func (rv rangeVoting) GetResult() (*vutil.VoteResult, int, error) {
 	result := rv.newResult()
 
 	viChan, nVoters, err := rv.baseGetVotes()
 	if err != nil {
-		return "", err
+		return nil, -1, err
 	}
 
 	nVoted := 0
 	for vi := range viChan {
 		if rv.isValidData(*vi) {
-			result = rv.addVote2Result(*vi, result)
+			result = rv.addVoteToResult(*vi, result)
 			nVoted++
 		}
 	}
-	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
-	return ipfs.ToCidWithAdd(m, rv.is), nil
+	return &result, nVoted, nil
 }
+

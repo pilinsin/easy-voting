@@ -1,0 +1,9 @@
+syntax = "proto3";
+package pb;
+option go_package = "./";
+
+message Identity{
+	string	hash	= 1;
+	bytes	pub		= 2;
+	bytes	priv	= 3;
+}

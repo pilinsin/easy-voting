@@ -5,29 +5,18 @@ import (
 
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
-
 type iBaseVoting interface {
 	Close()
-	VerifyIdentity() bool
-	VerifyIdVerfKeyMap() bool
-	VerifyResultMap() (bool, error)
 }
 type IVoting interface {
 	iBaseVoting
 	NewVotingForm(ngs []string) IVotingForm
 	Type() string
 	Vote(data vutil.VoteInt) error
-	GetMyVote() (string, error)
-	Count() (string, error)
+	GetMyVote() (*vutil.VoteInt, error)
+	GetResult() (*vutil.VoteResult, int, error)
 }
 
-type IManager interface {
-	Close()
-	IsValidUser(userData ...string) bool
-	Registrate() error
-	GetResultMap() error
-	VerifyResultMap() (bool, error)
-}
 
 type IVotingForm interface {
 	fyne.CanvasObject

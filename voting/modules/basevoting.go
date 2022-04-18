@@ -3,68 +3,98 @@ package votingmodule
 import (
 	"fmt"
 	"time"
-	"strings"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/util/crypto"
+	crdt "github.com/pilinsin/p2p-verse/crdt"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
+type identity struct{
+	manPriv crypto.IPriKey
+	sign	crypto.ISignKey
+	verf	crypto.IVerfKey
+}
+
 type voting struct {
-	is         *ipfs.IPFS
-	identity   *rutil.UserIdentity
-	vid        string
-	tInfo      *util.TimeInfo
-	salt2      string
-	cands      []vutil.Candidate
-	manPubKey  crypto.IPubKey
-	chmCid     string
-	nimCid     string
-	ivmCid     string
-	resMapName string
-	psTopic string
-	verfMapCid string
-	verfMapName string
+	salt1		string
+	tInfo      	*util.TimeInfo
+	cands      	[]vutil.Candidate
+	manPid		string
+	manPubKey  	crypto.IPubKey
+	manPriKey	crypto.IPriKey
+	hkm 		crdt.IStore
+	ivm			crdt.IStore
 }
 
-func (v *voting) init(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPFS) {
-	vCfg, err := vutil.ConfigFromCid(vCfgCid, is)
-	if err != nil {
-		return
-	}
-	verfCid, err := ipfs.CidFromName(vCfg.VerfMapName(), is)
-	if err != nil {
-		return
-	}
+func (v *voting) init(vCfg *vutil.Config, idStr, bAddr string) {
+	storeDir, save := parseIdStr(idStr)
+	bootstraps := pv.AddrInfosFromString(bAddr)
+	cv := crdt.NewVerse(i2p.NewI2pHost, storeDir, save, false, bootstraps...)
+	hkm, err := cv.LoadStore(vCfg.HkmAddr, "signature")
+	if err != nil{return}
 
-	v.is = is
-	v.identity = identity
-	v.vid = vCfg.VotingID()
-	v.tInfo = vCfg.TimeInfo()
-	v.salt2 = vCfg.Salt2()
-	v.cands = vCfg.Candidates()
-	v.manPubKey = vCfg.ManPubKey()
-	v.chmCid = vCfg.UchmCid()
-	v.nimCid = vCfg.UnimCid()
-	v.ivmCid = vCfg.UivmCid()
-	v.resMapName = vCfg.ResMapName()
-	v.psTopic = "voting_pubsub/" + vCfgCid
-	v.verfMapCid = verfCid
-	v.verfMapName = vCfg.VerfMapName()
+	id := getIdentity(idStr, vCfg, hkm)
+	opt := &crdt.StoreOpts{Priv: id.sign, Pub: id.verf}
+	ivm, err := cv.LoadStore(vCfg.IvmAddr, "updatableSignature", opt)
+	if err != nil{return}
+
+	v.salt1 = vCfg.Salt1
+	v.tInfo = vCfg.Time
+	v.cands = vCfg.Candidates
+	v.myPid = crdt.PubKeyToStr(id.verf)
+	v.manPid = vCfg.ManPid
+	v.manPubKey = vCfg.PubKey
+	v.manPriKey = id.manPriv
+	v.hkm = hkm
+	v.ivm = ivm
 }
+
+func parseIdStr(idStr string) (string, bool){
+	mi := &vutil.ManIdentity{}
+	if err := mi.FromString(idStr); err == nil{
+		return mi.StoreDir, true
+	}
+	
+	return pv.RandString(8), false
+}
+
+func getIdentity(idStr string, vCfg *vutil.Config, hkm crdt.IStore) *identity{
+	mi := &vutil.ManIdentity{}
+	if err := mi.FromString(idStr); err == nil{
+		return &identity{mi.Priv, mi.Sign, mi.Verf}
+	}
+	
+	ui := &rutil.UserIdentity{}
+	if err := ui.FromString(idStr); err == nil{
+		ukp, err := getUserKeyPair(hkm, ui, vCfg.Salt2)
+		if err == nil{
+			return &identity{nil, ukp.Sign(), ukp.Verify()}
+		}
+	}
+	return nil
+}
+
+func getUserKeyPair(hkm crdt.IStore, ui *rutil.UserIdentity, salt2 []byte) (*vutil.UserKeyPair, error){
+	uhHash := crdt.MakeHashKey(ui.UserHash(), salt2)
+	rs, err := hkm.Query(query.Query{
+		Filters: []query.Filter{crdt.KeyExistFilter{uhHash}},
+		Limit: 1,
+	})
+	if err != nil{return nil, err}
+	m := <-rs.Next()
+
+	mukp, err := ui.Private().Decrypt(m)
+	if err != nil{return nil, err}
+	ukp := &vutil.UserKeyPair{}
+	if err := ukp.Unmarshal(mukp); err != nil{return nil, err}
+	return ukp, nil
+}
+
 func (v *voting) Close() {
-	v.is = nil
-	v.identity = nil
-}
-
-func (v *voting) candNameGroups() []string {
-	ngs := make([]string, len(v.cands))
-	for idx, candidate := range v.cands {
-		ngs[idx] = candidate.Name + ", " + candidate.Group + " _" + v.vid
-	}
-	return ngs
+	v.hkm.Close()
+	v.ivm.Close()
 }
 
 func (v *voting) isCandsMatch(vi vutil.VoteInt) bool {
@@ -80,136 +110,86 @@ func (v *voting) isCandsMatch(vi vutil.VoteInt) bool {
 	return true
 }
 
-func (v voting) uid() (string, bool) {
-	chm := &rutil.ConstHashMap{}
-	err := chm.FromCid(v.chmCid, v.is)
-	if err != nil {
-		return "", false
+func (v *voting) candNameGroups() []string {
+	ngs := make([]string, len(v.cands))
+	for idx, candidate := range v.cands {
+		ngs[idx] = candidate.Name + ", " + candidate.Group
 	}
-	nim := &vutil.NameIdMap{}
-	err = nim.FromCid(v.nimCid, v.is)
-	if err != nil {
-		return "", false
-	}
-
-	uhHash := rutil.NewUhHash(v.is, v.salt2, v.identity.UserHash())
-	hash := chm.ContainHash(uhHash, v.is)
-	name := nim.VerifyIdentity(v.identity, v.is)
-	if !(hash && name) {
-		return "", false
-	}
-	return nim.ContainIdentity(v.identity, v.is)
-}
-
-func (v voting) VerifyIdentity() bool {
-	_, ok := v.uid()
-	return ok
+	return ngs
 }
 
 func (v *voting) baseVote(data vutil.VoteInt) error {
-	if uid, ok := v.uid(); !ok {
-		return util.NewError("cannot get uid")
-	} else {
-		uvHash := vutil.NewUidVidHash(uid, v.vid)
-		ivm, err := vutil.IdVotingMapFromCid(v.ivmCid, v.is)
-		if err != nil {
-			return err
-		}
-		ivm.Vote(uvHash, data, v.identity, v.manPubKey, v.is)
-
-		uInfo := vutil.NewUserInfo(uvHash, v.identity.Sign().Verify())
-		v.is.PubSubPublish(uInfo.Marshal(), v.psTopic)
-		ticker := time.NewTicker(30*time.Second)
-		defer ticker.Stop()
-		for {
-			verfMap, err := vutil.IdVerfKeyMapFromName(v.verfMapName, v.is)
-			if err != nil {
-				return err
-			}
-			if verfMap.VerifyUserInfo(uInfo, v.is) {
-				fmt.Println("uInfo verified")
-				return nil
-			}
-			//fmt.Println("wait for registration")
-			<-ticker.C
-		}
-		return nil
+	if ok := v.tInfo.WithinTime(time.Now()); !ok{
+		return errors.New("invalid vote time")
 	}
+
+	if v.manPriKey != nil{
+		m, err := crypto.MarshalPriKey(v.manPriKey)
+		if err != nil{return err}
+		return v.ivm.Put(v.salt1, m)
+	}
+
+	m, err := v.manPubKey.Encrypt(data.Marshal())
+	if err != nil{return err}
+	return v.ivm.Put(v.salt1, m)
+}
+
+
+func (v voting) getDecryptKey() (crypto.IPriKey, error){
+	rs, err := v.ivm.(crdt.IUpdatableSignatureStore).QueryWithoutTc(query.Query{
+		Prefix: "/"+v.manPid+"/"+v.salt1,
+		Limit: 1,
+	})
+	if err != nil{return nil, err}
+	
+	mpri := <-rs.Next()
+	return crypto.UnmarshalPriKey(mpri)
 }
 
 func (v voting) baseGetMyVote() (*vutil.VoteInt, error) {
-	if uid, ok := v.uid(); !ok {
-		return nil, util.NewError("cannot get uid")
-	} else {
-		uvHash := vutil.NewUidVidHash(uid, v.vid)
-		ivm, err := vutil.IdVotingMapFromCid(v.ivmCid, v.is)
-		if err != nil {
-			return nil, err
-		}
-		if vb, ok := ivm.ContainHash(uvHash, v.is); !ok {
-			return nil, util.NewError("invalid uvHash")
-		} else {
-			if sv, err := vb.GetMyVote(v.identity); err != nil{
-				return nil, err
-			} else {
-				if ok := sv.Verify(v.identity.Sign().Verify()); !ok {
-					return nil, util.NewError("invalid verfKey")
-				} else {
-					return sv.Vote(v.tInfo)
-				}
-			}
-		}
-	}
+	priv, err := v.getDecryptKey()
+	if err != nil{return nil, err}
+
+	m, err := v.ivm.Get(v.myPid+"/"+v.salt1)
+	if err != nil{return nil, err}
+	vi := &vutil.VoteInt{}
+	if err := vi.Unmarshal(m); err != nil{return nil, err}
+	return vi, nil
 }
+
 func (v voting) baseGetVotes() (<-chan *vutil.VoteInt, int, error) {
-	resMap, err := vutil.ResultMapFromName(v.resMapName, v.is)
-	if err != nil {
-		return nil, -1, err
+	priv, err := v.getDecryptKey()
+	if err != nil{return nil, err}
+
+	rs, err := v.ivm.Query(query.Query{
+		Filters: []query.Filter{crdt.KeyExistFilter{v.salt1}},
+	})
+	if err != nil{return nil, -1, err}
+	defer rs.Close()
+
+	ch := make(chan *vutil.VoteInt)
+	go func(){
+		defer close(ch)
+		for m := range rs.Next(){
+			mvi, err := priv.Decrypt(m)
+			if err != nil{continue}
+
+			vi := &vutil.VoteInt{}
+			if err := vi.Unmarshal(mvi); err != nil{continue}
+			ch <- vi
+		}
 	}
 
-	return resMap.Next(v.is), resMap.NumVoters(), nil
+	rs2, err := v.ivm.Query(query.Query{
+		Filters: []query.Filter{crdt.KeyExistFilter{v.salt1}},
+		KeysOnly: true,
+	})
+	if err != nil{return nil, -1, err}
+	defer rs2.Close()
+
+	resList, err := rs2.Rest()
+	if err != nil{return nil, -1, err}
+
+	return ch, len(resList), nil
 }
 
-func (v *voting) VerifyIdVerfKeyMap() bool {
-	ivm, err := vutil.IdVotingMapFromCid(v.ivmCid, v.is)
-	if err != nil {
-		return false
-	}
-
-	pth, _ := v.is.NameResolve(v.verfMapName)
-	mVerfMap, err := v.is.FileGet(pth)
-	if err != nil {
-		fmt.Println("verfMapName error")
-		return false
-	}
-	verfMap, err := vutil.UnmarshalIdVerfKeyMap(mVerfMap)
-	if err != nil {
-		fmt.Println("verfMap unmarshal error")
-		return false
-	}
-
-	if ok := verfMap.VerifyIds(ivm, v.is); !ok {
-		fmt.Println("a verfKey corresponding to a uvHash is not registered")
-		return false
-	}
-	if verfMap.VerifyCid(v.verfMapCid, v.is) {
-		v.verfMapCid = strings.TrimPrefix(pth.String(), "/ipfs/")
-		return true
-	} else {
-		fmt.Println("invalid verfMap cid")
-		return false
-	}
-}
-
-func (v voting) VerifyResultMap() (bool, error) {
-	verfMap, err := vutil.IdVerfKeyMapFromName(v.verfMapName, v.is)
-	if err != nil {
-		return false, util.NewError("invalid ivmCid")
-	}
-	resMap, err := vutil.ResultMapFromName(v.resMapName, v.is)
-	if err != nil {
-		return false, util.NewError("resMap does not exist")
-	}
-
-	return resMap.VerifyVotes(verfMap, v.is), nil
-}

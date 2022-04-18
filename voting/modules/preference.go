@@ -9,20 +9,19 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 type preferenceVoting struct {
 	voting
 }
 
-func NewPreferenceVoting(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPFS) viface.IVoting {
+func NewPreferenceVoting(vCfg *vutil.Config, idStr, bAddr string) viface.IVoting {
 	pv := &preferenceVoting{}
-	pv.init(vCfgCid, identity, is)
+	pv.init(vCfg, idStr, bAddr)
 	return pv
 }
 
@@ -112,19 +111,19 @@ func (pv *preferenceVoting) Vote(data vutil.VoteInt) error {
 		return util.NewError("invalid vote")
 	}
 }
-func (pv preferenceVoting) GetMyVote() (string, error) {
+func (pv preferenceVoting) GetMyVote() (*vutil.VoteInt, error) {
 	vi, err := pv.baseGetMyVote()
 	if err != nil {
-		return "", err
+		return nil, err
 	} else if vi != nil && pv.isValidData(*vi) {
-		return ipfs.ToCidWithAdd(vi.Marshal(), pv.is), nil
+		return vi, nil
 	} else {
-		return "", util.NewError("invalid vote")
+		return nil, util.NewError("invalid vote")
 	}
 }
 
-func (pv preferenceVoting) newResult() map[string]map[string]int {
-	result := make(map[string]map[string]int, len(pv.cands))
+func (pv preferenceVoting) newResult() vutil.VoteResult {
+	result := make(vutil.VoteResult, len(pv.cands))
 	for _, name := range pv.candNameGroups() {
 		result[name] = make(map[string]int, len(pv.cands))
 		for idx := 0; idx < len(pv.cands); idx++ {
@@ -133,27 +132,28 @@ func (pv preferenceVoting) newResult() map[string]map[string]int {
 	}
 	return result
 }
-func (pv preferenceVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[string]int) map[string]map[string]int {
+func (pv preferenceVoting) addVoteToResult(vi vutil.VoteInt, result vutil.VoteResult) vutil.VoteResult {
 	for k, v := range vi {
 		result[k][strconv.Itoa(v)]++
 	}
 	return result
 }
-func (pv preferenceVoting) Count() (string, error) {
+
+func (pv preferenceVoting) GetResult() (*vutil.VoteResult, int, error) {
 	result := pv.newResult()
 
 	viChan, nVoters, err := pv.baseGetVotes()
 	if err != nil {
-		return "", err
+		return nil, -1, err
 	}
 
 	nVoted := 0
 	for vi := range viChan {
 		if pv.isValidData(*vi) {
-			result = pv.addVote2Result(*vi, result)
+			result = pv.addVoteToResult(*vi, result)
 			nVoted++
 		}
 	}
-	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
-	return ipfs.ToCidWithAdd(m, pv.is), nil
+	return &result, nVoted, nil
 }
+

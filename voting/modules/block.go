@@ -5,11 +5,10 @@ import (
 
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/easy-voting/ipfs"
+	"github.com/pilinsin/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 type blockVoting struct {
@@ -17,12 +16,11 @@ type blockVoting struct {
 	total int
 }
 
-func NewBlockVoting(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPFS) viface.IVoting {
-	vCfg, _ := vutil.ConfigFromCid(vCfgCid, is)
+func NewBlockVoting(vCfg *vutil.Config, idStr, bAddr string) viface.IVoting {
 	bv := &blockVoting{
-		total: vCfg.VParam().Total,
+		total: vCfg.Params.Total,
 	}
-	bv.init(vCfgCid, identity, is)
+	bv.init(vCfg, idStr, bAddr)
 	return bv
 }
 
@@ -109,25 +107,25 @@ func (bv *blockVoting) Vote(data vutil.VoteInt) error {
 	}
 }
 
-func (bv blockVoting) GetMyVote() (string, error) {
+func (bv blockVoting) GetMyVote() (*vutil.VoteInt, error) {
 	vi, err := bv.baseGetMyVote()
 	if err != nil {
-		return "", err
+		return nil err
 	} else if vi != nil && bv.isValidData(*vi) {
-		return ipfs.ToCidWithAdd(vi.Marshal(), bv.is), nil
+		return vi, nil
 	} else {
-		return "", util.NewError("invalid vote")
+		return nil, util.NewError("invalid vote")
 	}
 }
 
-func (bv blockVoting) newResult() map[string]map[string]int {
-	result := make(map[string]map[string]int, len(bv.cands))
+func (bv blockVoting) newResult() vutil.VoteResult {
+	result := make(vutil.VoteResult, len(bv.cands))
 	for _, name := range bv.candNameGroups() {
 		result[name] = map[string]int{"n_votes": 0}
 	}
 	return result
 }
-func (bv blockVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[string]int) map[string]map[string]int {
+func (bv blockVoting) addVoteToResult(vi vutil.VoteInt, result vutil.VoteResult) vutil.VoteResult {
 	for k, v := range vi {
 		if v > 0 {
 			result[k]["n_votes"]++
@@ -135,21 +133,20 @@ func (bv blockVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[str
 	}
 	return result
 }
-func (bv blockVoting) Count() (string, error) {
+func (bv blockVoting) GetResult() (*vutil.VoteResult, int, error) {
 	result := bv.newResult()
 
 	viChan, nVoters, err := bv.baseGetVotes()
 	if err != nil {
-		return "", err
+		return nil, -1, err
 	}
 
 	nVoted := 0
 	for vi := range viChan {
 		if bv.isValidData(*vi) {
-			result = bv.addVote2Result(*vi, result)
+			result = bv.addVoteToResult(*vi, result)
 			nVoted++
 		}
 	}
-	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
-	return ipfs.ToCidWithAdd(m, bv.is), nil
+	return &result, nVoted, nil
 }

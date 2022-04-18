@@ -1,10 +1,18 @@
 package votingutil
 
 import (
-	"github.com/pilinsin/easy-voting/ipfs"
+	"path/filepath"
+	pb "github.com/pilinsin/easy-voting/voting/util/pb"
+	proto "google.golang.org/protobuf/proto"
+
+	"github.com/pilinsin/util"
+	"github.com/pilinsin/util/crypto"
+	i2p "github.com/pilinsin/go-libp2p-i2p"
+	pv "github.com/pilinsin/p2p-verse"
+	crdt "github.com/pilinsin/p2p-verse/crdt"
+	ipfs "github.com/pilinsin/p2p-verse/ipfs"
+	evutil "github.com/pilinsin/easy-voting/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
 )
 
 type VotingType int
@@ -70,237 +78,234 @@ type VoteParams struct {
 	Max   int
 	Total int
 }
+func encodeVoteParams(vp *VoteParams) *pb.Params{
+	return &pb.Params{
+		Min: int32(vp.Min),
+		Max: int32(vp.Max),
+		Total: int32(vp.Total),
+	}
+}
+func decodeVoteParams(vp *pb.Params) *VoteParams{
+	return &VoteParams{
+		Min: int(vp.GetMin()),
+		Max: int(vp.GetMax()),
+		Total: int(vp.GetTotal()),
+	}
+}
 
 type Candidate struct {
 	Name  string
 	Group string
 	Url   string
 	Image []byte
-	ImageName string
+	ImgName string
 }
-
-type config struct {
-	title          string
-	votingID       string
-	tInfo          *util.TimeInfo
-	salt1          string
-	salt2          string
-	candidates     []Candidate
-	manPubKey      crypto.IPubKey
-	vParam         VoteParams
-	vType          VotingType
-	chmCid         string
-	nimCid         string
-	ivmCid         string
-	verfMapName string
-	resMapName     string
-	userDataLabels []string
-}
-func NewConfigs(title, begin, end, loc, rCfgCid string, cands []Candidate, vParam VoteParams, vType VotingType, is *ipfs.IPFS) (*ManIdentity, *config, error) {
-	encKeyPair := crypto.NewEncryptKeyPair()
-	pub := encKeyPair.Public()
-	pri := encKeyPair.Private()
-	verfKf := ipfs.NewKeyFile()
-	resKf := ipfs.NewKeyFile()
-	resName, _ := resKf.Name()
-
-	vCfg, err := newConfig(title, begin, end, loc, cands, pub, vParam, vType, rCfgCid, verfKf, resName, is)
-	if err != nil {
-		return nil, nil, err
-	}
-	mId := &ManIdentity{
-		manPriKey:     pri,
-		verfMapKeyFile: verfKf,
-		resMapKeyFile: resKf,
-	}
-	return mId, vCfg, nil
-}
-func newConfig(title, begin, end, loc string, cands []Candidate, manPubKey crypto.IPubKey, vParam VoteParams, vType VotingType, rCfgCid string, verfMapKeyFile *ipfs.KeyFile, resMapName string, is *ipfs.IPFS) (*config, error) {
-	rCfg, err := rutil.ConfigFromCid(rCfgCid, is)
-	if err != nil {
-		return nil, util.AddError(err, "invalid rCfgCid")
-	}
-	tInfo, ok := util.NewTimeInfo(begin, end, loc)
-	if !ok {
-		return nil, util.NewError("invalid time info")
-	}
-
-	cfg := &config{}
-	cfg.title = title
-	cfg.votingID = util.GenUniqueID(30, 30)
-	cfg.tInfo = tInfo
-	cfg.candidates = cands
-	cfg.manPubKey = manPubKey
-	cfg.vParam = vParam
-	cfg.vType = vType
-	cfg.salt1 = rCfg.Salt1()
-	cfg.salt2 = rCfg.Salt2()
-	cfg.resMapName = resMapName
-	cfg.userDataLabels = rCfg.UserDataLabels()
-
-	hnm := &rutil.HashNameMap{}
-	err = hnm.FromName(rCfg.HnmIpnsName(), is)
-	if err != nil {
-		return nil, util.AddError(err, "hnm unmarshal error")
-	}
-	chm := rutil.NewConstHashMap([]rutil.UhHash{}, 100000, is)
-	nim := NewNameIdMap(100000, cfg.votingID)
-	ivm := NewIdVotingMap(100000, tInfo)
-	for kv := range hnm.NextKeyValue(is) {
-		uhHash := kv.Key()
-		chm.Append(uhHash, is)
-
-		var uid string
-		var uvHash UidVidHash
-		for {
-			uid = util.GenUniqueID(30, 6)
-			uvHash = NewUidVidHash(uid, cfg.votingID)
-			if _, ok := ivm.ContainHash(uvHash, is); !ok {
-				break
-			}
+func encodeCandidates(cands []*Candidate) []*pb.Candidate{
+	pbCands := make([]*pb.Candidate, len(cands))
+	for idx, cand := range cands{
+		pbCands[idx] = &pb.Candidate{
+			Name: cand.Name,
+			Group: cand.Group,
+			Url: cand.Url,
+			Image: cand.Image,
+			ImgName: cand.ImgName,
 		}
-		rIpnsName := kv.Value().Name()
-		nim.Append(rIpnsName, uid, is)
-		ivm.Append(uvHash, rIpnsName, is)
 	}
-	cfg.chmCid = ipfs.ToCidWithAdd(chm.Marshal(), is)
-	cfg.nimCid = ipfs.ToCidWithAdd(nim.Marshal(), is)
-	cfg.ivmCid = ipfs.ToCidWithAdd(ivm.Marshal(), is)
-
-	idVerfKeyMap := NewIdVerfKeyMap(100000)
-	cfg.verfMapName = ipfs.ToNameWithKeyFile(idVerfKeyMap.Marshal(), verfMapKeyFile, is)
-	return cfg, nil
+	return pbCands
 }
-func (cfg config) Title() string            { return cfg.title }
-func (cfg config) VotingID() string         { return cfg.votingID }
-func (cfg config) TimeInfo() *util.TimeInfo { return cfg.tInfo }
-func (cfg config) Salt1() string            { return cfg.salt1 }
-func (cfg config) Salt2() string            { return cfg.salt2 }
-func (cfg config) Candidates() []Candidate  { return cfg.candidates }
-func (cfg config) ManPubKey() crypto.IPubKey { return cfg.manPubKey }
-func (cfg config) VParam() VoteParams       { return cfg.vParam }
-func (cfg config) VType() VotingType        { return cfg.vType }
-func (cfg config) UchmCid() string          { return cfg.chmCid }
-func (cfg config) UnimCid() string          { return cfg.nimCid }
-func (cfg config) UivmCid() string          { return cfg.ivmCid }
-func (cfg config) VerfMapName() string { return cfg.verfMapName}
-func (cfg config) ResMapName() string       { return cfg.resMapName }
-func (cfg config) UserDataLabels() []string { return cfg.userDataLabels }
-
-func (cfg config) IsCompatible(mi *ManIdentity) bool{
-	pub := cfg.manPubKey.Equals(mi.manPriKey.Public())
-	verfName, vErr := mi.verfMapKeyFile.Name()
-	vnm := cfg.verfMapName == verfName
-	resName, rErr := mi.resMapKeyFile.Name()
-	rnm := cfg.resMapName == resName
-	return pub && vnm && (vErr == nil) && rnm && (rErr == nil)
+func decodeCandidates(cands []*pb.Candidate) []*Candidate{
+	pbCands := make([]*Candidate, len(cands))
+	for idx, cand := range cands{
+		pbCands[idx] = Candidate{
+			Name: cand.GetName(),
+			Group: cand.GetGroup(),
+			Url: cand.GetUrl(),
+			Image: cand.GetImage(),
+			ImgName: cand.GetImgName(),
+		}
+	}
+	return pbCands
 }
 
-func ConfigFromCid(vCfgCid string, is *ipfs.IPFS) (*config, error) {
-	m, err := ipfs.FromCid(vCfgCid, is)
-	if err != nil {
-		return nil, util.NewError("from vCfgCid error")
+
+func encodeTimeInfo(ti *util.TimeInfo) *pb.TimeInfo{
+	return &pb.TimeInfo{
+		Begin: ti.Begin,
+		End:	ti.End,
+		Loc:	ti.Loc,
 	}
-	vCfg, err := UnmarshalConfig(m)
-	if err != nil {
-		return nil, util.NewError("unmarshal vCfgCid error")
-	}
-	return vCfg, nil
 }
-func (cfg config) Marshal() []byte {
-	mCfg := &struct {
-		Title          string
-		VotingID       string
-		TimeInfo       *util.TimeInfo
-		Salt1          string
-		Salt2          string
-		Candidates     []Candidate
-		ManPubKey      []byte
-		VParam         VoteParams
-		VType          VotingType
-		ChmCid         string
-		NimCid         string
-		IvmCid         string
-		VerfMapName string
-		ResMapName     string
-		UserDataLabels []string
-	}{
-		Title:          cfg.title,
-		VotingID:       cfg.votingID,
-		TimeInfo:       cfg.tInfo,
-		Salt1:          cfg.salt1,
-		Salt2:          cfg.salt2,
-		Candidates:     cfg.candidates,
-		ManPubKey:      cfg.manPubKey.Marshal(),
-		VParam:         cfg.vParam,
-		VType:          cfg.vType,
-		ChmCid:         cfg.chmCid,
-		NimCid:         cfg.nimCid,
-		IvmCid:         cfg.ivmCid,
-		VerfMapName: cfg.verfMapName,
-		ResMapName:     cfg.resMapName,
-		UserDataLabels: cfg.userDataLabels,
+func decodeTimeInfo(ti *pb.TimeInfo) *util.TimeInfo{
+	return &util.TimeInfo{ti.Begin, ti.End, ti.Loc}
+}
+
+type Config struct{
+	Title string
+	Time *util.TimeInfo
+	Salt1 string
+	Salt2 []byte
+	Candidates []*Candidate
+	ManPid string
+	PubKey crypto.IPubKey
+	Params *VoteParams
+	Type VotingType
+	HkmAddr string
+	IvmAddr string
+	Labels []string
+}
+func NewConfigs(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate, vParam *VoteParams, vType VotingType) (string, string, error) {
+	bAddr, rCfgCid, err := evutil.ParseConfigAddr(rCfgAddr)
+	if err != nil{return "", "", err}
+	ipfsDir := pv.RandString(8)
+	is, err := evutil.NewIpfs(bAddr, ipfsDir, true)
+	if err != nil{return "", "", err}
+	defer is.Close()
+	rCfg := &rutil.Config{}
+	if err := rCfg.FromCid(rCfgCid, is); err != nil{return "", "", err}
+
+	bootstraps := pv.AddrInfosFromString(bAddr)
+	v := crdt.NewVerse(i2p.NewI2pHost, title, true, false, bootstraps...)
+
+
+	uhm, err := v.LoadStore(rCfg.UhmAddr, "hash")
+	if err != nil{return "", "", err}
+	defer uhm.Close()
+
+	skp := crypto.NewSignKeyPair()
+	ch := make(chan string)
+	ch <- crdt.PubKeyToStr(skp.Verify())
+	defer close(ch)
+	ac, err := v.NewAccessController(pv.RandString(8), ch)
+	if err != nil{return "", "", err}
+	hkm, err := v.NewStore(pv.RandString(8), "signature", &crdt.StoreOpts{Pub:skp.Verify(), Priv:skp.Sign(), Ac:ac})
+	if err != nil{return "", "", err}
+	defer hkm.Close()
+
+	accesses := make(chan string)
+	defer close(accesses)
+	rs, err := uhm.Query()
+	if err != nil{return "", "", err}
+	for res := range rs.Next(){
+		userPubKey, err := crypto.UnmarshalPubKey(r.Value)
+		if err != nil{continue}
+		ukp := NewUserKeyPair()
+		enc, err := userPubKey.Encrypt(ukp.Marshal())
+		if err != nil{continue}
+		if err := hkm.Put(r.Key, enc); err != nil{continue}
+		go func(){
+			accesses <- crdt.PubKeyToStr(ukp.Verify())
+		}()
 	}
-	m, _ := util.Marshal(mCfg)
+	signKeyPair := crypto.NewSignKeyPair()
+	manPid := crdt.PubKeyToStr(signKeyPair.Verify())
+	accesses <- manPid
+	ac2, err := v.NewAccessController(pv.RandString(8), accesses)
+	if err != nil{return "", "", err}
+
+
+	begin := tInfo.BeginTime()
+	end := tInfo.EndTime()
+	tc, err := v.NewTimeController(pv.RandString(8), begin, end, time.Minute*5, time.Second*10, 99)
+	if err != nil{return "", "", err}
+
+	opt := &crdt.StoreOpts{Ac:ac2, Tc:tc}
+	ivm, err := v.NewStore(pv.RandString(8), "updatableSignature", opt)
+	if err != nil{return "", "", err}
+	defer ivm.Close()
+
+	encKeyPair := crypto.NewPubEncryptKeyPair()
+	vCfg := &Config{
+		Title: title,
+		Time: tInfo,
+		Salt1: rCfg.Salt1,
+		Salt2: rCfg.Salt2,
+		Candidates: cands,
+		ManPid: manPid,
+		PubKey: encKeyPair.Public(),
+		Params: vParam,
+		Type: vType,
+		HkmAddr: hkm.Address(),
+		IvmAddr: ivm.Address(),
+		Labels: rCfg.Labels,
+	}
+	manId := &ManIdentity{
+		Priv: encKeyPair.Private(),
+		Sign: signKeyPair.Sign(),
+		Verf: signKeyPair.Verify(),
+		IpfsDir: filepath.Join(title, ipfsDir),
+		StoreDir: title,
+	}
+
+	vCfgCid, err := vCfg.toCid(is)
+	if err != nil{return "", "", err}
+	return "v/"+bAddr+"/"+vCfgCid, manId.toString(), nil
+}
+
+func (cfg Config) Marshal() []byte{
+	pbCfg := &pb.Config{
+		Title: cfg.Title,
+		Time: encodeTimeInfo(cfg.Time),
+		Salt1: cfg.Salt1,
+		Salt2: cfg.Salt2,
+		Candidates: encodeCandidates(cfg.Candidates),
+		ManPid: cfg.ManPid,
+		PubKey: cfg.PubKey.Marshal(),
+		Params: encodeVoteParams(cfg.Params),
+		Type: int32(cfg.Type),
+		HkmAddr: cfg.HkmAddr,
+		IvmAddr: cfg.IvmAddr,
+		Labels: cfg.Labels,
+	}
+	m, _ := proto.Marshal(pbCfg)
 	return m
 }
-func UnmarshalConfig(m []byte) (*config, error) {
-	mCfg := &struct {
-		Title          string
-		VotingID       string
-		TimeInfo       *util.TimeInfo
-		Salt1          string
-		Salt2          string
-		Candidates     []Candidate
-		ManPubKey      []byte
-		VParam         VoteParams
-		VType          VotingType
-		ChmCid         string
-		NimCid         string
-		IvmCid         string
-		VerfMapName string
-		ResMapName     string
-		UserDataLabels []string
-	}{}
-	err := util.Unmarshal(m, mCfg)
-	if err != nil {
-		return nil, err
-	}
+func (cfg *Config) Unmarshal(m []byte) error{
+	pbCfg := &pb.Config{}
+	if err := proto.Unmarshal(m, pbCfg); err != nil{return err}
 
-	pub, err := crypto.UnmarshalPubKey(mCfg.ManPubKey)
-	if err != nil {
-		return nil, err
-	}
-	cfg := &config{
-		title:          mCfg.Title,
-		votingID:       mCfg.VotingID,
-		tInfo:          mCfg.TimeInfo,
-		salt1:          mCfg.Salt1,
-		salt2:          mCfg.Salt2,
-		candidates:     mCfg.Candidates,
-		manPubKey:      pub,
-		vParam:         mCfg.VParam,
-		vType:          mCfg.VType,
-		chmCid:         mCfg.ChmCid,
-		nimCid:         mCfg.NimCid,
-		ivmCid:         mCfg.IvmCid,
-		verfMapName: mCfg.VerfMapName,
-		resMapName:     mCfg.ResMapName,
-		userDataLabels: mCfg.UserDataLabels,
-	}
-	return cfg, nil
+	pubKey, err := crypto.UnmarshalPubKey(pbCfg.GetPubKey())
+	if err != nil{return err}
+
+	cfg.Title: pbCfg.Title
+	cfg.Time: decodeTimeInfo(pbCfg.Time)
+	cfg.Salt1: pbCfg.Salt1
+	cfg.Salt2: pbCfg.Salt2
+	cfg.Candidates: decodeCandidates(pbCfg.Candidates)
+	cfg.ManPid: pbCfg.ManPid
+	cfg.PubKey: pubKey
+	cfg.Params: decodeVoteParams(pbCfg.Params)
+	cfg.Type: int(pbCfg.Type)
+	cfg.HkmAddr: pbCfg.HkmAddr
+	cfg.IvmAddr: pbCfg.IvmAddr
+	cfg.Labels: pbCfg.Labels
+	return nil
 }
-func (cfg *config) ShuffleCandidates() {
-	n := len(cfg.candidates)
+
+func (cfg *Config) toCid(is ipfs.Ipfs) (string, error){
+	return is.Add(cfg.Marshal())
+}
+func (cfg *Config) FromCid(vCfgCid string, is ipfs.Ipfs) error {
+	m, err := is.Get(vCfgCid)
+	if err != nil {
+		return errors.New("get from vCfgCid error")
+	}
+	if err := cfg.Unmarshal(m); err != nil {
+		return errors.New("unmarshal vCfg error")
+	}
+	return nil
+}
+
+func (cfg *Config) ShuffleCandidates() {
+	n := len(cfg.Candidates)
 	for i := 0; i < n-1; i++ {
 		j := i + util.RandInt(n-i) //[i, n)
-		cfg.candidates[i], cfg.candidates[j] = cfg.candidates[j], cfg.candidates[i]
+		cfg.Candidates[i], cfg.Candidates[j] = cfg.Candidates[j], cfg.Candidates[i]
 	}
 }
-func (cfg *config) CandNameGroups() []string {
-	ngs := make([]string, len(cfg.candidates))
-	for idx, candidate := range cfg.candidates {
-		ngs[idx] = candidate.Name + ", " + candidate.Group + " _" + cfg.votingID
+func (cfg *Config) CandNameGroups() []string {
+	ngs := make([]string, len(cfg.Candidates))
+	for idx, candidate := range cfg.Candidates {
+		ngs[idx] = candidate.Name + ", " + candidate.Group
 	}
 	return ngs
 }

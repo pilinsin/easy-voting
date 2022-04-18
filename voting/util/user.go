@@ -1,42 +1,45 @@
 package votingutil
 
 import(
-	"github.com/pilinsin/easy-voting/util"
-	"github.com/pilinsin/easy-voting/util/crypto"
+	pb "github.com/pilinsin/easy-voting/voting/util/pb"
+	proto "google.golang.org/protobuf/proto"
+
+	"github.com/pilinsin/util/crypto"
 )
 
-type UserInfo struct{
-	uvHash UidVidHash
+type UserKeyPair struct{
+	signKey crypto.ISignKey
 	verfKey crypto.IVerfKey
 }
-func NewUserInfo(hash UidVidHash, verfKey crypto.IVerfKey) *UserInfo{
-	return &UserInfo{hash, verfKey}
+func NewUserKeyPair() *UserKeyPair{
+	keyPair := crypto.NewSignKeyPair()
+	return &UserKeyPair{keyPair.Sign(), keyPair.Verify()}
 }
-func (ui UserInfo) UvHash() UidVidHash{
-	return ui.uvHash
+func (ukp UserKeyPair) Sign() crypto.ISignKey{
+	return ukp.signKey
 }
-func (ui UserInfo) Verify() crypto.IVerfKey{
-	return ui.verfKey
+func (ukp UserKeyPair) Verify() crypto.IVerfKey{
+	return ukp.verfKey
 }
-func (ui UserInfo) Marshal() []byte{
-	mui := &struct{
-		H UidVidHash
-		K []byte
-	}{ui.uvHash, ui.verfKey.Marshal()}
-	m, _ := util.Marshal(mui)
+func (ukp UserKeyPair) Marshal() []byte{
+	mui := &pb.KeyPair{
+		SignKey: ukp.signKey.Marshal(),
+		VerfKey: ukp.verfKey.Marshal(),
+	}
+	m, _ := proto.Marshal(mui)
 	return m
 }
-func (ui *UserInfo) Unmarshal(m []byte) error{
-	mui := &struct{
-		H UidVidHash
-		K []byte
-	}{}
-	if err := util.Unmarshal(m, mui); err != nil{return err}
-	verfKey, err := crypto.UnmarshalVerfKey(mui.K)
+func (ukp *UserKeyPair) Unmarshal(m []byte) error{
+	mui := &pb.KeyPair{}
+	if err := proto.Unmarshal(m, mui); err != nil{return err}
+
+	signKey, err := crypto.UnmarshalSignKey(mui.SignKey)
+	if err != nil{return err}
+	verfKey, err := crypto.UnmarshalVerfKey(mui.VerfKey)
 	if err != nil{return err}
 
-	ui.uvHash = mui.H
-	ui.verfKey = verfKey
+	ukp.signKey = signKey
+	ukp.verfKey = verfKey
 	return nil
 }
 
