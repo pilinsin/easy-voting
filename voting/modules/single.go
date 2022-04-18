@@ -6,7 +6,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/pilinsin/util"
-	"github.com/pilinsin/ipfs-util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
@@ -16,9 +15,9 @@ type singleVoting struct {
 	voting
 }
 
-func NewSingleVoting(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPFS) viface.IVoting {
+func NewSingleVoting(vCfg *vutil.Config, idStr, bAddr string) viface.IVoting {
 	sv := &singleVoting{}
-	sv.init(vCfgCid, identity, is)
+	sv.init(vCfg, idStr, bAddr)
 	return sv
 }
 
@@ -85,15 +84,25 @@ func (sv *singleVoting) Vote(data vutil.VoteInt) error {
 		return util.NewError("invalid vote")
 	}
 }
+func (sv singleVoting) GetMyVote() (*vutil.VoteInt, error) {
+	vi, err := sv.baseGetMyVote()
+	if err != nil {
+		return nil, err
+	} else if vi != nil && sv.isValidData(*vi) {
+		return vi, nil
+	} else {
+		return nil, util.NewError("invalid vote")
+	}
+}
 
-func (sv singleVoting) newResult() map[string]map[string]int {
-	result := make(map[string]map[string]int, len(sv.cands))
+func (sv singleVoting) newResult() vutil.VoteResult {
+	result := make(vutil.VoteResult, len(sv.cands))
 	for _, name := range sv.candNameGroups() {
 		result[name] = map[string]int{"n_votes": 0}
 	}
 	return result
 }
-func (sv singleVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[string]int) map[string]map[string]int {
+func (sv singleVoting) addVoteToResult(vi vutil.VoteInt, result vutil.VoteResult) vutil.VoteResult {
 	for k, v := range vi {
 		if v > 0 {
 			result[k]["n_votes"]++
@@ -102,27 +111,20 @@ func (sv singleVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[st
 	return result
 }
 
-func (sv singleVoting) CountMyResult() (string, error){
-	return sv.countResult(sv.baseGetMyVotes)
-}
-func (sv singleVoting) CountManResult() (string, error){
-	return sv.countResult(sv.baseGetVotes)
-}
-func (sv singleVoting) countResult(gvf viface.GetVotesFunc) (string, error) {
+func (sv singleVoting) GetResult() (*vutil.VoteResult, int, error) {
 	result := sv.newResult()
 
-	viChan, nVoters, err := gvf()
+	viChan, nVoters, err := sv.baseGetVotes()
 	if err != nil {
-		return "", err
+		return nil, -1, err
 	}
 
 	nVoted := 0
 	for vi := range viChan {
 		if sv.isValidData(*vi) {
-			result = sv.addVote2Result(*vi, result)
+			result = sv.addVoteToResult(*vi, result)
 			nVoted++
 		}
 	}
-	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
-	return ipfs.File.Add(m, sv.is), nil
+	return &result, nVoted, nil
 }

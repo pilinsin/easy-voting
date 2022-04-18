@@ -1,0 +1,12 @@
+syntax = "proto3";
+package pb;
+option go_package = "./";
+
+message Config{
+	string 	 title 			   = 1;
+	string 	 salt1 			   = 2;
+	bytes  	 salt2 			   = 3;
+	repeated string bootstraps = 4;
+	string 	 uhmAddr 		   = 5;
+	repeated string labels     = 6;
+}

@@ -5,7 +5,6 @@ import (
 
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/ipfs-util"
 	"github.com/pilinsin/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
@@ -16,9 +15,9 @@ type approvalVoting struct {
 	voting
 }
 
-func NewApprovalVoting(vCfgCid string, identity *rutil.UserIdentity, is *ipfs.IPFS) viface.IVoting {
+func NewApprovalVoting(vCfg *vutil.Config, idStr, bAddr string) viface.IVoting {
 	av := &approvalVoting{}
-	av.init(vCfgCid, identity, is)
+	av.init(vCfg, idStr, bAddr)
 	return av
 }
 
@@ -84,25 +83,25 @@ func (av *approvalVoting) Vote(data vutil.VoteInt) error {
 		return util.NewError("invalid vote")
 	}
 }
-func (av approvalVoting) GetMyVote() (string, error) {
+func (av approvalVoting) GetMyVote() (*vutil.VoteInt, error) {
 	vi, err := av.baseGetMyVote()
 	if err != nil {
-		return "", err
+		return nil err
 	} else if vi != nil && av.isValidData(*vi) {
-		return ipfs.ToCidWithAdd(vi.Marshal(), av.is), nil
+		return vi, nil
 	} else {
-		return "", util.NewError("invalid vote")
+		return nil, util.NewError("invalid vote")
 	}
 }
 
-func (av approvalVoting) newResult() map[string]map[string]int {
-	result := make(map[string]map[string]int, len(av.cands))
+func (av approvalVoting) newResult() vutil.VoteResult {
+	result := make(vutil.VoteResult, len(av.cands))
 	for _, name := range av.candNameGroups() {
 		result[name] = map[string]int{"n_votes": 0}
 	}
 	return result
 }
-func (av approvalVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[string]int) map[string]map[string]int {
+func (av approvalVoting) addVoteToResult(vi vutil.VoteInt, result vutil.VoteResult) vutil.VoteResult {
 	for k, v := range vi {
 		if v > 0 {
 			result[k]["n_votes"]++
@@ -110,28 +109,21 @@ func (av approvalVoting) addVote2Result(vi vutil.VoteInt, result map[string]map[
 	}
 	return result
 }
-func (av approvalVoting) CountMyResult() (string, error){
-	return av.countResult(av.baseGetMyVotes)
-}
-func (av approvalVoting) CountManResult() (string, error){
-	return av.countResult(av.baseGetVotes)
-}
-func (av approvalVoting) countResult(gvf viface.GetVotesFunc) (string, error) {
+func (av approvalVoting) GetResult() (*vutil.VoteResult, int, error) {
 	result := av.newResult()
 
-	viChan, nVoters, err := gvf()
+	viChan, nVoters, err := av.baseGetVotes()
 	if err != nil {
-		return "", err
+		return nil, -1, err
 	}
 
 	nVoted := 0
 	for vi := range viChan {
 		if av.isValidData(*vi) {
-			result = av.addVote2Result(*vi, result)
+			result = av.addVoteToResult(*vi, result)
 			nVoted++
 		}
 	}
-	m := vutil.NewResult(result, nVoted, nVoters).Marshal()
-	return ipfs.File.Add(m, av.is), nil
+	return &result, nVoted, nil
 }
 

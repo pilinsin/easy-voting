@@ -1,154 +1,70 @@
 package registrationutil
 
 import (
-	"github.com/pilinsin/ipfs-util"
-	"github.com/pilinsin/util"
+	"errors"
+	"encoding/base64"
 	"github.com/pilinsin/util/crypto"
+	pb "github.com/pilinsin/easy-voting/registration/util/pb"
+	proto "google.golang.org/protobuf/proto"
 )
 
-type registrationBox struct {
-	userPubKey  crypto.IPubKey
-}
-func NewRegistrationBox(pubKey crypto.IPubKey) *registrationBox {
-	return &registrationBox{pubKey}
-}
-func (rb registrationBox) Public() crypto.IPubKey {
-	return rb.userPubKey
-}
-func (rb registrationBox) Marshal() []byte {
-	mrb := &struct {
-		PubKey []byte
-	}{rb.userPubKey.Marshal()}
-	m, _ := util.Marshal(mrb)
-	return m
-}
-func UnmarshalRegistrationBox(m []byte) (*registrationBox, error) {
-	mrb := &struct {
-		PubKey []byte
-	}{}
-	err := util.Unmarshal(m, mrb)
-	if err != nil {
-		return nil, err
-	}
-	pubKey, err := crypto.UnmarshalPubKey(mrb.PubKey)
-	if  err != nil {
-		return nil, err
-	}
-
-	return &registrationBox{pubKey}, nil
-}
 
 type UserIdentity struct {
-	userHash    UserHash
-	userPubKey crypto.IPubKey
-	userPriKey  crypto.IPriKey
-	userSignKey crypto.ISignKey
-	userVerfKey crypto.IVerfKey
+	hash    string
+	pubKey crypto.IPubKey
+	privKey crypto.IPriKey
 }
 
-func NewUserIdentity(uhHash UserHash, pub crypto.IPubKey, pri crypto.IPriKey, sign crypto.ISignKey, verf crypto.IVerfKey) *UserIdentity {
-	return &UserIdentity{uhHash, pub, pri, sign, verf}
+func NewUserIdentity(userHash string, pub crypto.IPubKey, priv crypto.IPriKey) *UserIdentity {
+	return &UserIdentity{userHash, pub, priv}
 }
-func (ui UserIdentity) UserHash() UserHash {
-	return ui.userHash
+func (ui UserIdentity) UserHash() string {
+	return ui.hash
 }
 func (ui UserIdentity) Public() crypto.IPubKey {
-	return ui.userPubKey
+	return ui.pubKey
 }
 func (ui UserIdentity) Private() crypto.IPriKey {
-	return ui.userPriKey
-}
-func (ui UserIdentity) Sign() crypto.ISignKey {
-	return ui.userSignKey
-}
-func (ui UserIdentity) Verf() crypto.IVerfKey {
-	return ui.userVerfKey
+	return ui.privKey
 }
 func (ui UserIdentity) Marshal() []byte {
-	mui := &struct {
-		UserHash    UserHash
-		UserPubKey  []byte
-		UserPriKey  []byte
-		UserSignKey []byte
-		UserVerfKey []byte
-	}{ui.userHash, ui.userPubKey.Marshal(), ui.userPriKey.Marshal(), ui.userSignKey.Marshal(), ui.userVerfKey.Marshal()}
-	m, _ := util.Marshal(mui)
+	mpub, _ := crypto.MarshalPubKey(ui.pubKey)
+	mpri, _ := crypto.MarshalPriKey(ui.privKey)
+	mui := &pb.Identity{
+		Hash:	ui.hash,
+		Pub:	mpub,
+		Priv:  	mpri,
+	}
+	m, _ := proto.Marshal(mui)
 	return m
 }
 func (ui *UserIdentity) Unmarshal(m []byte) error {
-	mui := &struct {
-		UserHash    UserHash
-		UserPubKey  []byte
-		UserPriKey  []byte
-		UserSignKey []byte
-		UserVerfKey []byte
-	}{}
-	if err := util.Unmarshal(m, mui); err != nil {
+	mui := &pb.Identity{}
+	if err := proto.Unmarshal(m, mui); err != nil {
 		return err
 	}
 
-	pubKey, err := crypto.UnmarshalPubKey(mui.UserPubKey)
+	pubKey, err := crypto.UnmarshalPubKey(mui.GetPub())
 	if err != nil {
 		return err
 	}
-	priKey, err := crypto.UnmarshalPriKey(mui.UserPriKey)
-	if err != nil {
-		return err
-	}
-	signKey, err := crypto.UnmarshalSignKey(mui.UserSignKey)
-	if err != nil {
-		return err
-	}
-	verfKey, err := crypto.UnmarshalVerfKey(mui.UserVerfKey)
+	privKey, err := crypto.UnmarshalPriKey(mui.GetPriv())
 	if err != nil {
 		return err
 	}
 
-	ui.userHash = mui.UserHash
-	ui.userPubKey = pubKey
-	ui.userPriKey = priKey
-	ui.userSignKey = signKey
-	ui.userVerfKey = verfKey
+	ui.hash = mui.Hash
+	ui.pubKey = pubKey
+	ui.privKey = privKey
 	return nil
 }
 
-//sent for registration
-type UserInfo struct {
-	userHash  UserHash
-	rBox *registrationBox
+func (ui UserIdentity) ToString() string{
+	return base64.URLEncoding.EncodeToString(ui.Marshal())
 }
-func NewUserInfo(uhHash UserHash, rBox *registrationBox) *UserInfo {
-	return &UserInfo{uhHash, rBox}
-}
-func (ui UserInfo) UserHash() UserHash {
-	return ui.userHash
-}
-func (ui UserInfo) RegistrationBox() *registrationBox {
-	return ui.rBox
-}
-func (ui UserInfo) Marshal() []byte {
-	mui := &struct {
-		UserHash  UserHash
-		MRBox []byte
-	}{ui.userHash, ui.rBox.Marshal()}
-	m, _ := util.Marshal(mui)
-	return m
-}
-func (ui *UserInfo) Unmarshal(m []byte) error {
-	mui := &struct {
-		UserHash  UserHash
-		MRBox []byte
-	}{}
-	err := util.Unmarshal(m, mui)
-	if err != nil {
-		return err
-	}
-	rBox, err := UnmarshalRegistrationBox(mui.MRBox)
-	if err != nil {
-		return err
-	}
-
-	ui.userHash = mui.UserHash
-	ui.rBox = mui.rBox
-	return nil
+func (ui *UserIdentity) FromString(addr string) error{
+	if addr == ""{return errors.New("invalid addr")}
+	m, err := base64.URLEncoding.DecodeString(addr)
+	if err != nil{return err}
+	return ui.Unmarshal(m)
 }

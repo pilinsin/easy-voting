@@ -1,146 +1,111 @@
 package registration
 
 import (
-	"fmt"
-	"time"
-	"strings"
+	"errors"
+	"context"
+	"path/filepath"
 
-	"github.com/pilinsin/ipfs-util"
-	"github.com/pilinsin/util"
+	query "github.com/ipfs/go-datastore/query"
+
 	"github.com/pilinsin/util/crypto"
+	i2p "github.com/pilinsin/go-libp2p-i2p"
+	pv "github.com/pilinsin/p2p-verse"
+	crdt "github.com/pilinsin/p2p-verse/crdt"
+	ipfs "github.com/pilinsin/p2p-verse/ipfs"
+	evutil "github.com/pilinsin/easy-voting/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
 )
 
 type IRegistration interface {
 	Close()
-	VerifyHashBoxMap() bool
-	VerifyUserIdentity(identity *rutil.UserIdentity) bool
 	Registrate(userData ...string) (*rutil.UserIdentity, error)
 }
 
 type registration struct {
-	is          *ipfs.IPFS
-	psTopic     string
-	rPubKey     crypto.IPubKey
-	salt1       string
-	salt2       string
-	uhmCid      string
-	hbmCid      string
-	hbmIpnsName string
+	salt1   string
+	idStr	string
+	is ipfs.Ipfs
+	uhm    	crdt.IStore
 }
 
-func NewRegistration(rCfgCid string, is *ipfs.IPFS) (*registration, error) {
-	rCfg, err := rutil.ConfigFromCid(rCfgCid, is)
-	if err != nil {
-		return nil, err
-	}
-	hbmCid, err := ipfs.Name.GetCid(rCfg.HbmIpnsName(), is)
-	if err != nil {
-		return nil, err
-	}
+func NewRegistration(ctx context.Context, rCfgAddr, idStr string) (*registration, error) {
+	bAddr, rCfgCid, err := evutil.ParseConfigAddr(rCfgAddr)
+	if err != nil{return nil, err}
 
-	r := &registration{
-		is:          is,
-		psTopic:     "registration_pubsub/" + rCfgCid,
-		rPubKey:     rCfg.RPubKey(),
-		salt1:       rCfg.Salt1(),
-		salt2:       rCfg.Salt2(),
-		uhmCid:      rCfg.UhmCid(),
-		hbmCid:      hbmCid,
-		hbmIpnsName: rCfg.HbmIpnsName(),
-	}
-	return r, nil
+	ipfsDir, storeDir, save := parseIdStr(idStr)
+	is, err := evutil.NewIpfs(i2p.NewI2pHost, bAddr, ipfsDir, save)
+	if err != nil{return nil, err}
+	rCfg := &rutil.Config{}
+	if err := rCfg.FromCid(rCfgCid, is); err != nil{return nil, err}
+
+	bootstraps := pv.AddrInfosFromString(bAddr)
+	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, save, false, bootstraps...)
+	opt := &crdt.StoreOpts{Salt:rCfg.Salt2}
+	uhm, err := v.LoadStore(ctx, rCfg.UhmAddr, "hash", opt)
+	if err != nil{return nil, err}
+
+	return &registration{
+		salt1:  rCfg.Salt1,
+		idStr:	idStr,
+		is:		is,
+		uhm: 	uhm,
+	}, nil
 }
+
+func parseIdStr(idStr string) (string, string, bool){
+	mi := &rutil.ManIdentity{}
+	if err := mi.FromString(idStr); err == nil{
+		return mi.IpfsDir, mi.StoreDir, true
+	}
+	title := pv.RandString(8)
+	ipfsDir := filepath.Join(title, pv.RandString(8))
+	storeDir := filepath.Join(title, pv.RandString(8))
+	return ipfsDir, storeDir, false
+}
+
 func (r *registration) Close() {
-	r.is = nil
+	r.is.Close()
+	r.uhm.Close()
 }
-func (r *registration) VerifyHashBoxMap() bool {
-	pth, _ := r.is.Name.Resolve(r.hbmIpnsName)
-	mhbm, err := r.is.File.Get(pth)
-	if err != nil {
-		fmt.Println("hbmName error")
-		return false
-	}
-	hbm, err = UnmarshalHashBoxMap(mhbm)
-	if err != nil {
-		fmt.Println("hbm unmarshal error")
-		return false
+
+func (r *registration) hasPubKey(pubKey crypto.IPubKey) bool{
+	rs, err := r.uhm.Query()
+	if err != nil{return false}
+	mpub, err := crypto.MarshalPubKey(pubKey)
+	if err != nil{return false}
+	rs = query.NaiveFilter(rs, crdt.ValueMatchFilter{mpub})
+	resList, err := rs.Rest()
+	rs.Close()
+
+	return len(resList) > 0 && err == nil
+}
+func (r *registration) Registrate(userData ...string) (string, error) {
+	if _, _,  man := parseIdStr(r.idStr); man{
+		return "", errors.New("manager can not registrate")
 	}
 
-	if ok := hbm.VerifyHashes(r.uhmCid, r.is); !ok {
-		fmt.Println("invalid uhHash is contained in hbm")
-		return false
-	}
-	if hbm.VerifyCid(r.hbmCid, r.is) {
-		r.hbmCid = pth.Cid().String()
-		return true
-	} else {
-		fmt.Println("invalid hnm cid")
-		return false
-	}
-}
-func (r *registration) VerifyUserIdentity(identity *rutil.UserIdentity) bool {
-	if hbm, err := HashBoxMapFromName(r.hnmIpnsName, r.is); err != nil {
-		return false
-	}else{
-		return hbm.VerifyUserIdentity(identity, r.salt2, r.is)
-	}
-}
-func (r *registration) Registrate(userData ...string) (*rutil.UserIdentity, error) {
 	userHash := rutil.NewUserHash(r.salt1, userData...)
-	uhHash := rutil.NewUhHash(r.salt2, userHash)
-
-	uhm, err := UhHashMapFromCid(r.uhmCid, r.is)
-	if err != nil {
-		return nil, err
-	}
-	if ok := uhm.ContainHash(uhHash, r.is); !ok {
-		return nil, util.NewError("uhHash is not contained")
-	}
-	hbm, err := HashBoxMapFromName(r.hbmIpnsName, r.is)
-	if err != nil {
-		return nil, err
-	}
-	if _, ok := hbm.ContainHash(uhHash, r.is); ok {
-		return nil, util.NewError("uhHash is already registrated")
+	if ok, err := r.uhm.Has(userHash); ok && err == nil{
+		return "", errors.New("already registrated")
 	}
 
-	var userEncKeyPair IPubEncryptKeyPair
+	var userEncKeyPair crypto.IPubEncryptKeyPair
 	for{
 		userEncKeyPair = crypto.NewPubEncryptKeyPair()
-		if ng := hbm.ContainPubKey(userEncKeyPair.Public()); !ng{break}
+		if has := r.hasPubKey(userEncKeyPair.Public()); !has{break}
 	}
-	userSignKeyPair := crypto.NewSignKeyPair()
-	rb := rutil.NewRegistrationBox(userEncKeyPair.Public())
 
 	id := rutil.NewUserIdentity(
 		userHash,
 		userEncKeyPair.Public(),
 		userEncKeyPair.Private(),
-		userSignKeyPair.Sign(),
-		userSignKeyPair.Verify(),
 	)
-	uInfo := rutil.NewUserInfo(userHash, rb)
 
-	encInfo, err := r.rPubKey.Encrypt(uInfo.Marshal())
-	if err != nil {
-		return nil, util.AddError(err, "encUInfo err in r.Registrate")
-	}
-	r.is.PubSub().Publish(encInfo, r.psTopic)
-	
-	ticker := time.NewTicker(30*time.Second)
-	defer ticker.Stop()
-	for {
-		hbm, err := HashBoxMapFromName(r.hbmIpnsName, r.is)
-		if err != nil {
-			return nil, err
-		}
-		if hbm.VerifyUserInfo(uInfo, r.salt2, r.is) {
-			fmt.Println("uInfo verified")
-			return id, nil
-		}
-		//fmt.Println("wait for registration")
-		<-ticker.C
+	mpub, err := crypto.MarshalPubKey(userEncKeyPair.Public())
+	if err != nil{return "", err}
+	if err := r.uhm.Put(userHash, mpub); err != nil{
+		return "", err
 	}
 
+	return id.ToString(), nil
 }
