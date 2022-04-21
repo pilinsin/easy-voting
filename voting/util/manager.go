@@ -1,10 +1,11 @@
 package votingutil
 
 import (
+	"errors"
+	"encoding/base64"
 	pb "github.com/pilinsin/easy-voting/voting/util/pb"
 	proto "google.golang.org/protobuf/proto"
 
-	"github.com/pilinsin/util"
 	"github.com/pilinsin/util/crypto"
 )
 
@@ -17,10 +18,13 @@ type ManIdentity struct {
 }
 
 func (mi ManIdentity) Marshal() []byte {
+	mpri, _ := crypto.MarshalPriKey(mi.Priv)
+	msig, _ := crypto.MarshalSignKey(mi.Sign)
+	mver, _ := crypto.MarshalVerfKey(mi.Verf)
 	mManId := &pb.ManIdentity {
-		Priv: mi.Priv.Marshal(),
-		Sign: mi.Sign.Marshal(),
-		Verf: mi.Verf.Marshal(),
+		Priv: mpri,
+		Sign: msig,
+		Verf: mver,
 		IpfsDir: mi.IpfsDir,
 		StoreDir: mi.StoreDir,
 	}
@@ -58,6 +62,7 @@ func (mi ManIdentity) toString() string{
 	return base64.URLEncoding.EncodeToString(mi.Marshal())
 }
 func (mi *ManIdentity) FromString(addr string) error{
+	if addr == ""{return errors.New("invalid addr")}
 	m, err := base64.URLEncoding.DecodeString(addr)
 	if err != nil{return err}
 	return mi.Unmarshal(m)

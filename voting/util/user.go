@@ -22,20 +22,22 @@ func (ukp UserKeyPair) Verify() crypto.IVerfKey{
 	return ukp.verfKey
 }
 func (ukp UserKeyPair) Marshal() []byte{
-	mui := &pb.KeyPair{
-		SignKey: ukp.signKey.Marshal(),
-		VerfKey: ukp.verfKey.Marshal(),
+	msign, _ := crypto.MarshalSignKey(ukp.signKey)
+	mverf, _ := crypto.MarshalVerfKey(ukp.verfKey)
+	muk := &pb.KeyPair{
+		SignKey: msign,
+		VerfKey: mverf,
 	}
-	m, _ := proto.Marshal(mui)
+	m, _ := proto.Marshal(muk)
 	return m
 }
 func (ukp *UserKeyPair) Unmarshal(m []byte) error{
-	mui := &pb.KeyPair{}
-	if err := proto.Unmarshal(m, mui); err != nil{return err}
+	muk := &pb.KeyPair{}
+	if err := proto.Unmarshal(m, muk); err != nil{return err}
 
-	signKey, err := crypto.UnmarshalSignKey(mui.SignKey)
+	signKey, err := crypto.UnmarshalSignKey(muk.SignKey)
 	if err != nil{return err}
-	verfKey, err := crypto.UnmarshalVerfKey(mui.VerfKey)
+	verfKey, err := crypto.UnmarshalVerfKey(muk.VerfKey)
 	if err != nil{return err}
 
 	ukp.signKey = signKey

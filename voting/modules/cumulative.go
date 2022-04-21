@@ -2,14 +2,14 @@ package votingmodule
 
 import (
 	"log"
+	"errors"
+	"context"
 	"strconv"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/util"
-	rutil "github.com/pilinsin/easy-voting/registration/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
@@ -20,13 +20,13 @@ type cumulativeVoting struct {
 	total int
 }
 
-func NewCumulativeVoting(vCfg *vutil.Config, idStr, bAddr string) viface.IVoting {
+func NewCumulativeVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) (viface.IVoting, error) {
 	cv := &cumulativeVoting{
 		min:   vCfg.Params.Min,
 		total: vCfg.Params.Total,
 	}
-	cv.init(vCfg, idStr, bAddr)
-	return cv
+	if err := cv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil{return nil, err}
+	return cv, nil
 }
 
 type cumulativeForm struct {
@@ -122,7 +122,7 @@ func (cv *cumulativeVoting) Vote(data vutil.VoteInt) error {
 	if cv.isValidData(data) {
 		return cv.baseVote(data)
 	} else {
-		return util.NewError("invalid vote")
+		return errors.New("invalid vote")
 	}
 }
 func (cv cumulativeVoting) GetMyVote() (*vutil.VoteInt, error) {
@@ -132,7 +132,7 @@ func (cv cumulativeVoting) GetMyVote() (*vutil.VoteInt, error) {
 	} else if vi != nil && cv.isValidData(*vi) {
 		return vi, nil
 	} else {
-		return nil, util.NewError("invalid vote")
+		return nil, errors.New("invalid vote")
 	}
 }
 
@@ -150,12 +150,12 @@ func (cv cumulativeVoting) addVoteToResult(vi vutil.VoteInt, result vutil.VoteRe
 	return result
 }
 
-func (cv cumulativeVoting) GetResult() (*vutil.VoteResult, int, error) {
+func (cv cumulativeVoting) GetResult() (*vutil.VoteResult, int, int, error) {
 	result := cv.newResult()
 
 	viChan, nVoters, err := cv.baseGetVotes()
 	if err != nil {
-		return nil, -1, err
+		return nil, -1, -1, err
 	}
 
 	nVoted := 0
@@ -165,6 +165,6 @@ func (cv cumulativeVoting) GetResult() (*vutil.VoteResult, int, error) {
 			nVoted++
 		}
 	}
-	return &result, nVoted, nil
+	return &result, nVoters, nVoted, nil
 }
 

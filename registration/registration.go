@@ -4,6 +4,7 @@ import (
 	"errors"
 	"context"
 	"path/filepath"
+	"time"
 
 	query "github.com/ipfs/go-datastore/query"
 
@@ -14,21 +15,19 @@ import (
 	ipfs "github.com/pilinsin/p2p-verse/ipfs"
 	evutil "github.com/pilinsin/easy-voting/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
+	riface "github.com/pilinsin/easy-voting/registration/interface"
 )
 
-type IRegistration interface {
-	Close()
-	Registrate(userData ...string) (*rutil.UserIdentity, error)
-}
-
 type registration struct {
+	ctx context.Context
+	cancel func()
 	salt1   string
 	idStr	string
 	is ipfs.Ipfs
 	uhm    	crdt.IStore
 }
 
-func NewRegistration(ctx context.Context, rCfgAddr, idStr string) (*registration, error) {
+func NewRegistration(ctx context.Context, rCfgAddr, idStr string) (riface.IRegistration, error) {
 	bAddr, rCfgCid, err := evutil.ParseConfigAddr(rCfgAddr)
 	if err != nil{return nil, err}
 
@@ -44,12 +43,30 @@ func NewRegistration(ctx context.Context, rCfgAddr, idStr string) (*registration
 	uhm, err := v.LoadStore(ctx, rCfg.UhmAddr, "hash", opt)
 	if err != nil{return nil, err}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	autoSync(ctx, uhm)
+
 	return &registration{
+		ctx:	ctx,
+		cancel:	cancel,
 		salt1:  rCfg.Salt1,
 		idStr:	idStr,
 		is:		is,
 		uhm: 	uhm,
 	}, nil
+}
+func autoSync(ctx context.Context, uhm crdt.IStore){
+	ticker := time.NewTicker(time.Second*10)
+	go func(){
+		for{
+			select{
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				uhm.Sync()
+			}
+		}
+	}()
 }
 
 func parseIdStr(idStr string) (string, string, bool){
@@ -64,6 +81,7 @@ func parseIdStr(idStr string) (string, string, bool){
 }
 
 func (r *registration) Close() {
+	r.cancel()
 	r.is.Close()
 	r.uhm.Close()
 }

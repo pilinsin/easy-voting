@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.28.0
 // 	protoc        v3.19.4
-// source: manager.proto
+// source: registrationmanager.proto
 
-package __
+package pb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -32,7 +32,7 @@ type ManIdentity struct {
 func (x *ManIdentity) Reset() {
 	*x = ManIdentity{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_manager_proto_msgTypes[0]
+		mi := &file_registrationmanager_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -45,7 +45,7 @@ func (x *ManIdentity) String() string {
 func (*ManIdentity) ProtoMessage() {}
 
 func (x *ManIdentity) ProtoReflect() protoreflect.Message {
-	mi := &file_manager_proto_msgTypes[0]
+	mi := &file_registrationmanager_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *ManIdentity) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManIdentity.ProtoReflect.Descriptor instead.
 func (*ManIdentity) Descriptor() ([]byte, []int) {
-	return file_manager_proto_rawDescGZIP(), []int{0}
+	return file_registrationmanager_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ManIdentity) GetIpfsDir() string {
@@ -75,35 +75,37 @@ func (x *ManIdentity) GetStoreDir() string {
 	return ""
 }
 
-var File_manager_proto protoreflect.FileDescriptor
+var File_registrationmanager_proto protoreflect.FileDescriptor
 
-var file_manager_proto_rawDesc = []byte{
-	0x0a, 0x0d, 0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
-	0x02, 0x70, 0x62, 0x22, 0x43, 0x0a, 0x0b, 0x4d, 0x61, 0x6e, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69,
-	0x74, 0x79, 0x12, 0x18, 0x0a, 0x07, 0x69, 0x70, 0x66, 0x73, 0x44, 0x69, 0x72, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x07, 0x69, 0x70, 0x66, 0x73, 0x44, 0x69, 0x72, 0x12, 0x1a, 0x0a, 0x08,
-	0x53, 0x74, 0x6f, 0x72, 0x65, 0x44, 0x69, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08,
-	0x53, 0x74, 0x6f, 0x72, 0x65, 0x44, 0x69, 0x72, 0x42, 0x04, 0x5a, 0x02, 0x2e, 0x2f, 0x62, 0x06,
+var file_registrationmanager_proto_rawDesc = []byte{
+	0x0a, 0x19, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x6d, 0x61,
+	0x6e, 0x61, 0x67, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x14, 0x72, 0x65, 0x67,
+	0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x75, 0x74, 0x69, 0x6c, 0x2e, 0x70,
+	0x62, 0x22, 0x43, 0x0a, 0x0b, 0x4d, 0x61, 0x6e, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79,
+	0x12, 0x18, 0x0a, 0x07, 0x69, 0x70, 0x66, 0x73, 0x44, 0x69, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x07, 0x69, 0x70, 0x66, 0x73, 0x44, 0x69, 0x72, 0x12, 0x1a, 0x0a, 0x08, 0x53, 0x74,
+	0x6f, 0x72, 0x65, 0x44, 0x69, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x53, 0x74,
+	0x6f, 0x72, 0x65, 0x44, 0x69, 0x72, 0x42, 0x06, 0x5a, 0x04, 0x2e, 0x3b, 0x70, 0x62, 0x62, 0x06,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_manager_proto_rawDescOnce sync.Once
-	file_manager_proto_rawDescData = file_manager_proto_rawDesc
+	file_registrationmanager_proto_rawDescOnce sync.Once
+	file_registrationmanager_proto_rawDescData = file_registrationmanager_proto_rawDesc
 )
 
-func file_manager_proto_rawDescGZIP() []byte {
-	file_manager_proto_rawDescOnce.Do(func() {
-		file_manager_proto_rawDescData = protoimpl.X.CompressGZIP(file_manager_proto_rawDescData)
+func file_registrationmanager_proto_rawDescGZIP() []byte {
+	file_registrationmanager_proto_rawDescOnce.Do(func() {
+		file_registrationmanager_proto_rawDescData = protoimpl.X.CompressGZIP(file_registrationmanager_proto_rawDescData)
 	})
-	return file_manager_proto_rawDescData
+	return file_registrationmanager_proto_rawDescData
 }
 
-var file_manager_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_manager_proto_goTypes = []interface{}{
-	(*ManIdentity)(nil), // 0: pb.ManIdentity
+var file_registrationmanager_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_registrationmanager_proto_goTypes = []interface{}{
+	(*ManIdentity)(nil), // 0: registration.util.pb.ManIdentity
 }
-var file_manager_proto_depIdxs = []int32{
+var file_registrationmanager_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -111,13 +113,13 @@ var file_manager_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_manager_proto_init() }
-func file_manager_proto_init() {
-	if File_manager_proto != nil {
+func init() { file_registrationmanager_proto_init() }
+func file_registrationmanager_proto_init() {
+	if File_registrationmanager_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_manager_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_registrationmanager_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ManIdentity); i {
 			case 0:
 				return &v.state
@@ -134,18 +136,18 @@ func file_manager_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_manager_proto_rawDesc,
+			RawDescriptor: file_registrationmanager_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_manager_proto_goTypes,
-		DependencyIndexes: file_manager_proto_depIdxs,
-		MessageInfos:      file_manager_proto_msgTypes,
+		GoTypes:           file_registrationmanager_proto_goTypes,
+		DependencyIndexes: file_registrationmanager_proto_depIdxs,
+		MessageInfos:      file_registrationmanager_proto_msgTypes,
 	}.Build()
-	File_manager_proto = out.File
-	file_manager_proto_rawDesc = nil
-	file_manager_proto_goTypes = nil
-	file_manager_proto_depIdxs = nil
+	File_registrationmanager_proto = out.File
+	file_registrationmanager_proto_rawDesc = nil
+	file_registrationmanager_proto_goTypes = nil
+	file_registrationmanager_proto_depIdxs = nil
 }

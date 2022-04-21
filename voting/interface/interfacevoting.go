@@ -14,7 +14,7 @@ type IVoting interface {
 	Type() string
 	Vote(data vutil.VoteInt) error
 	GetMyVote() (*vutil.VoteInt, error)
-	GetResult() (*vutil.VoteResult, int, error)
+	GetResult() (*vutil.VoteResult, int, int, error)
 }
 
 

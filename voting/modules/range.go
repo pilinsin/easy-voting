@@ -3,13 +3,13 @@ package votingmodule
 import (
 	"log"
 	"strconv"
+	"errors"
+	"context"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/util"
-	rutil "github.com/pilinsin/easy-voting/registration/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
@@ -20,13 +20,13 @@ type rangeVoting struct {
 	max int
 }
 
-func NewRangeVoting(vCfg *vutil.Config, idStr, bAddr string) viface.IVoting {
+func NewRangeVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) (viface.IVoting, error) {
 	rv := &rangeVoting{
 		min: vCfg.Params.Min,
 		max: vCfg.Params.Max,
 	}
-	rv.init(vCfg, idStr, bAddr)
-	return rv
+	if err := rv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil{return nil, err}
+	return rv, nil
 }
 
 type rangeForm struct {
@@ -109,7 +109,7 @@ func (rv *rangeVoting) Vote(data vutil.VoteInt) error {
 	if rv.isValidData(data) {
 		return rv.baseVote(data)
 	} else {
-		return util.NewError("invalid vote")
+		return errors.New("invalid vote")
 	}
 }
 func (rv rangeVoting) GetMyVote() (*vutil.VoteInt, error) {
@@ -119,7 +119,7 @@ func (rv rangeVoting) GetMyVote() (*vutil.VoteInt, error) {
 	} else if vi != nil && rv.isValidData(*vi) {
 		return vi, nil
 	} else {
-		return nil, util.NewError("invalid vote")
+		return nil, errors.New("invalid vote")
 	}
 }
 
@@ -137,12 +137,12 @@ func (rv rangeVoting) addVoteToResult(vi vutil.VoteInt, result vutil.VoteResult)
 	return result
 }
 
-func (rv rangeVoting) GetResult() (*vutil.VoteResult, int, error) {
+func (rv rangeVoting) GetResult() (*vutil.VoteResult, int, int, error) {
 	result := rv.newResult()
 
 	viChan, nVoters, err := rv.baseGetVotes()
 	if err != nil {
-		return nil, -1, err
+		return nil, -1, -1, err
 	}
 
 	nVoted := 0
@@ -152,6 +152,6 @@ func (rv rangeVoting) GetResult() (*vutil.VoteResult, int, error) {
 			nVoted++
 		}
 	}
-	return &result, nVoted, nil
+	return &result, nVoters, nVoted, nil
 }
 

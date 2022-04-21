@@ -4,13 +4,13 @@ import (
 	"log"
 	"sort"
 	"strconv"
+	"errors"
+	"context"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/util"
-	rutil "github.com/pilinsin/easy-voting/registration/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
@@ -19,10 +19,10 @@ type preferenceVoting struct {
 	voting
 }
 
-func NewPreferenceVoting(vCfg *vutil.Config, idStr, bAddr string) viface.IVoting {
+func NewPreferenceVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) (viface.IVoting, error) {
 	pv := &preferenceVoting{}
-	pv.init(vCfg, idStr, bAddr)
-	return pv
+	if err := pv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil{return nil, err}
+	return pv, nil
 }
 
 type preferenceForm struct {
@@ -108,7 +108,7 @@ func (pv *preferenceVoting) Vote(data vutil.VoteInt) error {
 	if pv.isValidData(data) {
 		return pv.baseVote(data)
 	} else {
-		return util.NewError("invalid vote")
+		return errors.New("invalid vote")
 	}
 }
 func (pv preferenceVoting) GetMyVote() (*vutil.VoteInt, error) {
@@ -118,7 +118,7 @@ func (pv preferenceVoting) GetMyVote() (*vutil.VoteInt, error) {
 	} else if vi != nil && pv.isValidData(*vi) {
 		return vi, nil
 	} else {
-		return nil, util.NewError("invalid vote")
+		return nil, errors.New("invalid vote")
 	}
 }
 
@@ -139,12 +139,12 @@ func (pv preferenceVoting) addVoteToResult(vi vutil.VoteInt, result vutil.VoteRe
 	return result
 }
 
-func (pv preferenceVoting) GetResult() (*vutil.VoteResult, int, error) {
+func (pv preferenceVoting) GetResult() (*vutil.VoteResult, int, int, error) {
 	result := pv.newResult()
 
 	viChan, nVoters, err := pv.baseGetVotes()
 	if err != nil {
-		return nil, -1, err
+		return nil, -1, -1, err
 	}
 
 	nVoted := 0
@@ -154,6 +154,6 @@ func (pv preferenceVoting) GetResult() (*vutil.VoteResult, int, error) {
 			nVoted++
 		}
 	}
-	return &result, nVoted, nil
+	return &result, nVoters, nVoted, nil
 }
 
