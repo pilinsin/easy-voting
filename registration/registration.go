@@ -25,6 +25,7 @@ type registration struct {
 	idStr	string
 	is ipfs.Ipfs
 	uhm    	crdt.IStore
+	cfg    *rutil.Config
 }
 
 func NewRegistration(ctx context.Context, rCfgAddr, idStr string) (riface.IRegistration, error) {
@@ -53,6 +54,7 @@ func NewRegistration(ctx context.Context, rCfgAddr, idStr string) (riface.IRegis
 		idStr:	idStr,
 		is:		is,
 		uhm: 	uhm,
+		cfg:	rCfg,
 	}, nil
 }
 func autoSync(ctx context.Context, uhm crdt.IStore){
@@ -84,6 +86,10 @@ func (r *registration) Close() {
 	r.cancel()
 	r.is.Close()
 	r.uhm.Close()
+}
+
+func (r *registration) Config() *rutil.Config{
+	return r.cfg
 }
 
 func (r *registration) hasPubKey(pubKey crypto.IPubKey) bool{
@@ -125,5 +131,8 @@ func (r *registration) Registrate(userData ...string) (string, error) {
 		return "", err
 	}
 
+	time.Sleep(15*time.Second)
 	return id.ToString(), nil
 }
+//ClhkZ2thdGxXLU5tQmhMY0hiRWZrNzlpYm9UVHFGWExXQXB5ZFZScGNOLVhfSHhqRF9INmt5YXdOS2FkMDJjSnhKeHo3VGh6RWZoUGctNkhRVlg4aFJRQT09EusCCugCCs8C3cZ0ZGf5e6Vr-puVTHmkTBhMhmi4RQ6zV8SRhh71OkVppPJCDw24-ldbP2yLWk8BSPk3-DbrCxoh0804yNaVHMQtTEqd23rawLYG7bnqbu7xom6bcUbpYQbuoUN1F-ICpyBQokUtQ4ShiyaN4YHcNSAt83XClt4Fcauu05tGwCls8J-hlOIA3SZWNFGsZjoFRp4GISmq5MnE9-UQpBWbGBeKHSddvgrhpTY0fZtJlCgcoyECGGx7b0wL6fxdS8lpMPQsJWHAkwGR1n5ngLO-NSkeAVD-d93oeItUeQ40Wj3Jt_N1DjkflSrf80g8UY4igwoY25Ev7lLmMkEjAUhhid8v6zqLAJaR89nmoT8cg0DUkUegC02oJUgZFjr9Mw4BP9zexOqowOWb9BQGLkRDv9bjRrCEHpck0KNo2loVlpfWbFjSW0rWhJltRysBAgISFFNJREgtcDc1MS1jb21wcmVzc2VkGk0KSwowOA0CduNuWgKyzsEOHoo_uvQer83tgQBYAKagClygRswZY5WZAVOsIyTtt5jP8gQAEhRTSURILXA3NTEtY29tcHJlc3NlZBjPAg==
+//ClhPU1hSbzNnZ1RCSG92U0w5TW5vWGkyVDU5amRrLTlNTkV4MjE2a0JXWDlCMEhwaXQtd2NNQkpRT2h1ZUcyNnMxV3dJalliNDFlLWZZdXlmZTBHTmdQdz09EusCCugCCs8CrUq9T6D9SGAdI1OqBTp_utWrzJUQu1X5zsuYdPrDLWDWsKII7iDaB7Aq8paM__EDNoXkk_uyeuOpah-OUpXZKd8ikdJlpTooR0zrDcq3AxOfFC2upsVx7Oe_ShsJcqIElfvZV9EnAe39YzQhrqemwZ0T2zGB2R_KdBtWXkIPOb1PbByJeTO5duJBzKaFCfADHk0yAppSRL_J0l35zPpdy5vdn70FR0IptSxS2kqfvc7uHJRkKERPeF-cCMH7YxjB1csnnGng139FOX2l3JAtVK9s5TdB1tJq5P9z674wROFSFaXlUV1Pq81SsuMBTYtys_mzlDmVdt2GucDZnVFoPZ5h62NEnmThjSfCmchx4ChV5IhfrA8dIFd04FulfIpkK8m-AQemRaUkZ1mjoXeYkYOXjWj4p3JOBvnNPrEAzPtstFX-Qopw5L9drwiBAgESFFNJREgtcDc1MS1jb21wcmVzc2VkGk0KSwowxiC6pjEOAlnYcfWFSOCj1IIs_HmWTHpsk1qX4nyZKxXRcFFaVL7TYt7cxjZFQwgAEhRTSURILXA3NTEtY29tcHJlc3NlZBjPAg==

@@ -1,19 +1,22 @@
-package votingpageutil
+package votingpage
 
 import (
+	"context"
 	"time"
+	"io"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/easy-voting/util"
+	gutil "github.com/pilinsin/easy-voting/gui/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
-func CandCards(cands []vutil.Candidate) fyne.CanvasObject {
+func CandCards(cands []*vutil.Candidate) fyne.CanvasObject {
 	var candList [](fyne.CanvasObject)
 	for _, cand := range cands {
 		card := newCandCard(cand)
@@ -27,17 +30,17 @@ type candCard struct {
 	url   fyne.CanvasObject
 	imgCanvas *imageCanvas
 }
-func newCandCard(cand vutil.Candidate) *candCard {
-	res := fyne.NewStaticResource(cand.ImageName, cand.Image)
+func newCandCard(cand *vutil.Candidate) *candCard {
+	res := fyne.NewStaticResource(cand.ImgName, cand.Image)
 	img := newImageCanvas(res)
-	if resourceEqual(res, defaultIcon()){
+	if gutil.ResourceEqual(res, gutil.DefaultIcon()){
 		img.SetImage(nil)
 	}
 
 	card := &candCard{
 		name:     widget.NewLabel(cand.Name),
 		group: widget.NewLabel(cand.Group),
-		url:  setUrl("URL", cand.Url),
+		url:  gutil.SetUrl("URL", cand.Url),
 		imgCanvas: img,
 	}
 	return card
@@ -70,8 +73,8 @@ func (cf *CandForm) Render(w fyne.Window) fyne.CanvasObject {
 	})
 	return container.NewBorder(container.NewBorder(nil, nil, addBtn, nil), nil, nil, nil, contents)
 }
-func (cf *CandForm) Candidates() []vutil.Candidate {
-	candidates := make([]vutil.Candidate, len(cf.cands))
+func (cf *CandForm) Candidates() []*vutil.Candidate {
+	candidates := make([]*vutil.Candidate, len(cf.cands))
 	for idx, cand := range cf.cands {
 		candidates[idx] = cand.Candidate()
 	}
@@ -97,7 +100,7 @@ type candEntry struct {
 	thumbnail chan fyne.Resource
 }
 func newCandEntry(w fyne.Window) *candEntry {
-	imgCanvas := newImageCanvas(defaultIcon())
+	imgCanvas := newImageCanvas(gutil.DefaultIcon())
 	imgCanvas.Hide()
 
 	thumb := make(chan fyne.Resource)
@@ -109,10 +112,16 @@ func newCandEntry(w fyne.Window) *candEntry {
 	}
 	imgBtn.ExtendBaseWidget(imgBtn)
 
+	nameEntry := widget.NewEntry()
+	nameEntry.SetPlaceHolder("Name")
+	groupEntry := widget.NewEntry()
+	groupEntry.SetPlaceHolder("Group")
+	urlEntry := widget.NewEntry()
+	urlEntry.SetPlaceHolder("URL")
 	cand := &candEntry{
-		name:   PlaceHolderEntry("Name"),
-		group:  PlaceHolderEntry("Group"),
-		url:    PlaceHolderEntry("URL"),
+		name:   nameEntry,
+		group:  groupEntry,
+		url:    urlEntry,
 		imgBtn: imgBtn,
 		imgCanvas: imgCanvas,
 		thumbnail: thumb,
@@ -122,25 +131,55 @@ func newCandEntry(w fyne.Window) *candEntry {
 func (ce *candEntry) Render() fyne.CanvasObject {
 	return container.NewVBox(ce.imgCanvas.Render(), ce.imgBtn, ce.name, ce.group, ce.url)
 }
-func (ce *candEntry) Candidate() vutil.Candidate {
+func (ce *candEntry) Candidate() *vutil.Candidate {
 	var res fyne.Resource
-	ctx, cancel := util.CancelTimerContext(10*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 	select{
 		case res, _ = <- ce.thumbnail:
 		case <-ctx.Done():
-			res  = defaultIcon()
+			res  = gutil.DefaultIcon()
 			close(ce.thumbnail)
 	}
 	
-	return vutil.Candidate{
+	return &vutil.Candidate{
 		Name:  ce.name.Text,
 		Group: ce.group.Text,
 		Url:   ce.url.Text,
 		Image: res.Content(),
-		ImageName: res.Name(),
+		ImgName: res.Name(),
 	}
 }
+
+func imageDialog(w fyne.Window, res chan <- fyne.Resource, hideObj fyne.CanvasObject, resCanvas *imageCanvas) func(){
+	return func(){
+		onSelected := func(rc fyne.URIReadCloser, err error) {
+			if rc == nil || err != nil {return}
+			if ok := isImageExtension(rc.URI().Extension()); !ok{return}
+
+			data, err := io.ReadAll(rc)
+			if err != nil{return}
+			loadRes := &fyne.StaticResource{rc.URI().Name(), data}
+			go func(){
+				res <- loadRes
+				close(res)
+			}()
+			hideObj.Hide()
+			resCanvas.Show()
+			resCanvas.SetImage(loadRes)
+		}
+		dialog.ShowFileOpen(onSelected, w)
+	}
+}
+func isImageExtension(ext string) bool{
+	switch ext {
+	case ".bmp", ".png", ".jpeg", ".jpg", ".gif", ".tiff", ".vp8l", ".webp", ".svg":
+		return true
+	default:
+		return false
+	}
+}
+
 
 type imageCanvas struct{
 	imgCanvas *fyne.Container

@@ -1,14 +1,16 @@
 package registrationutil
 
 import (
-	"github.com/pilinsin/util"
+	"strings"
+	"encoding/base64"
 	"github.com/pilinsin/util/crypto"
 )
 
 
 func NewUserHash(salt string, userData ...string) string {
-	m, _ := util.Marshal(userData)
-	m = crypto.Hash([]byte(m), []byte(salt))
+	s := strings.Join(userData, " ")
+	s = strings.Join(strings.Fields(s), "#@%@#")
+	m := crypto.Hash([]byte(s), []byte(salt))
 	m = crypto.HashWithSize([]byte(salt), m, 64)
-	return util.AnyBytes64ToStr(m)
+	return base64.URLEncoding.EncodeToString(m)
 }

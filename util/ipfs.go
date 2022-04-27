@@ -7,11 +7,11 @@ import(
 	ipfs "github.com/pilinsin/p2p-verse/ipfs"
 )
 
-func ParseConfigAddr(rCfgAddr string) (string, string, error){
-	addrs := strings.Split(strings.TrimPrefix(rCfgAddr, "/"), "/")
+func ParseConfigAddr(cfgAddr string) (string, string, error){
+	addrs := strings.Split(strings.TrimPrefix(cfgAddr, "/"), "/")
 	pre := addrs[0]
 	if len(addrs)<3 || (pre != "r" && pre != "v"){
-		return "", "", errors.New("invalid rCfgAddr")
+		return "", "", errors.New("invalid cfgAddr")
 	}
 	return addrs[1], addrs[2], nil
 }

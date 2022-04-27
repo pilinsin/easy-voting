@@ -3,62 +3,55 @@ package registrationpage
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/easy-voting/ipfs"
-	rputil "github.com/pilinsin/easy-voting/registration/page/util"
+	gutil "github.com/pilinsin/easy-voting/gui/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
 )
 
-func NewSetupPage(w fyne.Window, is *ipfs.IPFS) fyne.CanvasObject {
+func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 	noteLabel := widget.NewLabel("")
-	cidEntry := widget.NewEntry()
-	cidEntry.SetPlaceHolder("registration config cid")
+	addrLabel := gutil.NewCopyButton("registration config address")
+	maIdLabel := gutil.NewCopyButton("manager identity address")
 
 	titleEntry := widget.NewEntry()
-
-	userDataset := make(chan []string)
-	//load icon
-	loadCsvBtn := &widget.Button{
-		Text: "upload userDataset csv",
-		Icon: theme.UploadIcon(),
-	}
-	loadCsvBtn.OnTapped = rputil.CsvDialog(w, userDataset, loadCsvBtn, noteLabel)
-	loadCsvBtn.ExtendBaseWidget(loadCsvBtn)
-
-	kwEntry := widget.NewEntry()
-	kwEntry.SetPlaceHolder("keyword of registration manager identity")
+	csvBtn := gutil.NewLoadCsvButton(w, noteLabel)
+	bAddrEntry := widget.NewEntry()
 
 	form := &widget.Form{}
 	form.Items = append(form.Items, widget.NewFormItem("title", titleEntry))
-	form.Items = append(form.Items, widget.NewFormItem("csv", loadCsvBtn))
-	form.Items = append(form.Items, widget.NewFormItem("keyword", kwEntry))
+	form.Items = append(form.Items, widget.NewFormItem("csv", csvBtn))
+	form.Items = append(form.Items, widget.NewFormItem("bAddr", bAddrEntry))
 	form.OnSubmit = func() {
 		if titleEntry.Text == "" {
 			noteLabel.SetText("title is empty")
 			return
 		}
-		if loadCsvBtn.Visible(){
-			noteLabel.SetText("csv is empty")
+		if bAddrEntry.Text == "" {
+			noteLabel.SetText("bAddr is empty")
 			return
 		}
 
 		noteLabel.SetText("processing...")
-		userDataLabels := <-userDataset
-		mId, rCfg := rutil.NewConfigs(titleEntry.Text, userDataset, userDataLabels, is)
-		rCfgCid := ipfs.ToCidWithAdd(rCfg.Marshal(), is)
-		noteLabel.SetText("registration config cid: ")
-		cidEntry.SetText(rCfgCid)
+		labels, dataset, err := csvBtn.Read()
+		if err != nil{
+			noteLabel.SetText("load csv error: "+err.Error())
+			return
+		}
+		cid, mid, err := rutil.NewConfig(titleEntry.Text, dataset, labels, bAddrEntry.Text)
+		if err != nil{
+			noteLabel.SetText("new rConfig error: "+err.Error())
+			return
+		}
 
-		idStore := rutil.NewIdentityStore()
-		idStore.Put(kwEntry.Text, mId.Marshal())
-		idStore.Close()
+		noteLabel.SetText("done")
+		addrLabel.SetText(cid)
+		maIdLabel.SetText(mid)
 
-		form.Hide()
+		//form.Hide()
 	}
 	form.ExtendBaseWidget(form)
 
-	page := container.NewVBox(form, noteLabel, cidEntry)
+	page := container.NewVBox(form, noteLabel, addrLabel.Render(), maIdLabel.Render())
 	return page
 }

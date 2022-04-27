@@ -7,6 +7,7 @@ import (
 )
 type iBaseVoting interface {
 	Close()
+	Config() *vutil.Config
 }
 type IVoting interface {
 	iBaseVoting

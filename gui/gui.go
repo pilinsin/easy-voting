@@ -1,19 +1,25 @@
 package gui
 
 import (
+	"context"
+	"strings"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/easy-voting/util"
-	rpage "github.com/pilinsin/easy-voting/registration/page"
-	rputil "github.com/pilinsin/easy-voting/registration/page/util"
-	rutil "github.com/pilinsin/easy-voting/registration/util"
-	vpage "github.com/pilinsin/easy-voting/voting/page"
-	vutil "github.com/pilinsin/easy-voting/voting/util"
+	bpage "github.com/pilinsin/easy-voting/gui/bootstrap"
+	rpage "github.com/pilinsin/easy-voting/gui/registration"
+	vpage "github.com/pilinsin/easy-voting/gui/voting"
+
+	evutil "github.com/pilinsin/easy-voting/util"
 )
+
+func init(){
+	evutil.Init()
+}
 
 type GUI struct {
 	w    fyne.Window
@@ -31,9 +37,9 @@ func New(title string, width, height float32) *GUI {
 	return &GUI{win, size, page}
 }
 
-func (gui *GUI) withRemove(page fyne.CanvasObject, closer rputil.IPageCloser) fyne.CanvasObject {
+func (gui *GUI) withRemove(page fyne.CanvasObject, closer func()) fyne.CanvasObject {
 	rmvBtn := widget.NewButtonWithIcon("", theme.ContentClearIcon(), func() {
-		closer.Close()
+		closer()
 		gui.changePage(gui.defaultPage())
 	})
 	return container.NewBorder(container.NewBorder(nil, nil, nil, rmvBtn), nil, nil, nil, page)
@@ -48,42 +54,51 @@ func (gui *GUI) changePage(page fyne.CanvasObject) {
 	gui.w.Resize(gui.size)
 }
 
-func (gui *GUI) loadPage(addr string) (fyne.CanvasObject, rputil.IPageCloser) {
+func (gui *GUI) loadPage(ctx context.Context, addr, idStr string) (fyne.CanvasObject, func()) {
 	if ok := strings.HasPrefix(addr, "r/"); ok{
-		return rpage.LoadPage(strings.TrimPrefix(addr, "r/"))
+		return rpage.LoadPage(ctx, addr, idStr)
 	}
 	if ok := strings.HasPrefix(addr, "v/"); ok{
-		return vpage.LoadPage(strings.TrimPrefix(addr, "v/"))
+		return vpage.LoadPage(ctx, addr, idStr)
 	}
 	return nil, nil
 }
 func (gui *GUI) loadPageForm() fyne.CanvasObject {
-	cidEntry := widget.NewEntry()
-	cidEntry.PlaceHolder = "registration/voting Config Address"
-	loadBtn := widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {
-		loadPage, closer := gui.loadPage(cidEntry.Text)
+	addrEntry := widget.NewEntry()
+	addrEntry.PlaceHolder = "Registration/Voting Config Address"
+	idEntry := widget.NewEntry()
+	idEntry.PlaceHolder = "User/Manager Identity Address"
+	
+	onTapped := func(){
+		loadPage, closer := gui.loadPage(context.Background(), addrEntry.Text, idEntry.Text)
 		if loadPage == nil {
-			cidEntry.SetText("")
+			addrEntry.SetText("")
+			idEntry.SetText("")
 			return
 		}
 		page := container.NewVScroll(loadPage)
 		//page.SetMinSize(fyne,NewSize(101.1,201.2))
 		gui.changePage(gui.withRemove(page, closer))
-	})
-	return container.NewBorder(nil, nil, nil, loadBtn, cidEntry)
+	}
+	loadBtn := widget.NewButtonWithIcon("", theme.MailForwardIcon(), onTapped)
+
+	entries := container.NewVBox(addrEntry, idEntry)
+	return container.NewBorder(nil, nil, nil, loadBtn, entries)
 }
 
 func (gui *GUI) newPageForm() fyne.CanvasObject {
 	var setup fyne.CanvasObject
 	chmod := &widget.Select{
-		Options:  []string{"registration", "voting"},
+		Options:  []string{"registration", "voting", "bootstrap"},
 		Selected: "registration",
 	}
 	chmod.OnChanged = func(mode string) {
 		if mode == "registration" {
-			setup = rpage.NewSetupPage(gui.w, gui.is)
-		} else {
-			setup = vpage.NewSetupPage(gui.w, gui.is)
+			setup = rpage.NewSetupPage(gui.w)
+		} else if mode == "voting"{
+			setup = vpage.NewSetupPage(gui.w)
+		} else{
+			setup = bpage.NewSetupPage(gui.w)
 		}
 		newForm := container.NewBorder(chmod, nil, nil, nil, setup)
 		defPage := container.NewBorder(gui.loadPageForm(), nil, nil, nil, newForm)

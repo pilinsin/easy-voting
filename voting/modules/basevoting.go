@@ -32,6 +32,7 @@ type voting struct {
 	manPriKey	crypto.IPriKey
 	hkm 		crdt.IStore
 	ivm			crdt.IStore
+	cfg        *vutil.Config
 }
 
 func (v *voting) init(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) error {
@@ -60,6 +61,7 @@ func (v *voting) init(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, 
 	v.manPriKey = id.manPriv
 	v.hkm = hkm
 	v.ivm = ivm
+	v.cfg = vCfg
 	return nil
 }
 
@@ -100,6 +102,10 @@ func (v *voting) Close() {
 	v.ivm.Close()
 }
 
+func (v *voting) Config() *vutil.Config{
+	return v.cfg
+}
+
 func (v *voting) isCandsMatch(vi vutil.VoteInt) bool {
 	if len(v.cands) != len(vi) {
 		return false
@@ -134,7 +140,10 @@ func (v *voting) baseVote(data vutil.VoteInt) error {
 	}
 	m, err := v.manPubKey.Encrypt(data.Marshal())
 	if err != nil{return err}
-	return v.ivm.Put(v.salt1, m)
+	if err := v.ivm.Put(v.salt1, m); err != nil{return err}
+
+	time.Sleep(10*time.Second)
+	return nil
 }
 
 
