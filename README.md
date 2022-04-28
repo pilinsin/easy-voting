@@ -5,77 +5,24 @@ Blockchain is not used.<br>
 ## Feature
 * Anonymous voting  
 * Revote  
-* Confirmation of every voting data by anyone  
-* Counting by anyone
+* Counting by anyone  
 
 
-# Requirement
-[go-ipfs](https://github.com/ipfs/go-ipfs)  
-[fyne](https://github.com/fyne-io/fyne)
+## Usage
+### Setup I2P
 
-# Usage
-<!--
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/system_process.png"><br>
--->
-## Registration
-<!--
-<img alt="registration" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
--->
-(Registration Manager)  
-In the registration setup page, input some informations.  
-Get a rCfgCid (Registration Config CID) and a ManIdentity.  
-The ManIdentity is stored locally with a key input in the setup page.   
-Input the rCfgCid and key, and then transition to the registration manager page.  
-Turn the registrate switch on, and then wait.    
+### Bootstrap
+- Manager
+### Registration
+- Manager
 
-```Go
-type ManIdentity struct{
-  rPriKey *ecies.PriKey
-  hnmKeyFile *ipfs.KeyFile
-}
-```
+- User
 
-(User)  
-Input the rCfgCid and transition to the registration page.  
-Input a userData and registrate.  
+### Voting
+- Manager
 
-```Go
-var userData []string
-```
+- User
 
-A UserIdentity is output and stored locally.  
-```Go
-type UserIdentity struct{
-  userHash UserHash
-  userPriKey *ecies.PriKey
-  userSignKey *ed25519.SignKey
-  rKeyFile *ipfs.KeyFile
-}
-type UserHash string
-```
-
-## Voting
-<!--
-<img alt="voting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
--->
-(Manager)  
-In the voting setup page, input some informations include the rCfgCid.  
-Get a vCfgCid (Voting Config CID) and a ManIdentity.  
-The ManIdentity is stored locally with a key input in the voting setup page.  
-Input the vCfgCid and key, and then transition to the voting manager page.  
-When input a userData for a user, the user can be verified.    
-After the voting time finished, generate a resultMap.    
-```Go
-type ManIdentity struct{
-  manPriKey *ecies.PriKey
-  resMapKeyFile *ipfs.KeyFile
-}
-```
-
-(User)  
-Input the vCfgCid and the key, and then transition to the voting page.  
-Input some informations for voting include the userIdentity.  
-After the voting time finished, verify and count from the resultMap.   
 
 # Voting Type
 This supports the following types:  
@@ -86,16 +33,22 @@ This supports the following types:
 * [Cumulative](https://en.wikipedia.org/wiki/Cumulative_voting)  
 * [Preference](https://en.wikipedia.org/wiki/Ranked_voting)  
 
-
-# TODO
-* GUI design
-* Bug fix  
-* Improvement of the registration process
-
-
 # Support
 I develop it in freelance.<br>
-I am going to release it free to make voting more common, and easy and fair.<br>
+I am going to release it free to make voting more common, easy and fair.<br>
 Your support lets development continue.<br>
 
-Ethereum Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
+- BitCoin (BTC)
+bc1qu0zl5z4zgvx2ar3zgdgmt3thl3fnt0ujvzdx9e
+- Ethereum (ETH)
+0x81f5877EFC75906230849205ce11387C119bd9d8
+- Tron (TRX)
+TCc7D7thmW4egbiUEk2uH3Y21shfbjVNvn
+- Monero (XMR)
+49y6hymbjLqf1LRrGoARqGNxD95UeHtpGbfYmutrLZaWhfFwefPHkDUiKkab3aCNBv36xAUu4VQus1V1g8hhYWrhLemRjPt
+- Zcash (ZEC)
+t1diehqpgftGp9dvEMKcAoCUxZnGgodcU96
+- Basic Attention Token (BAT)
+0xe83D64a10256aE37d3039344fE49ec9D1d75dd5c
+- FileCoin (FIL)
+f1mhulmnu4apv3thlsnmjw3nigl5hzcgozfabpsyi
