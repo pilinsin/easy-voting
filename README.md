@@ -13,16 +13,16 @@ Blockchain is not used.<br>
 Install and run [I2P](https://github.com/i2p/i2p.i2p).  
 Check if [SAM](https://geti2p.net/en/docs/api/samv3) is enabled, and if not enable it.  
 ### Bootstrap
-- Manager  
+##### Manager  
 If you generate your own I2P bootstrap on the setup page, its address is output.  
 Enter the address or others, and then an address of a list of the addresses will be output.  
 In this section, the address is "baddrs".
 ### Registration
-- Manager  
+##### Manager  
 On the setup page, enter the following information:
-  - Title of the registration page
-  - User Data Set
-  - baddrs
+- Title of the registration page
+- User Data Set
+- baddrs
 
 The user data set is a csv file containing the data required for user registration.
 
@@ -36,36 +36,36 @@ The user data set is a csv file containing the data required for user registrati
 After entering the information, press the Submit button to output rCfgAddr and manIdentity, which are then entered into the load page form to move to the registration page.  
 Publish rCfgAddr and wait until registration is complete.
 
-- User  
+##### User  
 Enter rCfgAddr to go to the registration page.  
 Enter the data necessary for registration.   
 The userIdentity will be output, so copy and keep it.  
 
 ### Voting
-- Manager  
+##### Manager  
 On the setup page, enter the following information:
-  - Voting Page Title
-  - Start Time
-  - End Time
-  - Time Zone (Location)
-  - rCfgAddr
-  - Number of Verificators(number needed to verify voting time)
-  - Candidate Information
-    - Image
-    - Name
-    - Group
-    - URL
-  - Voting Parameters
-    - Minimum Number of Votes
-    - Maximum Number of Votes
-    - Total Votes
-  - Voting Type
+- Voting Page Title
+- Start Time
+- End Time
+- Time Zone (Location)
+- rCfgAddr
+- Number of Verificators(number needed to verify voting time)
+- Candidate Information
+  - Image
+  - Name
+  - Group
+  - URL
+- Voting Parameters
+  - Minimum Number of Votes
+  - Maximum Number of Votes
+  - Total Votes
+- Voting Type
 
 After entering the information, press the Submit button to generate the vCfgAddr and manIdentity, which will be entered into the load page form to move to the voting page.  
 Publish vCfgAddr and wait until voting close.  
 After voting is completed, press the Vote button to release the decryption key for the voting data.
 
-- User  
+##### User  
 Enter vCfgAddr and userIdentity to go to the voting page.  
 If you do not enter userIdentity, you can only tally the voting results.  
 
