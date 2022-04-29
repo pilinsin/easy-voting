@@ -1,83 +1,78 @@
 # EasyVoting
-This is an Online Voting App based on [IPFS](https://ipfs.io/) and [Fyne](https://fyne.io/).<br>
+This is an Online Voting App based on [I2P](https://geti2p.net/en/) and [Fyne](https://fyne.io/).<br>
 Blockchain is not used.<br>
 
 ## Feature
 * Anonymous voting  
 * Revote  
-* Confirmation of every voting data by anyone  
-* Counting by anyone
+* Counting by anyone  
 
 
-# Requirement
-[go-ipfs](https://github.com/ipfs/go-ipfs)  
-[fyne](https://github.com/fyne-io/fyne)
+## Usage
+### Setup I2P
+Install and run [I2P](https://github.com/i2p/i2p.i2p).  
+Check if [SAM](https://geti2p.net/en/docs/api/samv3) is enabled, and if not enable it.  
+### Bootstrap
+##### Manager  
+If you generate your own I2P bootstrap on the setup page, its address is output.  
+Enter the address or others, and then an address of a list of the addresses will be output.  
+In this section, the address is "baddrs".
+### Registration
+##### Manager  
+On the setup page, enter the following information:
+- Title of the registration page
+- User Data Set
+- baddrs
 
-# Usage
-<!--
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/system_process.png"><br>
--->
-## Registration
-<!--
-<img alt="registration" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
--->
-(Registration Manager)  
-In the registration setup page, input some informations.  
-Get a rCfgCid (Registration Config CID) and a ManIdentity.  
-The ManIdentity is stored locally with a key input in the setup page.   
-Input the rCfgCid and key, and then transition to the registration manager page.  
-Turn the registrate switch on, and then wait.    
+The user data set is a csv file containing the data required for user registration.
 
-```Go
-type ManIdentity struct{
-  rPriKey *ecies.PriKey
-  hnmKeyFile *ipfs.KeyFile
-}
-```
+| label 0 | label 1 | ... | label M |
+| --- | --- | --- | --- |
+| user 00 | user 01 | ... | user 0M |
+| user 10 | user 11 | ... | user 1M |
+| ... | ... | ... | ... |
+| user N0 | user N1 | ... | user NM |
 
-(User)  
-Input the rCfgCid and transition to the registration page.  
-Input a userData and registrate.  
+After entering the information, press the Submit button to output rCfgAddr and manIdentity, which are then entered into the load page form to move to the registration page.  
+Publish rCfgAddr and wait until registration is complete.
 
-```Go
-var userData []string
-```
+##### User  
+Enter rCfgAddr to go to the registration page.  
+Enter the data necessary for registration.   
+The userIdentity will be output, so copy and keep it.  
 
-A UserIdentity is output and stored locally.  
-```Go
-type UserIdentity struct{
-  userHash UserHash
-  userPriKey *ecies.PriKey
-  userSignKey *ed25519.SignKey
-  rKeyFile *ipfs.KeyFile
-}
-type UserHash string
-```
+### Voting
+##### Manager  
+On the setup page, enter the following information:
+- Voting Page Title
+- Start Time
+- End Time
+- Time Zone (Location)
+- rCfgAddr
+- Number of Verificators(number needed to verify voting time)
+- Candidate Information
+  - Image
+  - Name
+  - Group
+  - URL
+- Voting Parameters
+  - Minimum Number of Votes
+  - Maximum Number of Votes
+  - Total Votes
+- Voting Type
 
-## Voting
-<!--
-<img alt="voting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
--->
-(Manager)  
-In the voting setup page, input some informations include the rCfgCid.  
-Get a vCfgCid (Voting Config CID) and a ManIdentity.  
-The ManIdentity is stored locally with a key input in the voting setup page.  
-Input the vCfgCid and key, and then transition to the voting manager page.  
-When input a userData for a user, the user can be verified.    
-After the voting time finished, generate a resultMap.    
-```Go
-type ManIdentity struct{
-  manPriKey *ecies.PriKey
-  resMapKeyFile *ipfs.KeyFile
-}
-```
+After entering the information, press the Submit button to generate the vCfgAddr and manIdentity, which will be entered into the load page form to move to the voting page.  
+Publish vCfgAddr and wait until voting close.  
+After voting is completed, press the Vote button to release the decryption key for the voting data.
 
-(User)  
-Input the vCfgCid and the key, and then transition to the voting page.  
-Input some informations for voting include the userIdentity.  
-After the voting time finished, verify and count from the resultMap.   
+##### User  
+Enter vCfgAddr and userIdentity to go to the voting page.  
+If you do not enter userIdentity, you can only tally the voting results.  
 
-# Voting Type
+Voting is done via the voting form.  
+If the voting manager has published the decryption key for your voting data, you can check your voting data and tally the results of all votes.
+
+## Voting Type
 This supports the following types:  
 * [Single](https://en.wikipedia.org/wiki/Single_transferable_vote)  
 * [Block](https://en.wikipedia.org/wiki/Multiple_non-transferable_vote)  
@@ -86,16 +81,22 @@ This supports the following types:
 * [Cumulative](https://en.wikipedia.org/wiki/Cumulative_voting)  
 * [Preference](https://en.wikipedia.org/wiki/Ranked_voting)  
 
-
-# TODO
-* GUI design
-* Bug fix  
-* Improvement of the registration process
-
-
-# Support
+## Support
 I develop it in freelance.<br>
-I am going to release it free to make voting more common, and easy and fair.<br>
+I am going to release it free to make voting more common, easy and fair.<br>
 Your support lets development continue.<br>
 
-Ethereum Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
+- BitCoin (BTC)
+bc1qu0zl5z4zgvx2ar3zgdgmt3thl3fnt0ujvzdx9e
+- Ethereum (ETH)
+0x81f5877EFC75906230849205ce11387C119bd9d8
+- Tron (TRX)
+TCc7D7thmW4egbiUEk2uH3Y21shfbjVNvn
+- Monero (XMR)
+49y6hymbjLqf1LRrGoARqGNxD95UeHtpGbfYmutrLZaWhfFwefPHkDUiKkab3aCNBv36xAUu4VQus1V1g8hhYWrhLemRjPt
+- Zcash (ZEC)
+t1diehqpgftGp9dvEMKcAoCUxZnGgodcU96
+- Basic Attention Token (BAT)
+0xe83D64a10256aE37d3039344fE49ec9D1d75dd5c
+- FileCoin (FIL)
+f1mhulmnu4apv3thlsnmjw3nigl5hzcgozfabpsyi

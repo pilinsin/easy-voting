@@ -1,70 +1,78 @@
 # EasyVoting
-[IPFS](https://ipfs.io/)と[Fyne](https://fyne.io/)を使用したオンライン投票アプリです。  
+[I2P](https://geti2p.net/en/)と[Fyne](https://fyne.io/)を使用したオンライン投票アプリです。  
 ブロックチェーンは使用しません。
 
-[日本語版IPFS解説サイト](https://ipfs-book.decentralized-web.jp/)
 ## Features
 * 匿名投票
 * 投票期間内ならば何度でも投票可能
-* 誰でも全ての投票結果の検証が可能
 * 誰でも投票結果の集計が可能
 
+## Usage
+### I2P Setup
+[I2P](https://github.com/i2p/i2p.i2p)をインストールして起動してください。  
+起動後、[SAM](https://geti2p.net/en/docs/api/samv3)が有効になっているか確認し、無効ならば有効にしてください。  
+### Bootstrap
+##### 登録マネージャー  
+セットアップページにて、I2Pブートストラップを生成するとそのアドレスが出力されます。  
+そのアドレスもしくは他のブートストラップのアドレスを入力することでブートストラップのリストのアドレスが出力されます。
+ここでは、ブートストラップのリストのアドレスを"baddrs"とします。
+### Registration
+##### 登録マネージャー  
+セットアップページにて、
+- 登録ページのタイトル
+- 登録ユーザーデータセット(csv)
+- baddrs
 
-# Requirement
-[go-ipfs](https://github.com/ipfs/go-ipfs)  
-[fyne](https://github.com/fyne-io/fyne)
+を入力します。  
+登録ユーザーデータセットはユーザーの登録に必要なデータをまとめたcsvファイルです。　　
 
-# Usage
-<!--
-<img alt="system_process" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/system_process.png"><br>
--->
-## Registration
-<!--
-<img alt="registration" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/registration.png"><br>
--->
-(登録マネージャー)  
-セットアップページにて、情報を入力してmCfgCid (registration Manager Config CID)を得ます。  
-mCfgCidを入力して登録マネージャーページに遷移します。  
-ページに表示されるrCfgCid (Registration Config CID)を取得して公開します。  
-登録処理スイッチをオンにして待機します。  
+| label 0 | label 1 | ... | label M |
+| --- | --- | --- | --- |
+| user 00 | user 01 | ... | user 0M |
+| user 10 | user 11 | ... | user 1M |
+| ... | ... | ... | ... |
+| user N0 | user N1 | ... | user NM |
 
-(ユーザー)  
-rCfgCidを入力して登録ページに遷移します。  
-userDataを入力して登録を行います。  
+Submitボタンを押してrCfgAddrとmanIdentityを取得し、それらをロードページフォームに入力して登録ページに遷移します。  
+rCfgAddrを公開して登録が完了するまで待機します。  
 
-```Go
-var userData []string
-```
-
+##### ユーザー  
+rCfgAddrを入力して登録ページに遷移します。  
+登録に必要なデータを入力して登録を行います。  
 userIdentityが出力されるので、それをコピーして保持しておきます。  
-```Go
-type UserIdentity struct{
-  userHash UserHash
-  userPriKey *ecies.PriKey
-  userSignKey *ed25519.SignKey
-  rKeyFile *ipfs.KeyFile
-}
-type UserHash string
-```
 
-## Voting
-<!--
-<img alt="voting" src="https://github.com/m-vlanbdg2ln52gla/EasyVoting/blob/main/images/voting.png"><br>
--->
-(投票マネージャー)  
-投票セットアップページにて、rCfgCidを含む幾つかの情報を入力し、mCfgCid (voting Manager Config CID)を得ます。   
-mCfgCidを入力して投票マネージャーページに遷移します。   
-vCfgCid (Voting Config CID)を取得して公開します。  
-userDataを入力することで、そのユーザーが登録されているかどうか検証が可能です。  
-投票期間終了後、resultMapを生成します。   
+### Voting
+##### 投票マネージャー  
+投票セットアップページにて、
+- 投票ページのタイトル
+- 開始時刻
+- 終了時刻
+- タイムゾーン(Location)
+- rCfgAddr
+- 認証者数(投票時刻の証明に必要な数)
+- 候補者情報
+  - 画像
+  - 氏名
+  - グループ名
+  - URL
+- 投票パラメータ
+  - 最小票数
+  - 最大票数
+  - 合計票数
+- 投票方式
 
-(ユーザー)  
-vCfgCidを入力して投票ページに遷移します。  
-userIdentityを含む幾つかの情報を入力して投票を行います。  
-投票期間終了後、resultMapを用いて検証と集計が可能です。  
+を入力します。  
+入力後、Submitボタンを押すとvCfgAddrとmanIdentityが生成されるので、ロードページフォームに入力して投票ページに遷移します。  
+vCfgAddrを公開して投票終了まで待機します。  
+投票終了後に投票ボタンを押して投票データの復号鍵を公開します。  
 
+##### ユーザー  
+vCfgAddrとuserIdentityを入力して投票ページに遷移します。  
+userIdentityを入力しない場合、投票結果の集計のみが可能です。  
+投票フォームから投票データを生成して投票を行います。  
+投票マネージャーが投票データの復号鍵を公開していれば、自身の投票データの確認と投票結果の集計が可能です。　　
 
-# Voting Type
+## Voting Type
 以下の投票方式に対応しています。  
 * [単記投票](https://ja.m.wikipedia.org/wiki/%E5%8D%98%E8%A8%98%E7%A7%BB%E8%AD%B2%E5%BC%8F%E6%8A%95%E7%A5%A8)  
 * [連記投票](https://ja.m.wikipedia.org/wiki/%E9%80%A3%E8%A8%98%E6%8A%95%E7%A5%A8)  
@@ -74,18 +82,22 @@ userIdentityを含む幾つかの情報を入力して投票を行います。
 * [選好投票](https://ja.m.wikipedia.org/wiki/%E9%81%B8%E5%A5%BD%E6%8A%95%E7%A5%A8)  
 
 
-# TODO
-* GUIデザイン
-* バグ修正
-* 登録時の新規ユーザーへの対応
-
-# Support
+## Support
 どの組織にも属さずフリーランスで開発しています。  
 このシステムは投票という制度をより身近で簡単で公平なものにすることを目的としています。  
 開発継続のため、ご支援ご協力をお願いいたします。  
 
-Ethereum Address: 0x81f5877EFC75906230849205ce11387C119bd9d8
-
-
-
-
+- BitCoin (BTC)
+bc1qu0zl5z4zgvx2ar3zgdgmt3thl3fnt0ujvzdx9e
+- Ethereum (ETH)
+0x81f5877EFC75906230849205ce11387C119bd9d8
+- Tron (TRX)
+TCc7D7thmW4egbiUEk2uH3Y21shfbjVNvn
+- Monero (XMR)
+49y6hymbjLqf1LRrGoARqGNxD95UeHtpGbfYmutrLZaWhfFwefPHkDUiKkab3aCNBv36xAUu4VQus1V1g8hhYWrhLemRjPt
+- Zcash (ZEC)
+t1diehqpgftGp9dvEMKcAoCUxZnGgodcU96
+- Basic Attention Token (BAT)
+0xe83D64a10256aE37d3039344fE49ec9D1d75dd5c
+- FileCoin (FIL)
+f1mhulmnu4apv3thlsnmjw3nigl5hzcgozfabpsyi
