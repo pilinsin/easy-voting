@@ -41,6 +41,8 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 	form.Items = append(form.Items, widget.NewFormItem("voting type", vType))
 	form.OnSubmit = func() {
 		noteLabel.SetText("processing...")
+		addrLabel.SetText("voting config address")
+		maIdLabel.SetText("voting manager address")
 
 		tInfo, err := util.NewTimeInfo(begin.Time(), end.Time(), loc.Selected)
 		if err != nil{

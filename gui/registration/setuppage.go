@@ -33,6 +33,8 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 		}
 
 		noteLabel.SetText("processing...")
+		addrLabel.SetText("registration config address")
+		maIdLabel.SetText("manager identity address")
 		labels, dataset, err := csvBtn.Read()
 		if err != nil{
 			noteLabel.SetText("load csv error: "+err.Error())

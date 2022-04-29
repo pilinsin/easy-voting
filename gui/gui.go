@@ -21,10 +21,15 @@ func init(){
 	evutil.Init()
 }
 
+func pageToTabItem(title string, page fyne.CanvasObject) *container.TabItem{
+	return container.NewTabItem(title, page)
+}
+
 type GUI struct {
 	w    fyne.Window
 	size fyne.Size
 	page *fyne.Container
+	tabs *container.AppTabs
 }
 
 func New(title string, width, height float32) *GUI {
@@ -34,34 +39,26 @@ func New(title string, width, height float32) *GUI {
 	win := a.NewWindow(title)
 	win.Resize(size)
 	page := container.NewMax()
-	return &GUI{win, size, page}
+	tabs := container.NewAppTabs()
+	return &GUI{win, size, page, tabs}
 }
 
-func (gui *GUI) withRemove(page fyne.CanvasObject, closer func()) fyne.CanvasObject {
+func (gui *GUI) withRemove(page fyne.CanvasObject, closer func()) *container.TabItem {
 	rmvBtn := widget.NewButtonWithIcon("", theme.ContentClearIcon(), func() {
 		closer()
-		gui.changePage(gui.defaultPage())
+		gui.tabs.Remove(gui.tabs.Selected())
 	})
 	return container.NewBorder(container.NewBorder(nil, nil, nil, rmvBtn), nil, nil, nil, page)
 }
 
-func (gui *GUI) changePage(page fyne.CanvasObject) {
-	for _, obj := range gui.page.Objects {
-		gui.page.Remove(obj)
-	}
-	gui.page.Add(page)
-	gui.page.Refresh()
-	gui.w.Resize(gui.size)
-}
-
-func (gui *GUI) loadPage(ctx context.Context, addr, idStr string) (fyne.CanvasObject, func()) {
+func (gui *GUI) loadPage(ctx context.Context, addr, idStr string) (string, fyne.CanvasObject, func()) {
 	if ok := strings.HasPrefix(addr, "r/"); ok{
 		return rpage.LoadPage(ctx, addr, idStr)
 	}
 	if ok := strings.HasPrefix(addr, "v/"); ok{
 		return vpage.LoadPage(ctx, addr, idStr)
 	}
-	return nil, nil
+	return "", nil, nil
 }
 func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	addrEntry := widget.NewEntry()
@@ -70,15 +67,18 @@ func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	idEntry.PlaceHolder = "User/Manager Identity Address"
 	
 	onTapped := func(){
-		loadPage, closer := gui.loadPage(context.Background(), addrEntry.Text, idEntry.Text)
+		title, loadPage, closer := gui.loadPage(context.Background(), addrEntry.Text, idEntry.Text)
+		addrEntry.SetText("")
+		idEntry.SetText("")
 		if loadPage == nil {
-			addrEntry.SetText("")
-			idEntry.SetText("")
 			return
 		}
 		page := container.NewVScroll(loadPage)
 		//page.SetMinSize(fyne,NewSize(101.1,201.2))
-		gui.changePage(gui.withRemove(page, closer))
+		withRmvPage := gui.withRemove(page, closer)
+		withRmvTab := pageToTabItem(title, withRmvPage)
+		gui.tabs.Append(withRmvTab)
+		gui.tabs.Select(withRmvTab)
 	}
 	loadBtn := widget.NewButtonWithIcon("", theme.MailForwardIcon(), onTapped)
 
@@ -89,8 +89,8 @@ func (gui *GUI) loadPageForm() fyne.CanvasObject {
 func (gui *GUI) newPageForm() fyne.CanvasObject {
 	var setup fyne.CanvasObject
 	chmod := &widget.Select{
-		Options:  []string{"registration", "voting", "bootstrap"},
-		Selected: "registration",
+		Options:  []string{"bootstrap", "registration", "voting"},
+		Selected: "bootstrap",
 	}
 	chmod.OnChanged = func(mode string) {
 		if mode == "registration" {
@@ -101,22 +101,24 @@ func (gui *GUI) newPageForm() fyne.CanvasObject {
 			setup = bpage.NewSetupPage(gui.w)
 		}
 		newForm := container.NewBorder(chmod, nil, nil, nil, setup)
-		defPage := container.NewBorder(gui.loadPageForm(), nil, nil, nil, newForm)
-		gui.changePage(defPage)
+		newTab := pageToTabItem("setup", newForm)
+		gui.tabs.Items[0] = newTab
+		gui.tabs.Refresh()
 	}
 	chmod.ExtendBaseWidget(chmod)
 
 	return container.NewBorder(chmod, nil, nil, nil)
 }
 
-func (gui *GUI) defaultPage() fyne.CanvasObject {
-	loadForm := gui.loadPageForm()
+func (gui *GUI) defaultPage() *container.TabItem {
 	newForm := gui.newPageForm()
-	return container.NewBorder(loadForm, nil, nil, nil, newForm)
+	return pageToTabItem("setup", newForm)
 }
 
 func (gui *GUI) Run() {
-	gui.page.Add(gui.defaultPage())
+	gui.tabs.Append(gui.defaultPage())
+	loadForm := gui.loadPageForm()
+	gui.page.Add(container.NewBorder(loadForm, nil, nil, nil, gui.tabs))
 	gui.w.SetContent(gui.page)
 	gui.w.ShowAndRun()
 }

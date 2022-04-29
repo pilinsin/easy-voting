@@ -11,9 +11,9 @@ import (
 	gutil "github.com/pilinsin/easy-voting/gui/util"
 )
 
-func LoadPage(ctx context.Context, vCfgAddr, idStr string) (fyne.CanvasObject, func()) {
+func LoadPage(ctx context.Context, vCfgAddr, idStr string) (string, fyne.CanvasObject, func()) {
 	v, err := vt.NewVoting(ctx, vCfgAddr, idStr)
-	if err != nil{return nil, nil}
+	if err != nil{return "", nil, nil}
 	closer := func(){v.Close()}
 
 	vCfg := v.Config()
@@ -32,6 +32,6 @@ func LoadPage(ctx context.Context, vCfgAddr, idStr string) (fyne.CanvasObject, f
 	titles := container.NewVBox(addrLabel.Render(), titleLabel)
 	page := container.NewVBox(contents, vbtn, cmvbtn, rbtn, noteLabel)
 	page = container.NewBorder(titles, nil, nil, nil, page)
-	return page, closer
+	return vCfg.Title, page, closer
 }
 
