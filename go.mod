@@ -6,6 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.1.4 // indirect
 	github.com/LoCCS/bliss v0.0.0-20180223025823-07585ac9b817 // indirect
 	github.com/Stebalien/go-bitfield v0.0.1 // indirect
+	github.com/andybalholm/brotli v1.0.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -25,11 +26,143 @@ require (
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
+	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/ecies/go v1.0.1 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
+	github.com/eyedeekay/checki2cp v0.0.18 // indirect
+	github.com/eyedeekay/go-i2cp v0.0.0-20190716135428-6d41bed718b0 // indirect
 	github.com/eyedeekay/goSam v0.32.31-0.20210122211817-f97683379f23 // indirect
 	github.com/eyedeekay/sam3 v0.32.33-0.20210718190649-31b8d62f0461 // indirect
+	github.com/eyedeekay/zerobundle v0.0.0-20210522053512-32c20fe179d3 // indirect
+	github.com/eyedeekay/zerobundle/parts/0 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/1 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/10 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/100 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/101 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/102 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/103 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/104 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/105 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/106 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/107 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/108 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/109 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/11 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/110 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/111 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/112 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/113 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/114 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/115 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/116 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/117 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/118 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/119 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/12 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/120 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/121 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/122 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/123 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/124 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/125 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/126 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/127 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/13 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/14 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/15 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/16 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/17 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/18 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/19 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/2 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/20 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/21 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/22 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/23 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/24 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/25 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/26 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/27 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/28 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/29 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/3 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/30 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/31 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/32 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/33 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/34 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/35 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/36 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/37 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/38 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/39 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/4 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/40 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/41 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/42 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/43 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/44 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/45 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/46 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/47 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/48 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/49 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/5 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/50 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/51 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/52 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/53 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/54 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/55 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/56 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/57 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/58 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/59 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/6 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/60 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/61 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/62 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/63 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/64 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/65 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/66 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/67 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/68 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/69 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/7 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/70 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/71 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/72 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/73 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/74 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/75 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/76 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/77 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/78 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/79 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/8 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/80 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/81 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/82 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/83 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/84 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/85 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/86 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/87 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/88 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/89 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/9 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/90 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/91 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/92 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/93 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/94 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/95 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/96 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/97 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/98 v0.0.0-20210508034048-7cd2a4edba67 // indirect
+	github.com/eyedeekay/zerobundle/parts/99 v0.0.0-20210508034048-7cd2a4edba67 // indirect
 	github.com/floostack/transcoder v1.1.1 // indirect
 	github.com/flynn/noise v1.0.0 // indirect
 	github.com/fomichev/secp256k1 v0.0.0-20180413221153-00116ff8c62f // indirect
@@ -95,6 +228,7 @@ require (
 	github.com/joomcode/errorx v1.1.0 // indirect
 	github.com/klauspost/compress v1.15.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
+	github.com/klauspost/pgzip v1.2.3 // indirect
 	github.com/koron/go-ssdp v0.0.2 // indirect
 	github.com/libp2p/go-addr-util v0.1.0 // indirect
 	github.com/libp2p/go-buffer-pool v0.0.2 // indirect
@@ -147,6 +281,7 @@ require (
 	github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
+	github.com/mholt/archiver/v3 v3.3.0 // indirect
 	github.com/miekg/dns v1.1.48 // indirect
 	github.com/mikioh/tcpinfo v0.0.0-20190314235526-30a79bb1804b // indirect
 	github.com/mikioh/tcpopt v0.0.0-20190314235656-172688c1accc // indirect
@@ -164,15 +299,17 @@ require (
 	github.com/multiformats/go-multihash v0.1.0 // indirect
 	github.com/multiformats/go-multistream v0.3.0 // indirect
 	github.com/multiformats/go-varint v0.0.6 // indirect
+	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/open-quantum-safe/liboqs-go v0.0.0-20220105163900-e0f759d70fa5 // indirect
 	github.com/opencontainers/runtime-spec v1.0.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
-	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220421030219-e75fa8c8cd5d // indirect
+	github.com/pierrec/lz4 v2.5.2+incompatible // indirect
+	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220429131236-d9073db19807 // indirect
 	github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220420124841-af137f670078 // indirect
-	github.com/pilinsin/p2p-verse v0.0.0-20220427041123-a46c16c17694 // indirect
+	github.com/pilinsin/p2p-verse v0.0.0-20220428023238-7cb04cb70e9b // indirect
 	github.com/pilinsin/util v0.0.0-20220421092850-f71b35585dd1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -188,12 +325,15 @@ require (
 	github.com/srwiley/oksvg v0.0.0-20200311192757-870daf9aa564 // indirect
 	github.com/srwiley/rasterx v0.0.0-20200120212402-85cb7272f5e9 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/ulikunitz/xz v0.5.7 // indirect
 	github.com/whyrusleeping/cbor-gen v0.0.0-20200123233031-1cdf64d27158 // indirect
 	github.com/whyrusleeping/chunker v0.0.0-20181014151217-fe64bd25879f // indirect
 	github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 // indirect
 	github.com/whyrusleeping/multiaddr-filter v0.0.0-20160516205228-e903e4adabd7 // indirect
 	github.com/whyrusleeping/timecache v0.0.0-20160911033111-cfcb2f1abfee // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yuin/goldmark v1.4.1 // indirect
+	github.com/zserge/lorca v0.1.9 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
@@ -209,6 +349,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	lukechampine.com/blake3 v1.1.7 // indirect
 )

@@ -51,7 +51,11 @@ func NewSetupPage(_ fyne.Window) fyne.CanvasObject{
 		}
 
 		s := pv.AddrInfosToString(baddrs...)
-		baddrsLabel.SetText(s)
+		if s == ""{
+			baddrsLabel.SetText("bootstrap list address")
+		}else{
+			baddrsLabel.SetText(s)
+		}
 	})
 
 	return container.NewVBox(tbtn, baddrLabel.Render(), form.Render(), addrsBtn, baddrsLabel.Render())

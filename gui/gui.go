@@ -15,6 +15,7 @@ import (
 	vpage "github.com/pilinsin/easy-voting/gui/voting"
 
 	evutil "github.com/pilinsin/easy-voting/util"
+	i2p "github.com/pilinsin/go-libp2p-i2p"
 )
 
 func init(){
@@ -43,7 +44,7 @@ func New(title string, width, height float32) *GUI {
 	return &GUI{win, size, page, tabs}
 }
 
-func (gui *GUI) withRemove(page fyne.CanvasObject, closer func()) *container.TabItem {
+func (gui *GUI) withRemove(page fyne.CanvasObject, closer func()) fyne.CanvasObject {
 	rmvBtn := widget.NewButtonWithIcon("", theme.ContentClearIcon(), func() {
 		closer()
 		gui.tabs.Remove(gui.tabs.Selected())
@@ -116,11 +117,26 @@ func (gui *GUI) defaultPage() *container.TabItem {
 }
 
 func (gui *GUI) Run() {
+	gui.i2pStart()
+	
 	gui.tabs.Append(gui.defaultPage())
 	loadForm := gui.loadPageForm()
 	gui.page.Add(container.NewBorder(loadForm, nil, nil, nil, gui.tabs))
 	gui.w.SetContent(gui.page)
 	gui.w.ShowAndRun()
 }
+func (gui *GUI) Close(){
+	i2p.StopI2pRouter()
+}
 
-
+func (gui *GUI) i2pStart(){
+	go func(){
+		if err := i2p.StartI2pRouter(); err != nil{
+			for _, obj := range gui.page.Objects{
+				gui.page.Remove(obj)
+			}
+			failed := widget.NewLabel("i2p router failed to start. please try again later.")
+			gui.page.Add(failed)
+		}
+	}()
+}

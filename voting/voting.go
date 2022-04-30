@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"time"
+	"os"
 
 	i2p "github.com/pilinsin/go-libp2p-i2p"
 	pv "github.com/pilinsin/p2p-verse"
@@ -17,17 +19,25 @@ import (
 type votingWithIpfs struct{
 	viface.IVoting
 	is ipfs.Ipfs
+	dirCancel func()
 }
 func (v *votingWithIpfs) Close(){
 	v.IVoting.Close()
 	v.is.Close()
+
+	time.Sleep(time.Second*10)
+	v.dirCancel()
 }
 
 func NewVoting(ctx context.Context, vCfgAddr, idStr string) (viface.IVoting, error) {
 	bAddr, vCfgCid, err := evutil.ParseConfigAddr(vCfgAddr)
 	if err != nil{return nil, err}
 
-	ipfsDir, storeDir, save := parseIdStr(idStr)
+	dirCancel := func(){}
+	baseDir, ipfsDir, storeDir, save := parseIdStr(idStr)
+	if !save{
+		dirCancel = func(){os.RemoveAll(baseDir)}
+	}
 	is, err := evutil.NewIpfs(i2p.NewI2pHost, bAddr, ipfsDir, save)
 	if err != nil{return nil, err}
 	vCfg := &vutil.Config{}
@@ -55,17 +65,17 @@ func NewVoting(ctx context.Context, vCfgAddr, idStr string) (viface.IVoting, err
 		return nil, err
 	}
 
-	return &votingWithIpfs{v, is}, nil
+	return &votingWithIpfs{v, is, dirCancel}, nil
 }
 
-func parseIdStr(idStr string) (string, string, bool){
+func parseIdStr(idStr string) (string, string, string, bool){
 	mi := &vutil.ManIdentity{}
 	if err := mi.FromString(idStr); err == nil{
-		return mi.IpfsDir, mi.StoreDir, true
+		return "", mi.IpfsDir, mi.StoreDir, true
 	}
 
 	baseDir := pv.RandString(8)
 	ipfsDir := filepath.Join(baseDir, pv.RandString(8))
 	storeDir := filepath.Join(baseDir, pv.RandString(8))
-	return ipfsDir, storeDir, false
+	return baseDir, ipfsDir, storeDir, false
 }
