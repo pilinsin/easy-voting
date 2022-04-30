@@ -9,9 +9,6 @@ Blockchain is not used.<br>
 
 
 ## Usage
-### Setup I2P
-Install and run [I2P](https://github.com/i2p/i2p.i2p).  
-Check if [SAM](https://geti2p.net/en/docs/api/samv3) is enabled, and if not enable it.  
 ### Bootstrap
 ##### Manager  
 If you generate your own I2P bootstrap on the setup page, its address is output.  
