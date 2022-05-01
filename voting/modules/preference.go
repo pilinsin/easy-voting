@@ -1,18 +1,18 @@
 package votingmodule
 
 import (
+	"context"
+	"errors"
 	"log"
 	"sort"
 	"strconv"
-	"errors"
-	"context"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type preferenceVoting struct {
@@ -21,7 +21,9 @@ type preferenceVoting struct {
 
 func NewPreferenceVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) (viface.IVoting, error) {
 	pv := &preferenceVoting{}
-	if err := pv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil{return nil, err}
+	if err := pv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil {
+		return nil, err
+	}
 	return pv, nil
 }
 
@@ -156,4 +158,3 @@ func (pv preferenceVoting) GetResult() (*vutil.VoteResult, int, int, error) {
 	}
 	return &result, nVoters, nVoted, nil
 }
-

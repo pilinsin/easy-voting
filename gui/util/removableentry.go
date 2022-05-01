@@ -1,23 +1,23 @@
 package guiutil
 
-import(
+import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 
 	pv "github.com/pilinsin/p2p-verse"
 )
 
-
-type RemovableEntryForm struct{
+type RemovableEntryForm struct {
 	entries map[string]*widget.Entry
 }
-func NewRemovableEntryForm() *RemovableEntryForm{
+
+func NewRemovableEntryForm() *RemovableEntryForm {
 	es := make(map[string]*widget.Entry)
 	return &RemovableEntryForm{es}
 }
-func (ref *RemovableEntryForm) Render() fyne.CanvasObject{
+func (ref *RemovableEntryForm) Render() fyne.CanvasObject {
 	contents := container.NewVBox()
 	addBtn := widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {
 		addrEntry := widget.NewEntry()
@@ -37,10 +37,10 @@ func (ref *RemovableEntryForm) Render() fyne.CanvasObject{
 	return container.NewBorder(addBtnObj, nil, nil, nil, contents)
 }
 
-func (ref *RemovableEntryForm) Texts() []string{
+func (ref *RemovableEntryForm) Texts() []string {
 	txts := make([]string, len(ref.entries))
 	idx := 0
-	for _, entry := range ref.entries{
+	for _, entry := range ref.entries {
 		txts[idx] = entry.Text
 		idx++
 	}

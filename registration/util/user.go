@@ -1,17 +1,16 @@
 package registrationutil
 
 import (
-	"errors"
 	"encoding/base64"
-	"github.com/pilinsin/util/crypto"
+	"errors"
 	pb "github.com/pilinsin/easy-voting/registration/util/pb"
+	"github.com/pilinsin/util/crypto"
 	proto "google.golang.org/protobuf/proto"
 )
 
-
 type UserIdentity struct {
 	hash    string
-	pubKey crypto.IPubKey
+	pubKey  crypto.IPubKey
 	privKey crypto.IPriKey
 }
 
@@ -31,9 +30,9 @@ func (ui UserIdentity) Marshal() []byte {
 	mpub, _ := crypto.MarshalPubKey(ui.pubKey)
 	mpri, _ := crypto.MarshalPriKey(ui.privKey)
 	mui := &pb.Identity{
-		Hash:	ui.hash,
-		Pub:	mpub,
-		Priv:  	mpri,
+		Hash: ui.hash,
+		Pub:  mpub,
+		Priv: mpri,
 	}
 	m, _ := proto.Marshal(mui)
 	return m
@@ -59,12 +58,16 @@ func (ui *UserIdentity) Unmarshal(m []byte) error {
 	return nil
 }
 
-func (ui UserIdentity) ToString() string{
+func (ui UserIdentity) ToString() string {
 	return base64.URLEncoding.EncodeToString(ui.Marshal())
 }
-func (ui *UserIdentity) FromString(addr string) error{
-	if addr == ""{return errors.New("invalid addr")}
+func (ui *UserIdentity) FromString(addr string) error {
+	if addr == "" {
+		return errors.New("invalid addr")
+	}
 	m, err := base64.URLEncoding.DecodeString(addr)
-	if err != nil{return err}
+	if err != nil {
+		return err
+	}
 	return ui.Unmarshal(m)
 }

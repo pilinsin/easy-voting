@@ -1,20 +1,20 @@
 package registrationutil
 
 import (
-	"errors"
 	"encoding/base64"
+	"errors"
 	pb "github.com/pilinsin/easy-voting/registration/util/pb"
 	proto "google.golang.org/protobuf/proto"
 )
 
 type ManIdentity struct {
-	IpfsDir string
+	IpfsDir  string
 	StoreDir string
 }
 
 func (mi ManIdentity) Marshal() []byte {
-	mManId := &pb.ManIdentity {
-		IpfsDir: mi.IpfsDir,
+	mManId := &pb.ManIdentity{
+		IpfsDir:  mi.IpfsDir,
 		StoreDir: mi.StoreDir,
 	}
 	m, _ := proto.Marshal(mManId)
@@ -30,12 +30,16 @@ func (mi *ManIdentity) Unmarshal(m []byte) error {
 	return nil
 }
 
-func (mi ManIdentity) toString() string{
+func (mi ManIdentity) toString() string {
 	return base64.URLEncoding.EncodeToString(mi.Marshal())
 }
-func (mi *ManIdentity) FromString(addr string) error{
-	if addr == ""{return errors.New("invalid addr")}
+func (mi *ManIdentity) FromString(addr string) error {
+	if addr == "" {
+		return errors.New("invalid addr")
+	}
 	m, err := base64.URLEncoding.DecodeString(addr)
-	if err != nil{return err}
+	if err != nil {
+		return err
+	}
 	return mi.Unmarshal(m)
 }

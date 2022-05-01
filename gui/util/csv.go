@@ -1,11 +1,11 @@
 package guiutil
 
-import(
+import (
 	"context"
-	"time"
-	"io"
-	"errors"
 	"encoding/csv"
+	"errors"
+	"io"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
@@ -13,10 +13,10 @@ import(
 	"fyne.io/fyne/v2/widget"
 )
 
-func CsvDialog(w fyne.Window, rc0 chan *csv.Reader, noteLabel *widget.Label) func(){
-	return func(){
+func CsvDialog(w fyne.Window, rc0 chan *csv.Reader, noteLabel *widget.Label) func() {
+	return func() {
 		onSelected := func(rc fyne.URIReadCloser, err error) {
-			if rc == nil || err != nil{
+			if rc == nil || err != nil {
 				noteLabel.SetText("no file is selected")
 				return
 			}
@@ -25,7 +25,7 @@ func CsvDialog(w fyne.Window, rc0 chan *csv.Reader, noteLabel *widget.Label) fun
 				return
 			}
 
-			go func(){
+			go func() {
 				rc0 <- csv.NewReader(rc)
 				noteLabel.SetText("csv file uploaded")
 			}()
@@ -34,12 +34,12 @@ func CsvDialog(w fyne.Window, rc0 chan *csv.Reader, noteLabel *widget.Label) fun
 	}
 }
 
-
-type loadCsvButton struct{
+type loadCsvButton struct {
 	*widget.Button
 	reader chan *csv.Reader
 }
-func NewLoadCsvButton(w fyne.Window, noteLabel *widget.Label) *loadCsvButton{
+
+func NewLoadCsvButton(w fyne.Window, noteLabel *widget.Label) *loadCsvButton {
 	r := make(chan *csv.Reader, 1)
 
 	onTapped := CsvDialog(w, r, noteLabel)
@@ -49,30 +49,33 @@ func NewLoadCsvButton(w fyne.Window, noteLabel *widget.Label) *loadCsvButton{
 	lcb.ExtendBaseWidget(lcb)
 	return lcb
 }
+
 /*
 	{"Label 1, Label 2, ..., Label M"}
 	{"data1 11, data1 12, ..., data 1M"}
 	...
 	{"data N1, data N2, ..., data NM"}
 */
-func (lcb *loadCsvButton) Read() ([]string, <-chan []string, error){
+func (lcb *loadCsvButton) Read() ([]string, <-chan []string, error) {
 	var r *csv.Reader
 	var isReaderGet bool
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
-	select{
-		case r, _ = <-lcb.reader:
-			isReaderGet = true
-		case <-ctx.Done():
-			//close(ce.thumbnail)
+	select {
+	case r, _ = <-lcb.reader:
+		isReaderGet = true
+	case <-ctx.Done():
+		//close(ce.thumbnail)
 	}
-	if !isReaderGet{return nil, nil, errors.New("reader is nil")}
+	if !isReaderGet {
+		return nil, nil, errors.New("reader is nil")
+	}
 
 	labels, err := r.Read()
 	if err == io.EOF {
 		return labels, nil, nil
 	}
-	if err != nil{
+	if err != nil {
 		return nil, nil, err
 	}
 

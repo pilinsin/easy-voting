@@ -1,23 +1,22 @@
 package voting
 
 import (
-	"testing"
 	"context"
+	"testing"
 	"time"
 
 	"github.com/pilinsin/util"
 	"github.com/pilinsin/util/crypto"
 
+	rgst "github.com/pilinsin/easy-voting/registration"
+	riface "github.com/pilinsin/easy-voting/registration/interface"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
 	pv "github.com/pilinsin/p2p-verse"
 	crdt "github.com/pilinsin/p2p-verse/crdt"
-	rgst "github.com/pilinsin/easy-voting/registration"
-	rutil "github.com/pilinsin/easy-voting/registration/util"
-	riface "github.com/pilinsin/easy-voting/registration/interface"
-	vutil "github.com/pilinsin/easy-voting/voting/util"
 	//viface "github.com/pilinsin/easy-voting/voting/interface"
 )
-
 
 func checkError(t *testing.T, err error, args ...interface{}) {
 	if err != nil {
@@ -29,41 +28,41 @@ func checkError(t *testing.T, err error, args ...interface{}) {
 	}
 }
 
-func userDataset() (<-chan []string, []string){
+func userDataset() (<-chan []string, []string) {
 	labels := []string{"name", "age", "sex"}
-	users :=[][]string{
-		{"alice",	"15",	"f"},
-		{"bob",		"17",	"m"},
-		{"c",		"19",	"f"},
-		{"d",		"22",	"m"},
-		{"e",		"58",	"m"},
-		{"f",		"32",	"m"},
-		{"g",		"19",	"f"},
-		{"h",		"98",	"f"},
-		{"i",		"39",	"f"},
+	users := [][]string{
+		{"alice", "15", "f"},
+		{"bob", "17", "m"},
+		{"c", "19", "f"},
+		{"d", "22", "m"},
+		{"e", "58", "m"},
+		{"f", "32", "m"},
+		{"g", "19", "f"},
+		{"h", "98", "f"},
+		{"i", "39", "f"},
 	}
 	ch := make(chan []string)
-	go func(){
+	go func() {
 		defer close(ch)
-		for _, user := range users{
+		for _, user := range users {
 			ch <- user
 		}
 	}()
 	return ch, labels
 }
 
-func genKp() (crdt.IPrivKey, crdt.IPubKey, error){
+func genKp() (crdt.IPrivKey, crdt.IPubKey, error) {
 	kp := crypto.NewSignKeyPair()
 	return kp.Sign(), kp.Verify(), nil
 }
-func marshalPub(pub crdt.IPubKey) ([]byte, error){
+func marshalPub(pub crdt.IPubKey) ([]byte, error) {
 	return crypto.MarshalVerfKey(pub.(crypto.IVerfKey))
 }
-func unmarshalPub(m []byte) (crdt.IPubKey, error){
+func unmarshalPub(m []byte) (crdt.IPubKey, error) {
 	return crypto.UnmarshalVerfKey(m)
 }
 
-func registrate(t *testing.T, baiStr string) (riface.IRegistration, string, string){
+func registrate(t *testing.T, baiStr string) (riface.IRegistration, string, string) {
 	users, labels := userDataset()
 	rCfgAddr, manIdStr, err := rutil.NewConfig("test_rTitle", users, labels, baiStr)
 	checkError(t, err)
@@ -74,30 +73,28 @@ func registrate(t *testing.T, baiStr string) (riface.IRegistration, string, stri
 	user, err := rgst.NewRegistration(context.Background(), rCfgAddr, "")
 	checkError(t, err)
 	defer user.Close()
-	
+
 	var uidStr string
 	users, _ = userDataset()
-	for ud := range users{
+	for ud := range users {
 		name, age, sex := ud[0], ud[1], ud[2]
 		uidStr, err = user.Registrate(name, age, sex)
 		checkError(t, err)
 	}
-	time.Sleep(time.Minute*5)
+	time.Sleep(time.Minute * 5)
 
 	return man, rCfgAddr, uidStr
 }
 
-
-
-func makeTimeInfo(t *testing.T) *util.TimeInfo{
+func makeTimeInfo(t *testing.T) *util.TimeInfo {
 	now := time.Now()
 	begin := now.Format(util.Layout)
-	end := now.Add(time.Minute*30).Format(util.Layout)
+	end := now.Add(time.Minute * 30).Format(util.Layout)
 	tInfo, err := util.NewTimeInfo(begin, end, now.Location().String())
 	checkError(t, err)
 	return tInfo
 }
-func makeCandidates() []*vutil.Candidate{
+func makeCandidates() []*vutil.Candidate {
 	nameGroups := [][]string{
 		{"A", "gA"},
 		{"B", "gB"},
@@ -107,32 +104,32 @@ func makeCandidates() []*vutil.Candidate{
 	}
 
 	cands := make([]*vutil.Candidate, len(nameGroups))
-	for idx, ng := range nameGroups{
+	for idx, ng := range nameGroups {
 		cands[idx] = &vutil.Candidate{ng[0], ng[1], "", nil, ""}
 	}
-	
+
 	return cands
 }
-func makeVote(name string, cands []*vutil.Candidate) vutil.VoteInt{
+func makeVote(name string, cands []*vutil.Candidate) vutil.VoteInt {
 	vi := make(vutil.VoteInt)
-	for _, cand := range cands{
+	for _, cand := range cands {
 		k := cand.Name + ", " + cand.Group
-		if cand.Name == name{
+		if cand.Name == name {
 			vi[k] = 1
-		}else{
+		} else {
 			vi[k] = 0
 		}
 	}
 	return vi
 }
-func vote(t *testing.T, baiStr string){
+func vote(t *testing.T, baiStr string) {
 	rMan, rcAddr, uidStr := registrate(t, baiStr)
 
 	ttl := "test_vtitle"
 	nv := 1
 	ti := makeTimeInfo(t)
 	cands := makeCandidates()
-	vp := &vutil.VoteParams{0,1,1}
+	vp := &vutil.VoteParams{0, 1, 1}
 	vt := vutil.Approval
 	vCfgAddr, manIdStr, err := vutil.NewConfig(ttl, rcAddr, nv, ti, cands, vp, vt)
 	checkError(t, err)
@@ -147,31 +144,31 @@ func vote(t *testing.T, baiStr string){
 	checkError(t, err)
 	t.Log("vUser generated")
 
-/*
-	verifiers := make([]viface.IVoting, nv)
-	for idx := 0; idx < nv; idx++{
-		verifier, err := NewVoting(context.Background(), vCfgAddr, "")
-		checkError(t, err)
-		verifiers[idx] = verifier
-		t.Log("verifier",idx," generated")
-	}
-	t.Log("verifiers generated")
-*/
+	/*
+		verifiers := make([]viface.IVoting, nv)
+		for idx := 0; idx < nv; idx++{
+			verifier, err := NewVoting(context.Background(), vCfgAddr, "")
+			checkError(t, err)
+			verifiers[idx] = verifier
+			t.Log("verifier",idx," generated")
+		}
+		t.Log("verifiers generated")
+	*/
 	checkError(t, user.Vote(makeVote("D", cands)))
 	t.Log("user vote")
-	time.Sleep(time.Minute*5)
+	time.Sleep(time.Minute * 5)
 
-/*
-	for _, verifier := range verifiers{
-		verifier.Close()
-	}
-	t.Log("verified")
-*/
+	/*
+		for _, verifier := range verifiers{
+			verifier.Close()
+		}
+		t.Log("verified")
+	*/
 
 	//upload manPriKey
 	checkError(t, vMan.Vote(makeVote("", cands)))
 	t.Log("man upload manPriKey")
-	time.Sleep(time.Minute*2)
+	time.Sleep(time.Minute * 2)
 
 	vi, err := user.GetMyVote()
 	checkError(t, err)
@@ -184,9 +181,8 @@ func vote(t *testing.T, baiStr string){
 	user.Close()
 }
 
-
 //go test -test.v=true -timeout 1h .
-func TestVoting(t *testing.T){
+func TestVoting(t *testing.T) {
 	crdt.InitCryptoFuncs(genKp, marshalPub, unmarshalPub)
 
 	bstrp, err := pv.NewBootstrap(i2p.NewI2pHost)

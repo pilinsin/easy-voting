@@ -1,14 +1,14 @@
 package votingmodule
 
 import (
-	"log"
-	"errors"
 	"context"
+	"errors"
+	"log"
 
 	"fyne.io/fyne/v2/widget"
 
-	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type singleVoting struct {
@@ -17,7 +17,9 @@ type singleVoting struct {
 
 func NewSingleVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) (viface.IVoting, error) {
 	sv := &singleVoting{}
-	if err := sv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil{return nil, err}
+	if err := sv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil {
+		return nil, err
+	}
 	return sv, nil
 }
 

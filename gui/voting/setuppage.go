@@ -7,9 +7,9 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/pilinsin/util"
 	gutil "github.com/pilinsin/easy-voting/gui/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	"github.com/pilinsin/util"
 )
 
 func NewSetupPage(w fyne.Window) fyne.CanvasObject {
@@ -45,7 +45,7 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 		maIdLabel.SetText("voting manager address")
 
 		tInfo, err := util.NewTimeInfo(begin.Time(), end.Time(), loc.Selected)
-		if err != nil{
+		if err != nil {
 			noteLabel.SetText(fmt.Sprintln(err))
 			return
 		}
@@ -55,16 +55,16 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 			noteLabel.SetText(fmt.Sprintln(err))
 			return
 		}
-		if loc.Selected == ""{
+		if loc.Selected == "" {
 			noteLabel.SetText("location is empty")
 			return
 		}
-		if nVerifiers.Num() <= 0{
+		if nVerifiers.Num() <= 0 {
 			noteLabel.SetText("nVerifiers must be positive")
 			return
 		}
 		candidates := cands.Candidates()
-		if len(candidates) == 0{
+		if len(candidates) == 0 {
 			noteLabel.SetText("there are no candidates")
 			return
 		}

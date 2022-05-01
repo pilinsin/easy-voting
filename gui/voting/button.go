@@ -8,42 +8,44 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
+	gutil "github.com/pilinsin/easy-voting/gui/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 func voteBtn(v viface.IVoting, candNameGroups []string, label *widget.Label) fyne.CanvasObject {
 	votingForm := v.NewVotingForm(candNameGroups)
-	voteBtn := widget.NewButtonWithIcon("", theme.MailSendIcon(), func() {
+	voteBtn := widget.NewButtonWithIcon("vote", theme.MailSendIcon(), func() {
 		label.SetText("processing...")
-		err := v.Vote(votingForm.VoteInt())
+		vi := votingForm.VoteInt()
+		err := v.Vote(vi)
 		if err != nil {
 			label.SetText(fmt.Sprintln(err))
 			return
 		}
-		label.SetText("voted")
+		label.SetText(fmt.Sprintln("voted:", vi))
 	})
 	return container.NewVBox(votingForm, voteBtn)
 }
-func checkMyVoteBtn(v viface.IVoting, note *widget.Label) fyne.CanvasObject {
+func checkMyVoteBtn(v viface.IVoting, copy *gutil.CopyButton) fyne.CanvasObject {
 	return widget.NewButtonWithIcon("check my vote", theme.DocumentIcon(), func() {
-		note.SetText("processing...")
+		copy.SetText("processing...")
 		vi, err := v.GetMyVote()
 		if err != nil {
-			note.SetText(fmt.Sprintln(err))
+			copy.SetText(fmt.Sprintln(err))
 			return
 		}
-		note.SetText(fmt.Sprintln("my vote: ", *vi))
+		copy.SetText(fmt.Sprintln("my vote: ", *vi))
 	})
 }
 
-func resultBtn(v viface.IVoting, note *widget.Label) fyne.CanvasObject {
+func resultBtn(v viface.IVoting, copy *gutil.CopyButton) fyne.CanvasObject {
 	return widget.NewButtonWithIcon("result", theme.FolderOpenIcon(), func() {
-		note.SetText("processing...")
-		
+		copy.SetText("processing...")
+
 		if vr, nVoters, nVoted, err := v.GetResult(); err != nil {
-			note.SetText(fmt.Sprintln(err))
+			copy.SetText(fmt.Sprintln(err))
 		} else {
-			note.SetText(fmt.Sprintln("turnout:", nVoted, "/", nVoters, ", result: ", *vr))
+			copy.SetText(fmt.Sprintln("turnout:", nVoted, "/", nVoters, ", result: ", *vr))
 		}
 	})
 }

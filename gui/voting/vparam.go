@@ -1,14 +1,12 @@
 package votingpage
 
 import (
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 
 	gutil "github.com/pilinsin/easy-voting/gui/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
-
 
 type VParamEntry struct {
 	min   *gutil.IntEntry

@@ -2,8 +2,8 @@ package votingpage
 
 import (
 	"context"
-	"time"
 	"io"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -24,28 +24,30 @@ func CandCards(cands []*vutil.Candidate) fyne.CanvasObject {
 	}
 	return container.NewAdaptiveGrid(4, candList...)
 }
+
 type candCard struct {
-	name   *widget.Label
-	group  *widget.Label
-	url   fyne.CanvasObject
+	name      *widget.Label
+	group     *widget.Label
+	url       fyne.CanvasObject
 	imgCanvas *imageCanvas
 }
+
 func newCandCard(cand *vutil.Candidate) *candCard {
 	res := fyne.NewStaticResource(cand.ImgName, cand.Image)
 	img := newImageCanvas(res)
-	if gutil.ResourceEqual(res, gutil.DefaultIcon()){
+	if gutil.ResourceEqual(res, gutil.DefaultIcon()) {
 		img.SetImage(nil)
 	}
 
 	card := &candCard{
-		name:     widget.NewLabel(cand.Name),
-		group: widget.NewLabel(cand.Group),
-		url:  gutil.SetUrl("URL", cand.Url),
+		name:      widget.NewLabel(cand.Name),
+		group:     widget.NewLabel(cand.Group),
+		url:       gutil.SetUrl("URL", cand.Url),
 		imgCanvas: img,
 	}
 	return card
 }
-func (cc *candCard) Render() fyne.CanvasObject{
+func (cc *candCard) Render() fyne.CanvasObject {
 	return container.NewVBox(cc.imgCanvas.Render(), cc.name, cc.group, cc.url)
 }
 
@@ -92,20 +94,21 @@ func removeCandEntry(cands []*candEntry, cand *candEntry) []*candEntry {
 }
 
 type candEntry struct {
-	name   *widget.Entry
-	group  *widget.Entry
-	url    *widget.Entry
-	imgBtn *widget.Button
+	name      *widget.Entry
+	group     *widget.Entry
+	url       *widget.Entry
+	imgBtn    *widget.Button
 	imgCanvas *imageCanvas
 	thumbnail chan fyne.Resource
 }
+
 func newCandEntry(w fyne.Window) *candEntry {
 	imgCanvas := newImageCanvas(gutil.DefaultIcon())
 	imgCanvas.Hide()
 
 	thumb := make(chan fyne.Resource)
 	imgBtn := &widget.Button{Icon: theme.ContentAddIcon()}
-	imgBtn.OnTapped = func(){
+	imgBtn.OnTapped = func() {
 		imageDialog(w, thumb, imgBtn, imgCanvas)()
 		//fmt.Println(thumb.Name())
 		//fmt.Println(resourceEqual(thumb, theme.ContentAddIcon()))
@@ -119,10 +122,10 @@ func newCandEntry(w fyne.Window) *candEntry {
 	urlEntry := widget.NewEntry()
 	urlEntry.SetPlaceHolder("URL")
 	cand := &candEntry{
-		name:   nameEntry,
-		group:  groupEntry,
-		url:    urlEntry,
-		imgBtn: imgBtn,
+		name:      nameEntry,
+		group:     groupEntry,
+		url:       urlEntry,
+		imgBtn:    imgBtn,
 		imgCanvas: imgCanvas,
 		thumbnail: thumb,
 	}
@@ -135,32 +138,38 @@ func (ce *candEntry) Candidate() *vutil.Candidate {
 	var res fyne.Resource
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
-	select{
-		case res, _ = <- ce.thumbnail:
-		case <-ctx.Done():
-			res  = gutil.DefaultIcon()
-			close(ce.thumbnail)
+	select {
+	case res, _ = <-ce.thumbnail:
+	case <-ctx.Done():
+		res = gutil.DefaultIcon()
+		close(ce.thumbnail)
 	}
-	
+
 	return &vutil.Candidate{
-		Name:  ce.name.Text,
-		Group: ce.group.Text,
-		Url:   ce.url.Text,
-		Image: res.Content(),
+		Name:    ce.name.Text,
+		Group:   ce.group.Text,
+		Url:     ce.url.Text,
+		Image:   res.Content(),
 		ImgName: res.Name(),
 	}
 }
 
-func imageDialog(w fyne.Window, res chan <- fyne.Resource, hideObj fyne.CanvasObject, resCanvas *imageCanvas) func(){
-	return func(){
+func imageDialog(w fyne.Window, res chan<- fyne.Resource, hideObj fyne.CanvasObject, resCanvas *imageCanvas) func() {
+	return func() {
 		onSelected := func(rc fyne.URIReadCloser, err error) {
-			if rc == nil || err != nil {return}
-			if ok := isImageExtension(rc.URI().Extension()); !ok{return}
+			if rc == nil || err != nil {
+				return
+			}
+			if ok := isImageExtension(rc.URI().Extension()); !ok {
+				return
+			}
 
 			data, err := io.ReadAll(rc)
-			if err != nil{return}
+			if err != nil {
+				return
+			}
 			loadRes := &fyne.StaticResource{rc.URI().Name(), data}
-			go func(){
+			go func() {
 				res <- loadRes
 				close(res)
 			}()
@@ -171,7 +180,7 @@ func imageDialog(w fyne.Window, res chan <- fyne.Resource, hideObj fyne.CanvasOb
 		dialog.ShowFileOpen(onSelected, w)
 	}
 }
-func isImageExtension(ext string) bool{
+func isImageExtension(ext string) bool {
 	switch ext {
 	case ".bmp", ".png", ".jpeg", ".jpg", ".gif", ".tiff", ".vp8l", ".webp", ".svg":
 		return true
@@ -180,26 +189,26 @@ func isImageExtension(ext string) bool{
 	}
 }
 
-
-type imageCanvas struct{
+type imageCanvas struct {
 	imgCanvas *fyne.Container
 }
-func newImageCanvas(res fyne.Resource) *imageCanvas{
+
+func newImageCanvas(res fyne.Resource) *imageCanvas {
 	imgCanvas := canvas.NewImageFromResource(res)
 	imgCanvas.FillMode = canvas.ImageFillContain
 	imgGridCanvas := container.NewGridWrap(fyne.NewSize(169, 239.27), imgCanvas)
 	return &imageCanvas{imgGridCanvas}
 }
-func (iCanvas *imageCanvas) Render() fyne.CanvasObject{
+func (iCanvas *imageCanvas) Render() fyne.CanvasObject {
 	return iCanvas.imgCanvas
 }
-func (iCanvas *imageCanvas) Hide(){
+func (iCanvas *imageCanvas) Hide() {
 	iCanvas.imgCanvas.Hide()
 }
-func (iCanvas *imageCanvas) Show(){
+func (iCanvas *imageCanvas) Show() {
 	iCanvas.imgCanvas.Show()
 }
-func (iCanvas *imageCanvas) SetImage(res fyne.Resource){
+func (iCanvas *imageCanvas) SetImage(res fyne.Resource) {
 	imgCanvas, _ := iCanvas.imgCanvas.Objects[0].(*canvas.Image)
 	imgCanvas.Resource = res
 	imgCanvas.Refresh()

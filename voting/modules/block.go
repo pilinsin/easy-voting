@@ -1,14 +1,14 @@
 package votingmodule
 
 import (
-	"log"
-	"errors"
 	"context"
+	"errors"
+	"log"
 
 	"fyne.io/fyne/v2/widget"
 
-	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type blockVoting struct {
@@ -20,7 +20,9 @@ func NewBlockVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bA
 	bv := &blockVoting{
 		total: vCfg.Params.Total,
 	}
-	if err := bv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil{return nil, err}
+	if err := bv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil {
+		return nil, err
+	}
 	return bv, nil
 }
 

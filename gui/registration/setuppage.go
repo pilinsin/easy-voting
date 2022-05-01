@@ -36,13 +36,13 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 		addrLabel.SetText("registration config address")
 		maIdLabel.SetText("manager identity address")
 		labels, dataset, err := csvBtn.Read()
-		if err != nil{
-			noteLabel.SetText("load csv error: "+err.Error())
+		if err != nil {
+			noteLabel.SetText("load csv error: " + err.Error())
 			return
 		}
 		cid, mid, err := rutil.NewConfig(titleEntry.Text, dataset, labels, bAddrEntry.Text)
-		if err != nil{
-			noteLabel.SetText("new rConfig error: "+err.Error())
+		if err != nil {
+			noteLabel.SetText("new rConfig error: " + err.Error())
 			return
 		}
 

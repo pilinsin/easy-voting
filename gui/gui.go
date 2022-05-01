@@ -18,11 +18,11 @@ import (
 	i2p "github.com/pilinsin/go-libp2p-i2p"
 )
 
-func init(){
+func init() {
 	evutil.Init()
 }
 
-func pageToTabItem(title string, page fyne.CanvasObject) *container.TabItem{
+func pageToTabItem(title string, page fyne.CanvasObject) *container.TabItem {
 	return container.NewTabItem(title, page)
 }
 
@@ -53,10 +53,10 @@ func (gui *GUI) withRemove(page fyne.CanvasObject, closer func()) fyne.CanvasObj
 }
 
 func (gui *GUI) loadPage(ctx context.Context, addr, idStr string) (string, fyne.CanvasObject, func()) {
-	if ok := strings.HasPrefix(addr, "r/"); ok{
+	if ok := strings.HasPrefix(addr, "r/"); ok {
 		return rpage.LoadPage(ctx, addr, idStr)
 	}
-	if ok := strings.HasPrefix(addr, "v/"); ok{
+	if ok := strings.HasPrefix(addr, "v/"); ok {
 		return vpage.LoadPage(ctx, addr, idStr)
 	}
 	return "", nil, nil
@@ -66,8 +66,8 @@ func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	addrEntry.PlaceHolder = "Registration/Voting Config Address"
 	idEntry := widget.NewEntry()
 	idEntry.PlaceHolder = "User/Manager Identity Address"
-	
-	onTapped := func(){
+
+	onTapped := func() {
 		title, loadPage, closer := gui.loadPage(context.Background(), addrEntry.Text, idEntry.Text)
 		addrEntry.SetText("")
 		idEntry.SetText("")
@@ -96,9 +96,9 @@ func (gui *GUI) newPageForm() fyne.CanvasObject {
 	chmod.OnChanged = func(mode string) {
 		if mode == "registration" {
 			setup = rpage.NewSetupPage(gui.w)
-		} else if mode == "voting"{
+		} else if mode == "voting" {
 			setup = vpage.NewSetupPage(gui.w)
-		} else{
+		} else {
 			setup = bpage.NewSetupPage(gui.w)
 		}
 		newForm := container.NewBorder(chmod, nil, nil, nil, setup)
@@ -116,12 +116,12 @@ func (gui *GUI) defaultPage() *container.TabItem {
 	return pageToTabItem("setup", newForm)
 }
 
-func (gui *GUI) initWaitPage(){
+func (gui *GUI) initWaitPage() {
 	wait := widget.NewLabel("i2p router start...")
 	gui.page.Add(wait)
 }
-func (gui *GUI) initPage(){
-	for _, obj := range gui.page.Objects{
+func (gui *GUI) initPage() {
+	for _, obj := range gui.page.Objects {
 		gui.page.Remove(obj)
 	}
 	gui.tabs.Append(gui.defaultPage())
@@ -129,33 +129,29 @@ func (gui *GUI) initPage(){
 	gui.page.Add(container.NewBorder(loadForm, nil, nil, nil, gui.tabs))
 	gui.page.Refresh()
 }
-func (gui *GUI) initErrorPage(){
-	for _, obj := range gui.page.Objects{
+func (gui *GUI) initErrorPage() {
+	for _, obj := range gui.page.Objects {
 		gui.page.Remove(obj)
 	}
 	failed := widget.NewLabel("i2p router failed to start. please try again later.")
 	gui.page.Add(failed)
 	gui.page.Refresh()
 }
-func (gui *GUI) i2pStart(){
+func (gui *GUI) i2pStart() {
 	gui.initWaitPage()
-	go func(){
-		if err := i2p.StartI2pRouter(); err == nil{
+	go func() {
+		if err := i2p.StartI2pRouter(); err == nil {
 			gui.initPage()
-		}else{
+		} else {
 			gui.initErrorPage()
 		}
 	}()
 }
 
-
 func (gui *GUI) Run() {
 	gui.i2pStart()
-	
+
 	gui.w.SetContent(gui.page)
+	gui.w.SetOnClosed(i2p.StopI2pRouter)
 	gui.w.ShowAndRun()
 }
-func (gui *GUI) Close(){
-	i2p.StopI2pRouter()
-}
-

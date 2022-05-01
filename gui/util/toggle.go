@@ -1,30 +1,35 @@
 package guiutil
 
-import(
-	"fyne.io/fyne/v2/widget"
+import (
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 )
 
-type toggleButton struct{
+type toggleButton struct {
 	*widget.Button
 	onoff bool
 }
-func NewToggleButton(onEnabled, onDisabled func() error) *toggleButton{
+
+func NewToggleButton(onEnabled, onDisabled func() error) *toggleButton {
 	tbtn := &toggleButton{onoff: false}
 
 	btn := &widget.Button{
 		Icon: theme.RadioButtonIcon(),
 	}
-	btn.OnTapped = func(){
-		if tbtn.onoff{
+	btn.OnTapped = func() {
+		if tbtn.onoff {
 			//on -> off
-			if err := onDisabled(); err != nil{return}
+			if err := onDisabled(); err != nil {
+				return
+			}
 			tbtn.onoff = false
 			btn.Icon = theme.RadioButtonIcon()
 			btn.Refresh()
-		}else{
+		} else {
 			//off -> on
-			if err := onEnabled(); err != nil{return}
+			if err := onEnabled(); err != nil {
+				return
+			}
 			tbtn.onoff = true
 			btn.Icon = theme.RadioButtonCheckedIcon()
 			btn.Refresh()

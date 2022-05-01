@@ -7,31 +7,35 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	vt "github.com/pilinsin/easy-voting/voting"
 	gutil "github.com/pilinsin/easy-voting/gui/util"
+	vt "github.com/pilinsin/easy-voting/voting"
 )
 
 func LoadPage(ctx context.Context, vCfgAddr, idStr string) (string, fyne.CanvasObject, func()) {
 	v, err := vt.NewVoting(ctx, vCfgAddr, idStr)
-	if err != nil{return "", nil, nil}
-	closer := func(){v.Close()}
+	if err != nil {
+		return "", nil, nil
+	}
+	closer := func() { v.Close() }
 
 	vCfg := v.Config()
 
 	addrLabel := gutil.NewCopyButton(vCfgAddr)
 	titleLabel := widget.NewLabel(vCfg.Title)
 	noteLabel := widget.NewLabel("")
+	resLabel := gutil.NewCopyButton("result:")
 
 	vCfg.ShuffleCandidates()
 	contents := CandCards(vCfg.Candidates)
 
-	vbtn := voteBtn(v, vCfg.CandNameGroups(), noteLabel)
-	cmvbtn := checkMyVoteBtn(v, noteLabel)
-	rbtn := resultBtn(v, noteLabel)
+	vBtn := voteBtn(v, vCfg.CandNameGroups(), noteLabel)
+	cmvBtn := checkMyVoteBtn(v, resLabel)
+	resBtn := resultBtn(v, resLabel)
 
-	titles := container.NewVBox(addrLabel.Render(), titleLabel)
-	page := container.NewVBox(contents, vbtn, cmvbtn, rbtn, noteLabel)
+	titles := container.NewVBox(titleLabel, addrLabel.Render())
+	vObjs := container.NewVBox(contents, vBtn, noteLabel)
+	resObjs := container.NewVBox(container.NewHBox(cmvBtn, resBtn), resLabel.Render())
+	page := container.NewVBox(vObjs, resObjs)
 	page = container.NewBorder(titles, nil, nil, nil, page)
 	return vCfg.Title, page, closer
 }
-

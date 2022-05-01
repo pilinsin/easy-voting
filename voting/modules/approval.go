@@ -1,14 +1,14 @@
 package votingmodule
 
 import (
-	"log"
-	"errors"
 	"context"
+	"errors"
+	"log"
 
 	"fyne.io/fyne/v2/widget"
 
-	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type approvalVoting struct {
@@ -17,7 +17,9 @@ type approvalVoting struct {
 
 func NewApprovalVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) (viface.IVoting, error) {
 	av := &approvalVoting{}
-	if err := av.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil{return nil, err}
+	if err := av.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil {
+		return nil, err
+	}
 	return av, nil
 }
 
@@ -126,4 +128,3 @@ func (av approvalVoting) GetResult() (*vutil.VoteResult, int, int, error) {
 	}
 	return &result, nVoters, nVoted, nil
 }
-

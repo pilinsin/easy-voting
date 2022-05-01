@@ -1,11 +1,10 @@
 package registrationutil
 
 import (
-	"strings"
 	"encoding/base64"
 	"github.com/pilinsin/util/crypto"
+	"strings"
 )
-
 
 func NewUserHash(salt string, userData ...string) string {
 	s := strings.Join(userData, " ")

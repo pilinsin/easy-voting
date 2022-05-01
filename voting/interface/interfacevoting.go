@@ -5,6 +5,7 @@ import (
 
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
+
 type iBaseVoting interface {
 	Close()
 	Config() *vutil.Config
@@ -17,7 +18,6 @@ type IVoting interface {
 	GetMyVote() (*vutil.VoteInt, error)
 	GetResult() (*vutil.VoteResult, int, int, error)
 }
-
 
 type IVotingForm interface {
 	fyne.CanvasObject

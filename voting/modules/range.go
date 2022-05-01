@@ -1,17 +1,17 @@
 package votingmodule
 
 import (
+	"context"
+	"errors"
 	"log"
 	"strconv"
-	"errors"
-	"context"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type rangeVoting struct {
@@ -25,7 +25,9 @@ func NewRangeVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bA
 		min: vCfg.Params.Min,
 		max: vCfg.Params.Max,
 	}
-	if err := rv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil{return nil, err}
+	if err := rv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil {
+		return nil, err
+	}
 	return rv, nil
 }
 
@@ -154,4 +156,3 @@ func (rv rangeVoting) GetResult() (*vutil.VoteResult, int, int, error) {
 	}
 	return &result, nVoters, nVoted, nil
 }
-

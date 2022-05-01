@@ -7,16 +7,18 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	rgst "github.com/pilinsin/easy-voting/registration"
 	gutil "github.com/pilinsin/easy-voting/gui/util"
+	rgst "github.com/pilinsin/easy-voting/registration"
 )
 
 func LoadPage(ctx context.Context, rCfgAddr, idStr string) (string, fyne.CanvasObject, func()) {
 	uidLabel := gutil.NewCopyButton("user identity address")
 
 	r, err := rgst.NewRegistration(ctx, rCfgAddr, idStr)
-	if err != nil{return "", nil, nil}
-	closer := func(){r.Close()}
+	if err != nil {
+		return "", nil, nil
+	}
+	closer := func() { r.Close() }
 
 	rCfg := r.Config()
 	addrLabel := gutil.NewCopyButton(rCfgAddr)
@@ -25,19 +27,19 @@ func LoadPage(ctx context.Context, rCfgAddr, idStr string) (string, fyne.CanvasO
 
 	entries := make([]*widget.Entry, len(rCfg.Labels))
 	rForm := &widget.Form{}
-	for idx, label := range rCfg.Labels{
+	for idx, label := range rCfg.Labels {
 		entries[idx] = widget.NewEntry()
 		rForm.Items = append(rForm.Items, widget.NewFormItem(label, entries[idx]))
 	}
-	rForm.OnSubmit = func(){
+	rForm.OnSubmit = func() {
 		noteLabel.SetText("processing...")
 		dataset := make([]string, len(rCfg.Labels))
-		for idx, entry := range entries{
+		for idx, entry := range entries {
 			dataset[idx] = entry.Text
 		}
 		uidStr, err := r.Registrate(dataset...)
-		if err != nil{
-			noteLabel.SetText("registration error: "+err.Error())
+		if err != nil {
+			noteLabel.SetText("registration error: " + err.Error())
 			return
 		}
 		noteLabel.SetText("done")
@@ -45,7 +47,7 @@ func LoadPage(ctx context.Context, rCfgAddr, idStr string) (string, fyne.CanvasO
 	}
 	rForm.ExtendBaseWidget(rForm)
 
-	titles := container.NewVBox(addrLabel.Render(), titleLabel)
+	titles := container.NewVBox(titleLabel, addrLabel.Render())
 	page := container.NewVBox(rForm, noteLabel, uidLabel.Render())
 	page = container.NewBorder(titles, nil, nil, nil, page)
 	return rCfg.Title, page, closer

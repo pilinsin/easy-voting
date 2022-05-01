@@ -1,14 +1,13 @@
 package guiutil
 
-import(
+import (
 	"bytes"
 	"net/url"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 )
-
 
 func SetUrl(text string, urlStr string) fyne.CanvasObject {
 	if urlStr != "" {
@@ -21,7 +20,7 @@ func SetUrl(text string, urlStr string) fyne.CanvasObject {
 	return widget.NewLabel("")
 }
 
-func DefaultIcon() fyne.Resource{
+func DefaultIcon() fyne.Resource {
 	return theme.FyneLogo()
 }
 func ResourceEqual(selected, def fyne.Resource) bool {

@@ -1,105 +1,110 @@
 package bootstrappage
 
-import(
+import (
 	peer "github.com/libp2p/go-libp2p-core/peer"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 
 	gutil "github.com/pilinsin/easy-voting/gui/util"
-	pv "github.com/pilinsin/p2p-verse"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
+	pv "github.com/pilinsin/p2p-verse"
 )
 
-func NewSetupPage(_ fyne.Window) fyne.CanvasObject{
+func NewSetupPage(_ fyne.Window) fyne.CanvasObject {
 	baddrLabel := gutil.NewCopyButton("bootstrap address")
 	baddrsLabel := gutil.NewCopyButton("bootstrap list address")
 
 	var self pv.IBootstrap
 	var err error
-	onEnabled := func() error{
+	onEnabled := func() error {
 		baddrLabel.SetText("processing...")
-		if self == nil{
+		if self == nil {
 			self, err = pv.NewBootstrap(i2p.NewI2pHost)
-			if err != nil{
+			if err != nil {
 				baddrLabel.SetText("bootstrap address")
 				return err
 			}
 		}
-		
+
 		s := pv.AddrInfoToString(self.AddrInfo())
 		baddrLabel.SetText(s)
 		return nil
 	}
-	onDisabled := func() error{
-		if self != nil{
+	onDisabled := func() error {
+		if self != nil {
 			self.Close()
 			self = nil
 			baddrLabel.SetText("bootstrap address")
-		}	
+		}
 		return nil
 	}
 	tbtn := gutil.NewToggleButton(onEnabled, onDisabled)
 
 	form := NewBootstrapsForm()
-	addrsBtn := widget.NewButtonWithIcon("", theme.ListIcon(), func(){
+	addrsBtn := widget.NewButtonWithIcon("", theme.ListIcon(), func() {
 		baddrs := form.AddrInfos()
-		if self != nil{
+		if self != nil {
 			baddrs = append(baddrs, self.AddrInfo())
 		}
 
 		s := pv.AddrInfosToString(baddrs...)
-		if s == ""{
+		if s == "" {
 			baddrsLabel.SetText("bootstrap list address")
-		}else{
+		} else {
 			baddrsLabel.SetText(s)
 		}
 	})
 
-	return container.NewVBox(tbtn, baddrLabel.Render(), form.Render(), addrsBtn, baddrsLabel.Render())
+	baddr := container.NewBorder(nil, nil, tbtn, nil, baddrLabel.Render())
+	baddrs := container.NewBorder(nil, nil, addrsBtn, nil, baddrsLabel.Render())
+	return container.NewVBox(baddr, form.Render(), baddrs)
 }
 
-func mapToSlice(m map[string]peer.AddrInfo) []peer.AddrInfo{
+func mapToSlice(m map[string]peer.AddrInfo) []peer.AddrInfo {
 	ais := make([]peer.AddrInfo, len(m))
 	idx := 0
-	for _, v := range m{
+	for _, v := range m {
 		ais[idx] = v
 		idx++
 	}
 	return ais
 }
-func sliceToMap(ais []peer.AddrInfo) map[string]peer.AddrInfo{
+func sliceToMap(ais []peer.AddrInfo) map[string]peer.AddrInfo {
 	m := make(map[string]peer.AddrInfo)
-	for _, ai := range ais{
+	for _, ai := range ais {
 		s := pv.AddrInfoToString(ai)
-		if s != ""{
+		if s != "" {
 			m[s] = ai
 		}
 	}
 	return m
 }
 
-type bootstrapsForm struct{
+type bootstrapsForm struct {
 	*gutil.RemovableEntryForm
 }
-func NewBootstrapsForm() *bootstrapsForm{
+
+func NewBootstrapsForm() *bootstrapsForm {
 	ref := gutil.NewRemovableEntryForm()
 	return &bootstrapsForm{ref}
 }
-func (bf *bootstrapsForm) AddrInfos() []peer.AddrInfo{
+func (bf *bootstrapsForm) AddrInfos() []peer.AddrInfo {
 	txts := bf.Texts()
 	aiMap := make(map[string]peer.AddrInfo)
 
-	for _, txt := range txts{
+	for _, txt := range txts {
 		ai := pv.AddrInfoFromString(txt)
-		if ai.ID != "" && len(ai.Addrs) > 0{
+		if ai.ID != "" && len(ai.Addrs) > 0 {
 			aiMap[txt] = ai
-		}else{
+		} else {
 			ais := pv.AddrInfosFromString(txt)
-			for _, ai := range ais{
-				if ai.ID == "" || len(ai.Addrs) == 0{continue}
+			for _, ai := range ais {
+				if ai.ID == "" || len(ai.Addrs) == 0 {
+					continue
+				}
 				s := pv.AddrInfoToString(ai)
 				aiMap[s] = ai
 			}

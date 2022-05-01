@@ -1,6 +1,6 @@
 package interfaceregistration
 
-import(
+import (
 	rutil "github.com/pilinsin/easy-voting/registration/util"
 )
 

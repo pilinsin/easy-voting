@@ -1,17 +1,17 @@
 package votingmodule
 
 import (
-	"log"
-	"errors"
 	"context"
+	"errors"
+	"log"
 	"strconv"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	vutil "github.com/pilinsin/easy-voting/voting/util"
 	viface "github.com/pilinsin/easy-voting/voting/interface"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 )
 
 type cumulativeVoting struct {
@@ -25,7 +25,9 @@ func NewCumulativeVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDi
 		min:   vCfg.Params.Min,
 		total: vCfg.Params.Total,
 	}
-	if err := cv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil{return nil, err}
+	if err := cv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil {
+		return nil, err
+	}
 	return cv, nil
 }
 
@@ -167,4 +169,3 @@ func (cv cumulativeVoting) GetResult() (*vutil.VoteResult, int, int, error) {
 	}
 	return &result, nVoters, nVoted, nil
 }
-
