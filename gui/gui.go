@@ -116,19 +116,6 @@ func (gui *GUI) defaultPage() *container.TabItem {
 	return pageToTabItem("setup", newForm)
 }
 
-func (gui *GUI) initWaitPage() {
-	wait := widget.NewLabel("i2p router start...")
-	gui.page.Add(wait)
-}
-func (gui *GUI) initPage() {
-	for _, obj := range gui.page.Objects {
-		gui.page.Remove(obj)
-	}
-	gui.tabs.Append(gui.defaultPage())
-	loadForm := gui.loadPageForm()
-	gui.page.Add(container.NewBorder(loadForm, nil, nil, nil, gui.tabs))
-	gui.page.Refresh()
-}
 func (gui *GUI) initErrorPage() {
 	for _, obj := range gui.page.Objects {
 		gui.page.Remove(obj)
@@ -137,11 +124,10 @@ func (gui *GUI) initErrorPage() {
 	gui.page.Add(failed)
 	gui.page.Refresh()
 }
-func (gui *GUI) i2pStart() {
-	gui.initWaitPage()
+func (gui *GUI) i2pStart(i2pNote *widget.Label) {
 	go func() {
 		if err := i2p.StartI2pRouter(); err == nil {
-			gui.initPage()
+			i2pNote.SetText("i2p router on")
 		} else {
 			gui.initErrorPage()
 		}
@@ -149,7 +135,12 @@ func (gui *GUI) i2pStart() {
 }
 
 func (gui *GUI) Run() {
-	gui.i2pStart()
+	i2pNote := widget.NewLabel("i2p router setup...")
+	gui.i2pStart(i2pNote)
+
+	gui.tabs.Append(gui.defaultPage())
+	loadForm := gui.loadPageForm()
+	gui.page.Add(container.NewBorder(loadForm, i2pNote, nil, nil, gui.tabs))
 
 	gui.w.SetContent(gui.page)
 	gui.w.SetOnClosed(i2p.StopI2pRouter)

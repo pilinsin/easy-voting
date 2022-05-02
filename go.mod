@@ -309,7 +309,7 @@ require (
 	github.com/pierrec/lz4 v2.5.2+incompatible // indirect
 	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220429131236-d9073db19807 // indirect
 	github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220420124841-af137f670078 // indirect
-	github.com/pilinsin/p2p-verse v0.0.0-20220428023238-7cb04cb70e9b // indirect
+	github.com/pilinsin/p2p-verse v0.0.0-20220502035705-29c94f5e768b // indirect
 	github.com/pilinsin/util v0.0.0-20220421092850-f71b35585dd1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

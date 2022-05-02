@@ -1,8 +1,11 @@
 setup Icon.png
 go get fyne.io/fyne/v2/cmd/fyne
-${GOBIN}/fyne package -os ${OS}
+${GOBIN}/fyne package -os ${OS} -icon ../Icon.png
+${GOBIN}/fyne release -os ${OS} -icon ../Icon.png
+
 
 for desktoop test:
 go run .
+
 for mobile test:
 go run -tags mobile .
