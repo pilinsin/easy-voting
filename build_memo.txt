@@ -1,8 +1,7 @@
 setup Icon.png
 go get fyne.io/fyne/v2/cmd/fyne
-${GOBIN}/fyne package -os ${OS} -icon ../Icon.png
-${GOBIN}/fyne release -os ${OS} -icon ../Icon.png
-
+fyne package -os linux -icon Icon.png --appVersion 0.1.0 --appBuild 1 --release true
+fyne release -os android -icon Icon.png --appVersion 0.1.0 --appBuild 1 --release true
 
 for desktoop test:
 go run .
