@@ -307,7 +307,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pierrec/lz4 v2.5.2+incompatible // indirect
-	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220503065634-dc56749ef812 // indirect
+	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220504100601-41363a0e9972 // indirect
 	github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220420124841-af137f670078 // indirect
 	github.com/pilinsin/p2p-verse v0.0.0-20220502035705-29c94f5e768b // indirect
 	github.com/pilinsin/util v0.0.0-20220421092850-f71b35585dd1 // indirect
