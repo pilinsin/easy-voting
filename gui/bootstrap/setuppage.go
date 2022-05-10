@@ -14,41 +14,26 @@ import (
 )
 
 func NewSetupPage(_ fyne.Window) fyne.CanvasObject {
-	baddrLabel := gutil.NewCopyButton("bootstrap address")
 	baddrsLabel := gutil.NewCopyButton("bootstrap list address")
 
 	var self pv.IBootstrap
 	var err error
-	onEnabled := func() error {
-		baddrLabel.SetText("processing...")
-		if self == nil {
-			self, err = pv.NewBootstrap(i2p.NewI2pHost)
-			if err != nil {
-				baddrLabel.SetText("bootstrap address")
-				return err
-			}
-		}
-
-		s := pv.AddrInfoToString(self.AddrInfo())
-		baddrLabel.SetText(s)
-		return nil
-	}
-	onDisabled := func() error {
-		if self != nil {
-			self.Close()
-			self = nil
-			baddrLabel.SetText("bootstrap address")
-		}
-		return nil
-	}
-	tbtn := gutil.NewToggleButton(onEnabled, onDisabled)
 
 	form := NewBootstrapsForm()
-	addrsBtn := widget.NewButtonWithIcon("", theme.ListIcon(), func() {
-		baddrs := form.AddrInfos()
-		if self != nil {
-			baddrs = append(baddrs, self.AddrInfo())
+	addrsBtn := widget.NewButtonWithIcon("", theme.NavigateNextIcon(), func() {
+		baddrsLabel.SetText("processing...")
+		if self != nil{
+			self.Close()
+			self = nil
 		}
+
+		baddrs := form.AddrInfos()
+		self, err = pv.NewBootstrap(i2p.NewI2pHost, baddrs...)
+		if err != nil{
+			baddrsLabel.SetText("bootstrap list address")
+			return
+		}
+		baddrs = append(baddrs, self.AddrInfo())
 
 		s := pv.AddrInfosToString(baddrs...)
 		if s == "" {
@@ -58,9 +43,8 @@ func NewSetupPage(_ fyne.Window) fyne.CanvasObject {
 		}
 	})
 
-	baddr := container.NewBorder(nil, nil, tbtn, nil, baddrLabel.Render())
 	baddrs := container.NewBorder(nil, nil, addrsBtn, nil, baddrsLabel.Render())
-	return container.NewVBox(baddr, form.Render(), baddrs)
+	return container.NewVBox(form.Render(), baddrs)
 }
 
 func mapToSlice(m map[string]peer.AddrInfo) []peer.AddrInfo {

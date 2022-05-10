@@ -178,6 +178,7 @@ github.com/dgraph-io/badger v1.5.5-0.20190226225317-8115aed38f8f/go.mod h1:VZxzA
 github.com/dgraph-io/badger v1.6.0-rc1/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgraph-io/badger v1.6.1/go.mod h1:FRmFw3uxvcpa8zG3Rxs0th+hCLIuaQg8HlNV5bjgnuU=
+github.com/dgraph-io/badger v1.6.2 h1:mNw0qs90GVgGGWylh0umH5iag1j6n/PeJtNvL6KY/x8=
 github.com/dgraph-io/badger v1.6.2/go.mod h1:JW2yswe3V058sS0kZ2h/AXeDSqFjxnZcRrVH//y2UQE=
 github.com/dgraph-io/badger/v2 v2.2007.3/go.mod h1:26P/7fbL4kUZVEVKLAKXkBXKOydDmM2p1e+NhhnBCAE=
 github.com/dgraph-io/badger/v2 v2.2007.4 h1:TRWBQg8UrlUhaFdco01nO2uXwzKS7zd+HVdwV/GHc4o=
@@ -1556,8 +1557,8 @@ github.com/pilinsin/go-libp2p-i2p v0.0.0-20220504100601-41363a0e9972 h1:G/pZjGX7
 github.com/pilinsin/go-libp2p-i2p v0.0.0-20220504100601-41363a0e9972/go.mod h1:wT07EANbDmL3I6PAfImXBAcZ55QRFK5V3+s3/I00zTE=
 github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220420124841-af137f670078 h1:zclZ9tg2YL1LaxIyGuOjUlhAPKuYHpICbdskLcJ0ZUM=
 github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220420124841-af137f670078/go.mod h1:l6uYpcEsIPBZJe+8CbjfhmxH+j4l60YD7qxLUgyCWWA=
-github.com/pilinsin/p2p-verse v0.0.0-20220502035705-29c94f5e768b h1:6oI4uAq8XXkdJoLXHp216RmJeDB2ogNFo//l722Rf1o=
-github.com/pilinsin/p2p-verse v0.0.0-20220502035705-29c94f5e768b/go.mod h1:6xr4uBojaEOjPL6clJxTwNGC8lnuy8S43DASmKddeHg=
+github.com/pilinsin/p2p-verse v0.0.0-20220510030921-889dec2fec8c h1:JA/002SQzFmLupCl7Ygh3+2JRl4DFhNNp0YD0HqCloc=
+github.com/pilinsin/p2p-verse v0.0.0-20220510030921-889dec2fec8c/go.mod h1:6xr4uBojaEOjPL6clJxTwNGC8lnuy8S43DASmKddeHg=
 github.com/pilinsin/util v0.0.0-20220421092850-f71b35585dd1 h1:GV6e6VyyVGBV8obJhATKIGNHdyHX2OPaw3GFuB+uJX0=
 github.com/pilinsin/util v0.0.0-20220421092850-f71b35585dd1/go.mod h1:eoh4zPdItE20YZDHX0Y6Pm3SkxQ6pZoP9HPy61A9JG0=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
