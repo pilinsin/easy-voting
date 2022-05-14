@@ -1,6 +1,8 @@
 fyne package -os linux -icon ../Icon.png
 tar xJvf easy-voting-linux.tar.xz
 mv usr/local easy-voting-linux
+
+echo \#\!/bin/bash >> easy-voting-linux/launch.sh
 echo ./bin/easy-voting-linux >> easy-voting-linux/launch.sh
 chmod +711 easy-voting-linux/launch.sh
 
