@@ -27,6 +27,7 @@ func pageToTabItem(title string, page fyne.CanvasObject) *container.TabItem {
 }
 
 type GUI struct {
+	rt *i2p.I2pRouter
 	w    fyne.Window
 	size fyne.Size
 	page *fyne.Container
@@ -34,6 +35,7 @@ type GUI struct {
 }
 
 func New(title string, width, height float32) *GUI {
+	rt := i2p.NewI2pRouter()
 	size := fyne.NewSize(width, height)
 	a := app.New()
 	a.Settings().SetTheme(theme.LightTheme())
@@ -41,7 +43,7 @@ func New(title string, width, height float32) *GUI {
 	win.Resize(size)
 	page := container.NewMax()
 	tabs := container.NewAppTabs()
-	return &GUI{win, size, page, tabs}
+	return &GUI{rt, win, size, page, tabs}
 }
 
 func (gui *GUI) withRemove(page fyne.CanvasObject, closer func()) fyne.CanvasObject {
@@ -126,7 +128,7 @@ func (gui *GUI) initErrorPage() {
 }
 func (gui *GUI) i2pStart(i2pNote *widget.Label) {
 	go func() {
-		if err := i2p.StartI2pRouter(); err == nil {
+		if err := gui.rt.Start(); err == nil {
 			i2pNote.SetText("i2p router on")
 		} else {
 			gui.initErrorPage()
@@ -143,6 +145,6 @@ func (gui *GUI) Run() {
 	gui.page.Add(container.NewBorder(loadForm, i2pNote, nil, nil, gui.tabs))
 
 	gui.w.SetContent(gui.page)
-	gui.w.SetOnClosed(i2p.StopI2pRouter)
+	gui.w.SetOnClosed(gui.rt.Stop)
 	gui.w.ShowAndRun()
 }
