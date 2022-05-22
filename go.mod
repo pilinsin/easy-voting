@@ -170,7 +170,7 @@ require (
 	github.com/opencontainers/runtime-spec v1.0.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
-	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220519050057-30dbacf2372e // indirect
+	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220522061631-2f0bb90231a6 // indirect
 	github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220420124841-af137f670078 // indirect
 	github.com/pilinsin/p2p-verse v0.0.0-20220510030921-889dec2fec8c // indirect
 	github.com/pilinsin/util v0.0.0-20220421092850-f71b35585dd1 // indirect

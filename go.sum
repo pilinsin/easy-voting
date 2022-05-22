@@ -1242,8 +1242,8 @@ github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/9
 github.com/performancecopilot/speed v3.0.0+incompatible/go.mod h1:/CLtqpZ5gBg1M9iaPbIdPPGyKcA8hKdoy6hAWba7Yac=
 github.com/pierrec/lz4 v1.0.2-0.20190131084431-473cd7ce01a1/go.mod h1:3/3N9NVKO0jef7pBehbT1qWhCMrIgbYNnFAZCqQ5LRc=
 github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=
-github.com/pilinsin/go-libp2p-i2p v0.0.0-20220519050057-30dbacf2372e h1:yWFGhZVbS9+3sJ4ZBsw8bJKMwVkmcx7dL23ry2hDVBI=
-github.com/pilinsin/go-libp2p-i2p v0.0.0-20220519050057-30dbacf2372e/go.mod h1:wT07EANbDmL3I6PAfImXBAcZ55QRFK5V3+s3/I00zTE=
+github.com/pilinsin/go-libp2p-i2p v0.0.0-20220522061631-2f0bb90231a6 h1:xWlWwt7YxFQrGSJ0Vy1OkOCzI9yrATbu7BdikeMFWBA=
+github.com/pilinsin/go-libp2p-i2p v0.0.0-20220522061631-2f0bb90231a6/go.mod h1:wT07EANbDmL3I6PAfImXBAcZ55QRFK5V3+s3/I00zTE=
 github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220420124841-af137f670078 h1:zclZ9tg2YL1LaxIyGuOjUlhAPKuYHpICbdskLcJ0ZUM=
 github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220420124841-af137f670078/go.mod h1:l6uYpcEsIPBZJe+8CbjfhmxH+j4l60YD7qxLUgyCWWA=
 github.com/pilinsin/p2p-verse v0.0.0-20220510030921-889dec2fec8c h1:JA/002SQzFmLupCl7Ygh3+2JRl4DFhNNp0YD0HqCloc=
