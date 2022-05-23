@@ -7,12 +7,14 @@ Blockchain is not used.<br>
 * Revote  
 * Counting by anyone  
 
+## Dependency
+[I2P](https://geti2p.net/en/download)をダウンロード、インストールしてください。  
+
 
 ## Usage
 ### Bootstrap
 ##### Manager  
-If you generate your own I2P bootstrap on the setup page, its address is output.  
-Enter the address or others, and then an address of a list of the addresses will be output.  
+On the Setup page, you can obtain the address of the bootstrap list. It is also possible to add the addresses of other bootstrap lists.  
 In this section, the address is "baddrs".
 ### Registration
 ##### Manager  
