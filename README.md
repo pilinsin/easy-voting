@@ -8,7 +8,7 @@ Blockchain is not used.<br>
 * Counting by anyone  
 
 ## Dependency
-[I2P](https://geti2p.net/en/download)をダウンロード、インストールしてください。  
+Download and install [I2P](https://geti2p.net/en/download).  
 
 
 ## Usage
