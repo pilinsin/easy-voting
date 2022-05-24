@@ -15,9 +15,9 @@ type approvalVoting struct {
 	voting
 }
 
-func NewApprovalVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) (viface.IVoting, error) {
+func NewApprovalVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.IVoting, error) {
 	av := &approvalVoting{}
-	if err := av.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil {
+	if err := av.init(ctx, vCfg, storeDir, bAddr, save); err != nil {
 		return nil, err
 	}
 	return av, nil

@@ -11,14 +11,18 @@ import (
 	vt "github.com/pilinsin/easy-voting/voting"
 )
 
-func LoadPage(ctx context.Context, vCfgAddr, idStr string) (string, fyne.CanvasObject, func()) {
-	v, err := vt.NewVoting(ctx, vCfgAddr, idStr)
+func LoadPage(ctx context.Context, vCfgAddr, baseDir string) (string, fyne.CanvasObject, func()) {
+	v, err := vt.NewVoting(ctx, vCfgAddr, baseDir)
 	if err != nil {
 		return "", nil, nil
 	}
 	closer := func() { v.Close() }
 
 	vCfg := v.Config()
+
+	idEntry := widget.NewEntry()
+	idEntry.SetPlaceHolder("User/Man Indentity")
+	idEntry.OnChanged = func(s string){v.SetIdentity(s)}
 
 	addrLabel := gutil.NewCopyButton(vCfgAddr)
 	titleLabel := widget.NewLabel(vCfg.Title)
@@ -33,7 +37,7 @@ func LoadPage(ctx context.Context, vCfgAddr, idStr string) (string, fyne.CanvasO
 	resBtn := resultBtn(v, resLabel)
 
 	titles := container.NewVBox(titleLabel, addrLabel.Render())
-	vObjs := container.NewVBox(contents, vBtn, noteLabel)
+	vObjs := container.NewVBox(idEntry, contents, vBtn, noteLabel)
 	resObjs := container.NewVBox(container.NewHBox(cmvBtn, resBtn), resLabel.Render())
 	page := container.NewVBox(vObjs, resObjs)
 	page = container.NewBorder(titles, nil, nil, nil, page)

@@ -16,6 +16,7 @@ import (
 
 	evutil "github.com/pilinsin/easy-voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
+	pv "github.com/pilinsin/p2p-verse"
 )
 
 func init() {
@@ -36,6 +37,7 @@ type GUI struct {
 
 func New(title string, width, height float32) *GUI {
 	rt := i2p.NewI2pRouter()
+
 	size := fyne.NewSize(width, height)
 	a := app.New()
 	a.Settings().SetTheme(theme.LightTheme())
@@ -54,25 +56,24 @@ func (gui *GUI) withRemove(page fyne.CanvasObject, closer func()) fyne.CanvasObj
 	return container.NewBorder(container.NewBorder(nil, nil, nil, rmvBtn), nil, nil, nil, page)
 }
 
-func (gui *GUI) loadPage(ctx context.Context, addr, idStr string) (string, fyne.CanvasObject, func()) {
+func (gui *GUI) loadPage(ctx context.Context, addr string) (string, fyne.CanvasObject, func()) {
 	if ok := strings.HasPrefix(addr, "r/"); ok {
-		return rpage.LoadPage(ctx, addr, idStr)
+		baseDir := evutil.BaseDir(addr, "registration")
+		return rpage.LoadPage(ctx, addr, baseDir)
 	}
 	if ok := strings.HasPrefix(addr, "v/"); ok {
-		return vpage.LoadPage(ctx, addr, idStr)
+		baseDir := evutil.BaseDir(addr, "voting")
+		return vpage.LoadPage(ctx, addr, baseDir)
 	}
 	return "", nil, nil
 }
 func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	addrEntry := widget.NewEntry()
 	addrEntry.PlaceHolder = "Registration/Voting Config Address"
-	idEntry := widget.NewEntry()
-	idEntry.PlaceHolder = "User/Manager Identity Address"
 
 	onTapped := func() {
-		title, loadPage, closer := gui.loadPage(context.Background(), addrEntry.Text, idEntry.Text)
+		title, loadPage, closer := gui.loadPage(context.Background(), addrEntry.Text)
 		addrEntry.SetText("")
-		idEntry.SetText("")
 		if loadPage == nil {
 			return
 		}
@@ -85,8 +86,7 @@ func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	}
 	loadBtn := widget.NewButtonWithIcon("", theme.MailForwardIcon(), onTapped)
 
-	entries := container.NewVBox(addrEntry, idEntry)
-	return container.NewBorder(nil, nil, nil, loadBtn, entries)
+	return container.NewBorder(nil, nil, nil, loadBtn, addrEntry)
 }
 
 func (gui *GUI) newPageForm() fyne.CanvasObject {
@@ -101,7 +101,7 @@ func (gui *GUI) newPageForm() fyne.CanvasObject {
 		} else if mode == "voting" {
 			setup = vpage.NewSetupPage(gui.w)
 		} else {
-			setup = bpage.NewSetupPage(gui.w)
+			setup = bpage.NewSetupPage(nil)
 		}
 		newForm := container.NewBorder(chmod, nil, nil, nil, setup)
 		newTab := pageToTabItem("setup", newForm)
@@ -135,6 +135,7 @@ func (gui *GUI) i2pStart(i2pNote *widget.Label) {
 		}
 	}()
 }
+
 
 func (gui *GUI) Run() {
 	i2pNote := widget.NewLabel("i2p router setup...")

@@ -2,6 +2,7 @@ package votingpage
 
 import (
 	"fmt"
+	"context"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -9,10 +10,14 @@ import (
 
 	gutil "github.com/pilinsin/easy-voting/gui/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
+	voting "github.com/pilinsin/easy-voting/voting"
 	"github.com/pilinsin/util"
 )
 
 func NewSetupPage(w fyne.Window) fyne.CanvasObject {
+	var v viface.IVoting
+
 	noteLabel := widget.NewLabel("")
 	addrLabel := gutil.NewCopyButton("voting config address")
 	maIdLabel := gutil.NewCopyButton("voting manager address")
@@ -68,8 +73,12 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 			noteLabel.SetText("there are no candidates")
 			return
 		}
+		if v != nil{
+			v.Close()
+			v = nil
+		}
 
-		cid, mid, err := vutil.NewConfig(
+		cid, baseDir, mid, err := vutil.NewConfig(
 			title.Text,
 			rCfgAddr.Text,
 			nVerifiers.Num(),
@@ -80,13 +89,19 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 		)
 		if err != nil {
 			noteLabel.SetText(fmt.Sprintln(err))
-		} else {
-			noteLabel.SetText("done")
-			addrLabel.SetText(cid)
-			maIdLabel.SetText(mid)
+			return
 		}
+		v, err = voting.NewVoting(context.Background(), cid, baseDir)
+		if err != nil{
+			noteLabel.SetText(fmt.Sprintln(err))
+			return
+		}
+		noteLabel.SetText("done")
+		addrLabel.SetText(cid)
+		maIdLabel.SetText(mid)	
 	}
 	form.ExtendBaseWidget(form)
 
-	return container.NewVScroll(container.NewVBox(form, noteLabel, addrLabel.Render(), maIdLabel.Render()))
+	page := container.NewVScroll(container.NewVBox(form, noteLabel, addrLabel.Render(), maIdLabel.Render()))
+	return page
 }

@@ -64,13 +64,13 @@ func unmarshalPub(m []byte) (crdt.IPubKey, error) {
 
 func registrate(t *testing.T, baiStr string) (riface.IRegistration, string, string) {
 	users, labels := userDataset()
-	rCfgAddr, manIdStr, err := rutil.NewConfig("test_rTitle", users, labels, baiStr)
+	rCfgAddr, err := rutil.NewConfig("test_rTitle", users, labels, baiStr)
 	checkError(t, err)
 
-	man, err := rgst.NewRegistration(context.Background(), rCfgAddr, manIdStr)
+	man, err := rgst.NewRegistration(context.Background(), rCfgAddr)
 	checkError(t, err)
 
-	user, err := rgst.NewRegistration(context.Background(), rCfgAddr, "")
+	user, err := rgst.NewRegistration(context.Background(), rCfgAddr)
 	checkError(t, err)
 	defer user.Close()
 
@@ -136,12 +136,14 @@ func vote(t *testing.T, baiStr string) {
 	t.Log("vCfg generated")
 	rMan.Close()
 
-	vMan, err := NewVoting(context.Background(), vCfgAddr, manIdStr)
+	vMan, err := NewVoting(context.Background(), vCfgAddr)
 	checkError(t, err)
+	man.SetIdentity(manIdStr)
 	t.Log("vMan generated")
 
-	user, err := NewVoting(context.Background(), vCfgAddr, uidStr)
+	user, err := NewVoting(context.Background(), vCfgAddr)
 	checkError(t, err)
+	man.SetIdentity(uidStr)
 	t.Log("vUser generated")
 
 	/*

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"os"
 	"time"
 
 	pb "github.com/pilinsin/easy-voting/voting/util/pb"
@@ -160,30 +161,34 @@ type Config struct {
 	Labels     []string
 }
 
-func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, cands []*Candidate, vParam *VoteParams, vType VotingType) (string, string, error) {
+func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, cands []*Candidate, vParam *VoteParams, vType VotingType) (string, string, string, error) {
 	bAddr, rCfgCid, err := evutil.ParseConfigAddr(rCfgAddr)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	ipfsDir := filepath.Join(title, pv.RandString(8))
+	baseDir := evutil.BaseDir("voting", "setup")
+
+	ipfsDir := filepath.Join("stores", baseDir, "ipfs")
+	os.RemoveAll(ipfsDir)
 	is, err := evutil.NewIpfs(i2p.NewI2pHost, bAddr, ipfsDir, true)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	defer is.Close()
 	rCfg := &rutil.Config{}
 	if err := rCfg.FromCid(rCfgCid, is); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	bootstraps := pv.AddrInfosFromString(bAddr)
-	storeDir := filepath.Join(title, pv.RandString(8))
+	storeDir := filepath.Join("stores", baseDir, "store")
+	os.RemoveAll(storeDir)
 	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, false, bootstraps...)
 
 	uhm, err := v.LoadStore(context.Background(), rCfg.UhmAddr, "hash")
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	defer uhm.Close()
 
@@ -195,11 +200,11 @@ func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, can
 	}()
 	ac, err := v.NewAccessController(pv.RandString(8), ch)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	hkm, err := v.NewStore(pv.RandString(8), "signature", &crdt.StoreOpts{Pub: skp.Verify(), Priv: skp.Sign(), Ac: ac})
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	defer hkm.Close()
 
@@ -233,20 +238,20 @@ func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, can
 	}()
 	ac2, err := v.NewAccessController(pv.RandString(8), accesses)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	begin := tInfo.BeginTime()
 	end := tInfo.EndTime()
 	tc, err := v.NewTimeController(pv.RandString(8), begin, end, time.Minute*5, time.Second*10, nVerifiers)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	opt := &crdt.StoreOpts{Ac: ac2, Tc: tc}
 	ivm, err := v.NewStore(pv.RandString(8), "updatableSignature", opt)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	defer ivm.Close()
 
@@ -269,15 +274,13 @@ func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, can
 		Priv:     encKeyPair.Private(),
 		Sign:     signKeyPair.Sign(),
 		Verf:     signKeyPair.Verify(),
-		IpfsDir:  ipfsDir,
-		StoreDir: storeDir,
 	}
 
 	vCfgCid, err := vCfg.toCid(is)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	return "v/" + bAddr + "/" + vCfgCid, manId.toString(), nil
+	return "v/" + bAddr +"/" + vCfgCid, baseDir, manId.toString(), nil
 }
 
 func (cfg Config) Marshal() []byte {

@@ -1,8 +1,0 @@
-syntax = "proto3";
-package registration.util.pb;
-option go_package = ".;pb";
-
-message ManIdentity{
-	string 	ipfsDir	 = 1;
-	string	StoreDir = 2;
-}

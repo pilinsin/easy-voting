@@ -16,11 +16,11 @@ type blockVoting struct {
 	total int
 }
 
-func NewBlockVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) (viface.IVoting, error) {
+func NewBlockVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.IVoting, error) {
 	bv := &blockVoting{
 		total: vCfg.Params.Total,
 	}
-	if err := bv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil {
+	if err := bv.init(ctx, vCfg, storeDir, bAddr, save); err != nil {
 		return nil, err
 	}
 	return bv, nil

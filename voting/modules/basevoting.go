@@ -24,6 +24,7 @@ type identity struct {
 
 type voting struct {
 	salt1     string
+	salt2	  []byte
 	tInfo     *util.TimeInfo
 	cands     []*vutil.Candidate
 	myPid     string
@@ -31,11 +32,11 @@ type voting struct {
 	manPubKey crypto.IPubKey
 	manPriKey crypto.IPriKey
 	hkm       crdt.IStore
-	ivm       crdt.IStore
+	ivm       crdt.IUpdatableSignatureStore
 	cfg       *vutil.Config
 }
 
-func (v *voting) init(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) error {
+func (v *voting) init(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) error {
 	bootstraps := pv.AddrInfosFromString(bAddr)
 	cv := crdt.NewVerse(i2p.NewI2pHost, storeDir, save, false, bootstraps...)
 
@@ -44,45 +45,55 @@ func (v *voting) init(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, 
 		return err
 	}
 
-	id := getIdentity(idStr, vCfg.Salt2, hkm)
-	opt := &crdt.StoreOpts{Priv: id.sign, Pub: id.verf}
-	ivm, err := cv.LoadStore(ctx, vCfg.IvmAddr, "updatableSignature", opt)
+	tmp, err := cv.LoadStore(ctx, vCfg.IvmAddr, "updatableSignature")
 	if err != nil {
 		return err
 	}
-
-	myPid := ""
-	if id.verf != nil {
-		myPid = crdt.PubKeyToStr(id.verf)
-	}
+	ivm := tmp.(crdt.IUpdatableSignatureStore)	
 
 	v.salt1 = vCfg.Salt1
+	v.salt2 = vCfg.Salt2
 	v.tInfo = vCfg.Time
 	v.cands = vCfg.Candidates
-	v.myPid = myPid
+	v.myPid = ""
 	v.manPid = vCfg.ManPid
 	v.manPubKey = vCfg.PubKey
-	v.manPriKey = id.manPriv
+	v.manPriKey = nil
 	v.hkm = hkm
 	v.ivm = ivm
 	v.cfg = vCfg
 	return nil
 }
 
-func getIdentity(idStr string, salt2 []byte, hkm crdt.IStore) *identity {
+func (v *voting) Close() {
+	v.hkm.Close()
+	v.ivm.Close()
+}
+
+func (v *voting) Config() *vutil.Config {
+	return v.cfg
+}
+
+func (v *voting) SetIdentity(idStr string) {
+	var id *identity
 	mi := &vutil.ManIdentity{}
 	if err := mi.FromString(idStr); err == nil {
-		return &identity{mi.Priv, mi.Sign, mi.Verf}
+		id = &identity{mi.Priv, mi.Sign, mi.Verf}
 	}
 
 	ui := &rutil.UserIdentity{}
 	if err := ui.FromString(idStr); err == nil {
-		ukp, err := getUserKeyPair(hkm, ui, salt2)
+		ukp, err := getUserKeyPair(v.hkm, ui, v.salt2)
 		if err == nil {
-			return &identity{nil, ukp.Sign(), ukp.Verify()}
+			id = &identity{nil, ukp.Sign(), ukp.Verify()}
 		}
 	}
-	return &identity{}
+
+	if id != nil {
+		v.myPid = crdt.PubKeyToStr(id.verf)
+		v.ivm.ResetKeyPair(id.sign, id.verf)
+		v.manPriKey = id.manPriv
+	}
 }
 
 func getUserKeyPair(hkm crdt.IStore, ui *rutil.UserIdentity, salt2 []byte) (*vutil.UserKeyPair, error) {
@@ -107,14 +118,6 @@ func getUserKeyPair(hkm crdt.IStore, ui *rutil.UserIdentity, salt2 []byte) (*vut
 	return ukp, nil
 }
 
-func (v *voting) Close() {
-	v.hkm.Close()
-	v.ivm.Close()
-}
-
-func (v *voting) Config() *vutil.Config {
-	return v.cfg
-}
 
 func (v *voting) isCandsMatch(vi vutil.VoteInt) bool {
 	if len(v.cands) != len(vi) {

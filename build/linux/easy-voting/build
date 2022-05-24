@@ -8,4 +8,4 @@ ln -s -r easy-voting/usr/local/bin/easy-voting easy-voting/easy-voting
 
 
 tar cJvf easy-voting.tar.xz easy-voting
-rm easy-voting
+rm -r easy-voting

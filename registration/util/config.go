@@ -3,6 +3,7 @@ package registrationutil
 import (
 	"errors"
 	"path/filepath"
+	"os"
 
 	evutil "github.com/pilinsin/easy-voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
@@ -43,7 +44,10 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 	}()
 
 	bootstraps := pv.AddrInfosFromString(bAddr)
-	storeDir := filepath.Join(title, pv.RandString(8))
+	baseDir := evutil.BaseDir("registration", "setup")
+	
+	storeDir := filepath.Join("stores", baseDir, "store")
+	os.RemoveAll(storeDir)
 	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, false, bootstraps...)
 	ac, err := v.NewAccessController(pv.RandString(8), uhHashes)
 	if err != nil {
@@ -57,7 +61,8 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 
 	cfg.UhmAddr = uhm.Address()
 
-	ipfsDir := filepath.Join(title, pv.RandString(8))
+	ipfsDir := filepath.Join("stores", baseDir, "ipfs")
+	os.RemoveAll(ipfsDir)
 	is, err := evutil.NewIpfs(i2p.NewI2pHost, bAddr, ipfsDir, true)
 	if err != nil {
 		return "", "", err
@@ -68,9 +73,7 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 		return "", "", err
 	}
 
-	mi := &ManIdentity{ipfsDir, storeDir}
-
-	return "r/" + bAddr + "/" + cid, mi.toString(), nil
+	return "r/" + bAddr + "/" + cid, baseDir, nil
 }
 
 func (cfg Config) Marshal() []byte {

@@ -15,9 +15,9 @@ type singleVoting struct {
 	voting
 }
 
-func NewSingleVoting(ctx context.Context, vCfg *vutil.Config, idStr, storeDir, bAddr string, save bool) (viface.IVoting, error) {
+func NewSingleVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.IVoting, error) {
 	sv := &singleVoting{}
-	if err := sv.init(ctx, vCfg, idStr, storeDir, bAddr, save); err != nil {
+	if err := sv.init(ctx, vCfg, storeDir, bAddr, save); err != nil {
 		return nil, err
 	}
 	return sv, nil

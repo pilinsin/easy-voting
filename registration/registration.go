@@ -3,7 +3,6 @@ package registration
 import (
 	"context"
 	"errors"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -22,7 +21,6 @@ import (
 type registration struct {
 	ctx       context.Context
 	cancel    func()
-	dirCancel func()
 	salt1     string
 	idStr     string
 	is        ipfs.Ipfs
@@ -30,17 +28,14 @@ type registration struct {
 	cfg       *rutil.Config
 }
 
-func NewRegistration(ctx context.Context, rCfgAddr, idStr string) (riface.IRegistration, error) {
+func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IRegistration, error) {
 	bAddr, rCfgCid, err := evutil.ParseConfigAddr(rCfgAddr)
 	if err != nil {
 		return nil, err
 	}
+	save := true
 
-	dirCancel := func() {}
-	baseDir, ipfsDir, storeDir, save := parseIdStr(idStr)
-	if !save {
-		dirCancel = func() { os.RemoveAll(baseDir) }
-	}
+	ipfsDir := filepath.Join("stores", baseDir, "ipfs")
 	is, err := evutil.NewIpfs(i2p.NewI2pHost, bAddr, ipfsDir, save)
 	if err != nil {
 		return nil, err
@@ -51,6 +46,7 @@ func NewRegistration(ctx context.Context, rCfgAddr, idStr string) (riface.IRegis
 	}
 
 	bootstraps := pv.AddrInfosFromString(bAddr)
+	storeDir := filepath.Join("stores", baseDir, "store")
 	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, save, false, bootstraps...)
 	opt := &crdt.StoreOpts{Salt: rCfg.Salt2}
 	uhm, err := v.LoadStore(ctx, rCfg.UhmAddr, "hash", opt)
@@ -64,9 +60,7 @@ func NewRegistration(ctx context.Context, rCfgAddr, idStr string) (riface.IRegis
 	return &registration{
 		ctx:       ctx,
 		cancel:    cancel,
-		dirCancel: dirCancel,
 		salt1:     rCfg.Salt1,
-		idStr:     idStr,
 		is:        is,
 		uhm:       uhm,
 		cfg:       rCfg,
@@ -86,24 +80,10 @@ func autoSync(ctx context.Context, uhm crdt.IStore) {
 	}()
 }
 
-func parseIdStr(idStr string) (string, string, string, bool) {
-	mi := &rutil.ManIdentity{}
-	if err := mi.FromString(idStr); err == nil {
-		return "", mi.IpfsDir, mi.StoreDir, true
-	}
-	title := pv.RandString(8)
-	ipfsDir := filepath.Join(title, pv.RandString(8))
-	storeDir := filepath.Join(title, pv.RandString(8))
-	return title, ipfsDir, storeDir, false
-}
-
 func (r *registration) Close() {
 	r.cancel()
 	r.is.Close()
 	r.uhm.Close()
-
-	time.Sleep(time.Second * 10)
-	r.dirCancel()
 }
 
 func (r *registration) Config() *rutil.Config {
@@ -125,11 +105,8 @@ func (r *registration) hasPubKey(pubKey crypto.IPubKey) bool {
 
 	return len(resList) > 0 && err == nil
 }
-func (r *registration) Registrate(userData ...string) (string, error) {
-	if _, _, _, man := parseIdStr(r.idStr); man {
-		return "", errors.New("manager can not registrate")
-	}
 
+func (r *registration) Registrate(userData ...string) (string, error) {
 	userHash := rutil.NewUserHash(r.salt1, userData...)
 	if ok, err := r.uhm.Has(userHash); ok && err == nil {
 		return "", errors.New("already registrated")

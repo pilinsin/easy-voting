@@ -11,10 +11,10 @@ import (
 	rgst "github.com/pilinsin/easy-voting/registration"
 )
 
-func LoadPage(ctx context.Context, rCfgAddr, idStr string) (string, fyne.CanvasObject, func()) {
+func LoadPage(ctx context.Context, rCfgAddr, baseDir string) (string, fyne.CanvasObject, func()) {
 	uidLabel := gutil.NewCopyButton("user identity address")
 
-	r, err := rgst.NewRegistration(ctx, rCfgAddr, idStr)
+	r, err := rgst.NewRegistration(ctx, rCfgAddr, baseDir)
 	if err != nil {
 		return "", nil, nil
 	}

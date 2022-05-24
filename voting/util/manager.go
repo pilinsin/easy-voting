@@ -13,8 +13,6 @@ type ManIdentity struct {
 	Priv     crypto.IPriKey
 	Sign     crypto.ISignKey
 	Verf     crypto.IVerfKey
-	IpfsDir  string
-	StoreDir string
 }
 
 func (mi ManIdentity) Marshal() []byte {
@@ -25,8 +23,6 @@ func (mi ManIdentity) Marshal() []byte {
 		Priv:     mpri,
 		Sign:     msig,
 		Verf:     mver,
-		IpfsDir:  mi.IpfsDir,
-		StoreDir: mi.StoreDir,
 	}
 	m, _ := proto.Marshal(mManId)
 	return m
@@ -53,8 +49,6 @@ func (mi *ManIdentity) Unmarshal(m []byte) error {
 	mi.Priv = priv
 	mi.Sign = sign
 	mi.Verf = verf
-	mi.IpfsDir = mManId.GetIpfsDir()
-	mi.StoreDir = mManId.GetStoreDir()
 	return nil
 }
 

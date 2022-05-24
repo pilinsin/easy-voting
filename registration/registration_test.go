@@ -67,15 +67,15 @@ func TestRegistration(t *testing.T) {
 	baiStr := pv.AddrInfosToString(bAddrInfo)
 
 	users, labels := userDataset()
-	rCfgAddr, manIdStr, err := rutil.NewConfig("test_title", users, labels, baiStr)
+	rCfgAddr, err := rutil.NewConfig("test_title", users, labels, baiStr)
 	checkError(t, err)
 	t.Log("config generated")
 
-	man, err := NewRegistration(context.Background(), rCfgAddr, manIdStr)
+	man, err := NewRegistration(context.Background(), rCfgAddr)
 	checkError(t, err)
 	t.Log("man registration")
 
-	user, err := NewRegistration(context.Background(), rCfgAddr, "")
+	user, err := NewRegistration(context.Background(), rCfgAddr)
 	checkError(t, err)
 	t.Log("user registration")
 

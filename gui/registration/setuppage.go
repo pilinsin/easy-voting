@@ -1,18 +1,23 @@
 package registrationpage
 
 import (
+	"context"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
 	gutil "github.com/pilinsin/easy-voting/gui/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
+	riface "github.com/pilinsin/easy-voting/registration/interface"
+	rgst "github.com/pilinsin/easy-voting/registration"
 )
 
 func NewSetupPage(w fyne.Window) fyne.CanvasObject {
+	var r riface.IRegistration
+
 	noteLabel := widget.NewLabel("")
 	addrLabel := gutil.NewCopyButton("registration config address")
-	maIdLabel := gutil.NewCopyButton("manager identity address")
 
 	titleEntry := widget.NewEntry()
 	csvBtn := gutil.NewLoadCsvButton(w, noteLabel)
@@ -34,26 +39,27 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 
 		noteLabel.SetText("processing...")
 		addrLabel.SetText("registration config address")
-		maIdLabel.SetText("manager identity address")
 		labels, dataset, err := csvBtn.Read()
 		if err != nil {
 			noteLabel.SetText("load csv error: " + err.Error())
 			return
 		}
-		cid, mid, err := rutil.NewConfig(titleEntry.Text, dataset, labels, bAddrEntry.Text)
+		cid, baseDir, err := rutil.NewConfig(titleEntry.Text, dataset, labels, bAddrEntry.Text)
 		if err != nil {
 			noteLabel.SetText("new rConfig error: " + err.Error())
 			return
 		}
-
+		r, err = rgst.NewRegistration(context.Background(), cid, baseDir)
+		if err != nil {
+			noteLabel.SetText("new rConfig error: " + err.Error())
+			return
+		}
 		noteLabel.SetText("done")
 		addrLabel.SetText(cid)
-		maIdLabel.SetText(mid)
-
 		//form.Hide()
 	}
 	form.ExtendBaseWidget(form)
 
-	page := container.NewVBox(form, noteLabel, addrLabel.Render(), maIdLabel.Render())
+	page := container.NewVBox(form, noteLabel, addrLabel.Render())
 	return page
 }
