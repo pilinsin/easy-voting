@@ -15,12 +15,15 @@ import (
 	"github.com/pilinsin/util"
 )
 
-func NewSetupPage(w fyne.Window) fyne.CanvasObject {
-	var v viface.IVoting
-
+func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject {
 	noteLabel := widget.NewLabel("")
 	addrLabel := gutil.NewCopyButton("voting config address")
 	maIdLabel := gutil.NewCopyButton("voting manager address")
+	if v, exist := vs["setup"]; exist{
+		noteLabel.SetText("voting config is already generated")
+		addrLabel.SetText(v.Address())
+		maIdLabel.SetText(v.GetIdentity())
+	}
 
 	title := widget.NewEntry()
 	begin := gutil.NewTimeSelect()
@@ -48,7 +51,7 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 		noteLabel.SetText("processing...")
 		addrLabel.SetText("voting config address")
 		maIdLabel.SetText("voting manager address")
-
+		
 		tInfo, err := util.NewTimeInfo(begin.Time(), end.Time(), loc.Selected)
 		if err != nil {
 			noteLabel.SetText(fmt.Sprintln(err))
@@ -73,10 +76,6 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 			noteLabel.SetText("there are no candidates")
 			return
 		}
-		if v != nil{
-			v.Close()
-			v = nil
-		}
 
 		cid, baseDir, mid, err := vutil.NewConfig(
 			title.Text,
@@ -91,14 +90,23 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 			noteLabel.SetText(fmt.Sprintln(err))
 			return
 		}
-		v, err = voting.NewVoting(context.Background(), cid, baseDir)
+
+		mapKey := "setup"
+		if _, exist := vs[mapKey]; exist{
+			vs[mapKey].Close()
+			vs[mapKey] = nil
+		}
+		v, err := voting.NewVoting(context.Background(), cid, baseDir)
 		if err != nil{
 			noteLabel.SetText(fmt.Sprintln(err))
 			return
 		}
+		v.SetIdentity(mid)
+
 		noteLabel.SetText("done")
 		addrLabel.SetText(cid)
-		maIdLabel.SetText(mid)	
+		maIdLabel.SetText(mid)
+		vs[mapKey] = v
 	}
 	form.ExtendBaseWidget(form)
 

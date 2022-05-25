@@ -8,17 +8,11 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	gutil "github.com/pilinsin/easy-voting/gui/util"
-	rgst "github.com/pilinsin/easy-voting/registration"
+	riface "github.com/pilinsin/easy-voting/registration/interface"
 )
 
-func LoadPage(ctx context.Context, rCfgAddr, baseDir string) (string, fyne.CanvasObject, func()) {
+func LoadPage(ctx context.Context, rCfgAddr string, r riface.IRegistration) (string, fyne.CanvasObject) {
 	uidLabel := gutil.NewCopyButton("user identity address")
-
-	r, err := rgst.NewRegistration(ctx, rCfgAddr, baseDir)
-	if err != nil {
-		return "", nil, nil
-	}
-	closer := func() { r.Close() }
 
 	rCfg := r.Config()
 	addrLabel := gutil.NewCopyButton(rCfgAddr)
@@ -50,5 +44,5 @@ func LoadPage(ctx context.Context, rCfgAddr, baseDir string) (string, fyne.Canva
 	titles := container.NewVBox(titleLabel, addrLabel.Render())
 	page := container.NewVBox(rForm, noteLabel, uidLabel.Render())
 	page = container.NewBorder(titles, nil, nil, nil, page)
-	return rCfg.Title, page, closer
+	return rCfg.Title, page
 }

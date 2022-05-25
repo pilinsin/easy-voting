@@ -16,7 +16,7 @@ type blockVoting struct {
 	total int
 }
 
-func NewBlockVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.IVoting, error) {
+func NewBlockVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.ITypedVoting, error) {
 	bv := &blockVoting{
 		total: vCfg.Params.Total,
 	}

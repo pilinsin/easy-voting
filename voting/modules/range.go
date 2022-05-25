@@ -20,7 +20,7 @@ type rangeVoting struct {
 	max int
 }
 
-func NewRangeVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.IVoting, error) {
+func NewRangeVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.ITypedVoting, error) {
 	rv := &rangeVoting{
 		min: vCfg.Params.Min,
 		max: vCfg.Params.Max,

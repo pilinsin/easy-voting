@@ -22,7 +22,7 @@ type registration struct {
 	ctx       context.Context
 	cancel    func()
 	salt1     string
-	idStr     string
+	addr     string
 	is        ipfs.Ipfs
 	uhm       crdt.IStore
 	cfg       *rutil.Config
@@ -61,6 +61,7 @@ func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IReg
 		ctx:       ctx,
 		cancel:    cancel,
 		salt1:     rCfg.Salt1,
+		addr:		rCfgAddr,
 		is:        is,
 		uhm:       uhm,
 		cfg:       rCfg,
@@ -88,6 +89,9 @@ func (r *registration) Close() {
 
 func (r *registration) Config() *rutil.Config {
 	return r.cfg
+}
+func (r *registration) Address() string{
+	return r.addr
 }
 
 func (r *registration) hasPubKey(pubKey crypto.IPubKey) bool {

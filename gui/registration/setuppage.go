@@ -13,11 +13,13 @@ import (
 	rgst "github.com/pilinsin/easy-voting/registration"
 )
 
-func NewSetupPage(w fyne.Window) fyne.CanvasObject {
-	var r riface.IRegistration
-
+func NewSetupPage(w fyne.Window, rs map[string]riface.IRegistration) fyne.CanvasObject {
 	noteLabel := widget.NewLabel("")
 	addrLabel := gutil.NewCopyButton("registration config address")
+	if r, exist := rs["setup"]; exist{
+		noteLabel.SetText("registration config is already generated")
+		addrLabel.SetText(r.Address())
+	}
 
 	titleEntry := widget.NewEntry()
 	csvBtn := gutil.NewLoadCsvButton(w, noteLabel)
@@ -49,13 +51,20 @@ func NewSetupPage(w fyne.Window) fyne.CanvasObject {
 			noteLabel.SetText("new rConfig error: " + err.Error())
 			return
 		}
-		r, err = rgst.NewRegistration(context.Background(), cid, baseDir)
+
+		mapKey := "setup"
+		if _, exist := rs[mapKey]; exist{
+			rs[mapKey].Close()
+			rs[mapKey] = nil
+		}
+		r, err := rgst.NewRegistration(context.Background(), cid, baseDir)
 		if err != nil {
 			noteLabel.SetText("new rConfig error: " + err.Error())
 			return
 		}
 		noteLabel.SetText("done")
 		addrLabel.SetText(cid)
+		rs[mapKey] = r
 		//form.Hide()
 	}
 	form.ExtendBaseWidget(form)

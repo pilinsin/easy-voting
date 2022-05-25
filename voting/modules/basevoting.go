@@ -34,6 +34,7 @@ type voting struct {
 	hkm       crdt.IStore
 	ivm       crdt.IUpdatableSignatureStore
 	cfg       *vutil.Config
+	idStr string
 }
 
 func (v *voting) init(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) error {
@@ -93,7 +94,11 @@ func (v *voting) SetIdentity(idStr string) {
 		v.myPid = crdt.PubKeyToStr(id.verf)
 		v.ivm.ResetKeyPair(id.sign, id.verf)
 		v.manPriKey = id.manPriv
+		v.idStr = idStr
 	}
+}
+func (v *voting) GetIdentity() string{
+	return v.idStr
 }
 
 func getUserKeyPair(hkm crdt.IStore, ui *rutil.UserIdentity, salt2 []byte) (*vutil.UserKeyPair, error) {
@@ -155,6 +160,10 @@ func (v *voting) baseVote(data vutil.VoteInt) error {
 	if ok := v.tInfo.WithinTime(time.Now()); !ok {
 		return errors.New("invalid vote time")
 	}
+	if _, err := v.getDecryptKey(); err != nil {
+		return err
+	}
+
 	m, err := v.manPubKey.Encrypt(data.Marshal())
 	if err != nil {
 		return err

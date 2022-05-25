@@ -10,14 +10,19 @@ type iBaseVoting interface {
 	Close()
 	Config() *vutil.Config
 	SetIdentity(string)
+	GetIdentity() string
 }
-type IVoting interface {
+type ITypedVoting interface {
 	iBaseVoting
 	NewVotingForm(ngs []string) IVotingForm
 	Type() string
 	Vote(data vutil.VoteInt) error
 	GetMyVote() (*vutil.VoteInt, error)
 	GetResult() (*vutil.VoteResult, int, int, error)
+}
+type IVoting interface{
+	ITypedVoting
+	Address() string
 }
 
 type IVotingForm interface {

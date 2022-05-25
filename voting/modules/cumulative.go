@@ -20,7 +20,7 @@ type cumulativeVoting struct {
 	total int
 }
 
-func NewCumulativeVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.IVoting, error) {
+func NewCumulativeVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.ITypedVoting, error) {
 	cv := &cumulativeVoting{
 		min:   vCfg.Params.Min,
 		total: vCfg.Params.Total,

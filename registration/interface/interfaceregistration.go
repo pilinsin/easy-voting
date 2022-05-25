@@ -7,5 +7,6 @@ import (
 type IRegistration interface {
 	Close()
 	Config() *rutil.Config
+	Address() string
 	Registrate(userData ...string) (string, error)
 }

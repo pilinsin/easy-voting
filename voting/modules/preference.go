@@ -19,7 +19,7 @@ type preferenceVoting struct {
 	voting
 }
 
-func NewPreferenceVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.IVoting, error) {
+func NewPreferenceVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.ITypedVoting, error) {
 	pv := &preferenceVoting{}
 	if err := pv.init(ctx, vCfg, storeDir, bAddr, save); err != nil {
 		return nil, err

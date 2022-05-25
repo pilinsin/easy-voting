@@ -8,16 +8,10 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	gutil "github.com/pilinsin/easy-voting/gui/util"
-	vt "github.com/pilinsin/easy-voting/voting"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
-func LoadPage(ctx context.Context, vCfgAddr, baseDir string) (string, fyne.CanvasObject, func()) {
-	v, err := vt.NewVoting(ctx, vCfgAddr, baseDir)
-	if err != nil {
-		return "", nil, nil
-	}
-	closer := func() { v.Close() }
-
+func LoadPage(ctx context.Context, vCfgAddr string, v viface.IVoting) (string, fyne.CanvasObject) {
 	vCfg := v.Config()
 
 	idEntry := widget.NewEntry()
@@ -41,5 +35,5 @@ func LoadPage(ctx context.Context, vCfgAddr, baseDir string) (string, fyne.Canva
 	resObjs := container.NewVBox(container.NewHBox(cmvBtn, resBtn), resLabel.Render())
 	page := container.NewVBox(vObjs, resObjs)
 	page = container.NewBorder(titles, nil, nil, nil, page)
-	return vCfg.Title, page, closer
+	return vCfg.Title, page
 }

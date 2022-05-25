@@ -14,13 +14,17 @@ import (
 )
 
 type votingWithIpfs struct {
-	viface.IVoting
+	viface.ITypedVoting
+	addr string
 	is        ipfs.Ipfs
 }
 
 func (v *votingWithIpfs) Close() {
-	v.IVoting.Close()
+	v.ITypedVoting.Close()
 	v.is.Close()
+}
+func (v *votingWithIpfs) Address() string{
+	return v.addr
 }
 
 func NewVoting(ctx context.Context, vCfgAddr, baseDir string) (viface.IVoting, error) {
@@ -42,7 +46,7 @@ func NewVoting(ctx context.Context, vCfgAddr, baseDir string) (viface.IVoting, e
 		return nil, err
 	}
 
-	var v viface.IVoting
+	var v viface.ITypedVoting
 	switch vCfg.Type {
 	case vutil.Single:
 		v, err = module.NewSingleVoting(ctx, vCfg, storeDir, bAddr, save)
@@ -64,5 +68,5 @@ func NewVoting(ctx context.Context, vCfgAddr, baseDir string) (viface.IVoting, e
 		return nil, err
 	}
 
-	return &votingWithIpfs{v, is}, nil
+	return &votingWithIpfs{v, vCfgAddr, is}, nil
 }

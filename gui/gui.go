@@ -14,6 +14,12 @@ import (
 	rpage "github.com/pilinsin/easy-voting/gui/registration"
 	vpage "github.com/pilinsin/easy-voting/gui/voting"
 
+	riface "github.com/pilinsin/easy-voting/registration/interface"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
+
+	rgst "github.com/pilinsin/easy-voting/registration"
+	vt "github.com/pilinsin/easy-voting/voting"
+
 	evutil "github.com/pilinsin/easy-voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
 	pv "github.com/pilinsin/p2p-verse"
@@ -29,6 +35,9 @@ func pageToTabItem(title string, page fyne.CanvasObject) *container.TabItem {
 
 type GUI struct {
 	rt *i2p.I2pRouter
+	bs map[string]pv.IBootstrap
+	rs map[string]riface.IRegistration
+	vs map[string]viface.IVoting
 	w    fyne.Window
 	size fyne.Size
 	page *fyne.Container
@@ -37,6 +46,9 @@ type GUI struct {
 
 func New(title string, width, height float32) *GUI {
 	rt := i2p.NewI2pRouter()
+	bs := make(map[string]pv.IBootstrap)
+	rs := make(map[string]riface.IRegistration)
+	vs := make(map[string]viface.IVoting)
 
 	size := fyne.NewSize(width, height)
 	a := app.New()
@@ -45,41 +57,55 @@ func New(title string, width, height float32) *GUI {
 	win.Resize(size)
 	page := container.NewMax()
 	tabs := container.NewAppTabs()
-	return &GUI{rt, win, size, page, tabs}
+	return &GUI{rt, bs, rs, vs, win, size, page, tabs}
 }
 
-func (gui *GUI) withRemove(page fyne.CanvasObject, closer func()) fyne.CanvasObject {
+func (gui *GUI) withRemove(page fyne.CanvasObject) fyne.CanvasObject {
 	rmvBtn := widget.NewButtonWithIcon("", theme.ContentClearIcon(), func() {
-		closer()
 		gui.tabs.Remove(gui.tabs.Selected())
 	})
 	return container.NewBorder(container.NewBorder(nil, nil, nil, rmvBtn), nil, nil, nil, page)
 }
 
-func (gui *GUI) loadPage(ctx context.Context, addr string) (string, fyne.CanvasObject, func()) {
-	if ok := strings.HasPrefix(addr, "r/"); ok {
-		baseDir := evutil.BaseDir(addr, "registration")
-		return rpage.LoadPage(ctx, addr, baseDir)
+func (gui *GUI) loadPage(ctx context.Context, addr string) (string, fyne.CanvasObject) {
+	addrs := strings.Split(addr, "/")
+	if len(addrs) != 3{return "", nil}
+	mode, stAddr := addrs[0], addrs[2]
+
+	var err error
+	if mode == "r"{
+		baseDir := evutil.BaseDir(stAddr, "registration")
+		r, exist := gui.rs[baseDir]
+		if !exist{
+			r, err = rgst.NewRegistration(ctx, addr, baseDir)
+			if err != nil {return "", nil}
+		}
+		return rpage.LoadPage(ctx, addr, r)
 	}
-	if ok := strings.HasPrefix(addr, "v/"); ok {
-		baseDir := evutil.BaseDir(addr, "voting")
-		return vpage.LoadPage(ctx, addr, baseDir)
+	if mode == "v"{
+		baseDir := evutil.BaseDir(stAddr, "voting")
+		v, exist := gui.vs[baseDir]
+		if !exist{
+			v, err = vt.NewVoting(ctx, addr, baseDir)
+			if err != nil {return "", nil}
+		}
+		return vpage.LoadPage(ctx, addr, v)
 	}
-	return "", nil, nil
+	return "", nil
 }
 func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	addrEntry := widget.NewEntry()
 	addrEntry.PlaceHolder = "Registration/Voting Config Address"
 
 	onTapped := func() {
-		title, loadPage, closer := gui.loadPage(context.Background(), addrEntry.Text)
+		title, loadPage := gui.loadPage(context.Background(), addrEntry.Text)
 		addrEntry.SetText("")
 		if loadPage == nil {
 			return
 		}
 		page := container.NewVScroll(loadPage)
 		//page.SetMinSize(fyne,NewSize(101.1,201.2))
-		withRmvPage := gui.withRemove(page, closer)
+		withRmvPage := gui.withRemove(page)
 		withRmvTab := pageToTabItem(title, withRmvPage)
 		gui.tabs.Append(withRmvTab)
 		gui.tabs.Select(withRmvTab)
@@ -97,11 +123,11 @@ func (gui *GUI) newPageForm() fyne.CanvasObject {
 	}
 	chmod.OnChanged = func(mode string) {
 		if mode == "registration" {
-			setup = rpage.NewSetupPage(gui.w)
+			setup = rpage.NewSetupPage(gui.w, gui.rs)
 		} else if mode == "voting" {
-			setup = vpage.NewSetupPage(gui.w)
+			setup = vpage.NewSetupPage(gui.w, gui.vs)
 		} else {
-			setup = bpage.NewSetupPage(nil)
+			setup = bpage.NewSetupPage(gui.bs)
 		}
 		newForm := container.NewBorder(chmod, nil, nil, nil, setup)
 		newTab := pageToTabItem("setup", newForm)
@@ -135,6 +161,18 @@ func (gui *GUI) i2pStart(i2pNote *widget.Label) {
 		}
 	}()
 }
+func (gui *GUI) Close(){
+	for _, v := range gui.vs{
+		v.Close()
+	}
+	for _, r := range gui.rs{
+		r.Close()
+	}
+	for _, b := range gui.bs{
+		b.Close()
+	}
+	gui.rt.Stop()
+}
 
 
 func (gui *GUI) Run() {
@@ -146,6 +184,6 @@ func (gui *GUI) Run() {
 	gui.page.Add(container.NewBorder(loadForm, i2pNote, nil, nil, gui.tabs))
 
 	gui.w.SetContent(gui.page)
-	gui.w.SetOnClosed(gui.rt.Stop)
+	gui.w.SetOnClosed(gui.Close)
 	gui.w.ShowAndRun()
 }

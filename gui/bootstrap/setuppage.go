@@ -13,28 +13,28 @@ import (
 	pv "github.com/pilinsin/p2p-verse"
 )
 
-func NewSetupPage(_ fyne.Window) fyne.CanvasObject {
+func NewSetupPage(bs map[string]pv.IBootstrap) fyne.CanvasObject {
 	baddrsLabel := gutil.NewCopyButton("bootstrap list address")
-
-	var self pv.IBootstrap
-	var err error
 
 	form := NewBootstrapsForm()
 	addrsBtn := widget.NewButtonWithIcon("", theme.NavigateNextIcon(), func() {
+		var self pv.IBootstrap
+		var err error
+		mapKey := "setup"
+		
 		baddrsLabel.SetText("processing...")
-		if self != nil{
-			self.Close()
-			self = nil
-		}
-
 		baddrs := form.AddrInfos()
+		if b, exist := bs[mapKey]; exist{
+			self = b
+		}
 		self, err = pv.NewBootstrap(i2p.NewI2pHost, baddrs...)
 		if err != nil{
 			baddrsLabel.SetText("bootstrap list address")
 			return
 		}
-		baddrs = append(baddrs, self.AddrInfo())
+		bs[mapKey] = self
 
+		baddrs = append(baddrs, self.AddrInfo())
 		s := pv.AddrInfosToString(baddrs...)
 		if s == "" {
 			baddrsLabel.SetText("bootstrap list address")
