@@ -73,7 +73,7 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 		return "", "", err
 	}
 
-	return "r/" + bAddr + "/" + cid, baseDir, nil
+	return "r/" + cid, baseDir, nil
 }
 
 func (cfg Config) Marshal() []byte {

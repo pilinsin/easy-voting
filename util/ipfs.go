@@ -9,11 +9,11 @@ import (
 
 func ParseConfigAddr(cfgAddr string) (string, string, error) {
 	addrs := strings.Split(strings.TrimPrefix(cfgAddr, "/"), "/")
-	pre := addrs[0]
+	pre := addrs[1]
 	if len(addrs) < 3 || (pre != "r" && pre != "v") {
 		return "", "", errors.New("invalid cfgAddr")
 	}
-	return addrs[1], addrs[2], nil
+	return addrs[0], addrs[2], nil
 }
 
 func NewIpfs(hGen pv.HostGenerator, bAddr, dirName string, save bool) (ipfs.Ipfs, error) {

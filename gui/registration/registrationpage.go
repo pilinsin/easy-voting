@@ -11,11 +11,13 @@ import (
 	riface "github.com/pilinsin/easy-voting/registration/interface"
 )
 
-func LoadPage(ctx context.Context, rCfgAddr string, r riface.IRegistration) (string, fyne.CanvasObject) {
+func LoadPage(ctx context.Context, bAddr, rCfgCid string, r riface.IRegistration) (string, fyne.CanvasObject) {
 	uidLabel := gutil.NewCopyButton("user identity address")
 
 	rCfg := r.Config()
-	addrLabel := gutil.NewCopyButton(rCfgAddr)
+	bAddrLabel := gutil.NewCopyButton(bAddr)
+	cfgLabel := gutil.NewCopyButton(rCfgCid)
+	addrLabel := container.NewVBox(bAddrLabel.Render(), cfgLabel.Render())
 	titleLabel := widget.NewLabel(rCfg.Title)
 	noteLabel := widget.NewLabel("")
 
@@ -41,7 +43,7 @@ func LoadPage(ctx context.Context, rCfgAddr string, r riface.IRegistration) (str
 	}
 	rForm.ExtendBaseWidget(rForm)
 
-	titles := container.NewVBox(titleLabel, addrLabel.Render())
+	titles := container.NewVBox(titleLabel, addrLabel)
 	page := container.NewVBox(rForm, noteLabel, uidLabel.Render())
 	page = container.NewBorder(titles, nil, nil, nil, page)
 	return rCfg.Title, page

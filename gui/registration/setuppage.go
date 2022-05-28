@@ -2,6 +2,7 @@ package registrationpage
 
 import (
 	"context"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -15,10 +16,12 @@ import (
 
 func NewSetupPage(w fyne.Window, rs map[string]riface.IRegistration) fyne.CanvasObject {
 	noteLabel := widget.NewLabel("")
-	addrLabel := gutil.NewCopyButton("registration config address")
+	addrLabel := gutil.NewCopyButton("registration config cid")
 	if r, exist := rs["setup"]; exist{
 		noteLabel.SetText("registration config is already generated")
-		addrLabel.SetText(r.Address())
+		addrs := strings.Split(r.Address(), "/")
+		addr := strings.Join(addrs[1:], "/")
+		addrLabel.SetText(addr)
 	}
 
 	titleEntry := widget.NewEntry()
@@ -40,7 +43,7 @@ func NewSetupPage(w fyne.Window, rs map[string]riface.IRegistration) fyne.Canvas
 		}
 
 		noteLabel.SetText("processing...")
-		addrLabel.SetText("registration config address")
+		addrLabel.SetText("registration config cid")
 		labels, dataset, err := csvBtn.Read()
 		if err != nil {
 			noteLabel.SetText("load csv error: " + err.Error())
@@ -57,7 +60,8 @@ func NewSetupPage(w fyne.Window, rs map[string]riface.IRegistration) fyne.Canvas
 			rs[mapKey].Close()
 			rs[mapKey] = nil
 		}
-		r, err := rgst.NewRegistration(context.Background(), cid, baseDir)
+		rCfgAddr := bAddrEntry.Text + "/" + cid
+		r, err := rgst.NewRegistration(context.Background(), rCfgAddr, baseDir)
 		if err != nil {
 			noteLabel.SetText("new rConfig error: " + err.Error())
 			return

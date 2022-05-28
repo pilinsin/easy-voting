@@ -11,14 +11,16 @@ import (
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
-func LoadPage(ctx context.Context, vCfgAddr string, v viface.IVoting) (string, fyne.CanvasObject) {
+func LoadPage(ctx context.Context, bAddr, vCfgCid string, v viface.IVoting) (string, fyne.CanvasObject) {
 	vCfg := v.Config()
 
 	idEntry := widget.NewEntry()
 	idEntry.SetPlaceHolder("User/Man Indentity")
 	idEntry.OnChanged = func(s string){v.SetIdentity(s)}
 
-	addrLabel := gutil.NewCopyButton(vCfgAddr)
+	bAddrLabel := gutil.NewCopyButton(bAddr)
+	cfgLabel := gutil.NewCopyButton(vCfgCid)
+	addrLabel := container.NewVBox(bAddrLabel.Render(), cfgLabel.Render())
 	titleLabel := widget.NewLabel(vCfg.Title)
 	noteLabel := widget.NewLabel("")
 	resLabel := gutil.NewCopyButton("result:")
@@ -30,7 +32,7 @@ func LoadPage(ctx context.Context, vCfgAddr string, v viface.IVoting) (string, f
 	cmvBtn := checkMyVoteBtn(v, resLabel)
 	resBtn := resultBtn(v, resLabel)
 
-	titles := container.NewVBox(titleLabel, addrLabel.Render())
+	titles := container.NewVBox(titleLabel, addrLabel)
 	vObjs := container.NewVBox(idEntry, contents, vBtn, noteLabel)
 	resObjs := container.NewVBox(container.NewHBox(cmvBtn, resBtn), resLabel.Render())
 	page := container.NewVBox(vObjs, resObjs)

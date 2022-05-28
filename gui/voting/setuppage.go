@@ -3,6 +3,7 @@ package votingpage
 import (
 	"fmt"
 	"context"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -17,11 +18,13 @@ import (
 
 func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject {
 	noteLabel := widget.NewLabel("")
-	addrLabel := gutil.NewCopyButton("voting config address")
+	addrLabel := gutil.NewCopyButton("voting config cid")
 	maIdLabel := gutil.NewCopyButton("voting manager address")
 	if v, exist := vs["setup"]; exist{
 		noteLabel.SetText("voting config is already generated")
-		addrLabel.SetText(v.Address())
+		addrs := strings.Split(v.Address(), "/")
+		addr := strings.Join(addrs[1:], "/")
+		addrLabel.SetText(addr)
 		maIdLabel.SetText(v.GetIdentity())
 	}
 
@@ -29,7 +32,11 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 	begin := gutil.NewTimeSelect()
 	end := gutil.NewTimeSelect()
 	loc := widget.NewSelect(util.GetOsTimeZones(), nil)
-	rCfgAddr := widget.NewEntry()
+	bAddr := widget.NewEntry()
+	bAddr.SetPlaceHolder("Bootstraps Address")
+	rCfgCid := widget.NewEntry()
+	rCfgCid.SetPlaceHolder("Registration Config Cid")
+	rCfgAddr := container.NewHBox(bAddr, rCfgCid)
 	nVerifiers := gutil.NewIntEntry()
 	cands := NewCandForm()
 	vParam := NewVParamEntry()
@@ -49,7 +56,7 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 	form.Items = append(form.Items, widget.NewFormItem("voting type", vType))
 	form.OnSubmit = func() {
 		noteLabel.SetText("processing...")
-		addrLabel.SetText("voting config address")
+		addrLabel.SetText("voting config cid")
 		maIdLabel.SetText("voting manager address")
 		
 		tInfo, err := util.NewTimeInfo(begin.Time(), end.Time(), loc.Selected)
@@ -77,9 +84,10 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 			return
 		}
 
+		rCfgAddr := bAddr.Text + "/" + rCfgCid.Text
 		cid, baseDir, mid, err := vutil.NewConfig(
 			title.Text,
-			rCfgAddr.Text,
+			rCfgAddr,
 			nVerifiers.Num(),
 			tInfo,
 			candidates,
@@ -96,7 +104,8 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 			vs[mapKey].Close()
 			vs[mapKey] = nil
 		}
-		v, err := voting.NewVoting(context.Background(), cid, baseDir)
+		vCfgAddr := bAddr.Text + "/" + cid
+		v, err := voting.NewVoting(context.Background(), vCfgAddr, baseDir)
 		if err != nil{
 			noteLabel.SetText(fmt.Sprintln(err))
 			return

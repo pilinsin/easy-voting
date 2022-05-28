@@ -67,39 +67,43 @@ func (gui *GUI) withRemove(page fyne.CanvasObject) fyne.CanvasObject {
 	return container.NewBorder(container.NewBorder(nil, nil, nil, rmvBtn), nil, nil, nil, page)
 }
 
-func (gui *GUI) loadPage(ctx context.Context, addr string) (string, fyne.CanvasObject) {
-	addrs := strings.Split(addr, "/")
-	if len(addrs) != 3{return "", nil}
-	mode, stAddr := addrs[0], addrs[2]
+func (gui *GUI) loadPage(ctx context.Context, bAddr, cid string) (string, fyne.CanvasObject) {
+	addrs := strings.Split(cid, "/")
+	if len(addrs) != 2{return "", nil}
+	mode, stAddr := addrs[0], addrs[1]
 
 	var err error
 	if mode == "r"{
 		baseDir := evutil.BaseDir(stAddr, "registration")
 		r, exist := gui.rs[baseDir]
 		if !exist{
-			r, err = rgst.NewRegistration(ctx, addr, baseDir)
+			r, err = rgst.NewRegistration(ctx, bAddr+"/"+cid, baseDir)
 			if err != nil {return "", nil}
 		}
-		return rpage.LoadPage(ctx, addr, r)
+		return rpage.LoadPage(ctx, bAddr, cid, r)
 	}
 	if mode == "v"{
 		baseDir := evutil.BaseDir(stAddr, "voting")
 		v, exist := gui.vs[baseDir]
 		if !exist{
-			v, err = vt.NewVoting(ctx, addr, baseDir)
+			v, err = vt.NewVoting(ctx, bAddr+"/"+cid, baseDir)
 			if err != nil {return "", nil}
 		}
-		return vpage.LoadPage(ctx, addr, v)
+		return vpage.LoadPage(ctx, bAddr, cid, v)
 	}
 	return "", nil
 }
 func (gui *GUI) loadPageForm() fyne.CanvasObject {
-	addrEntry := widget.NewEntry()
-	addrEntry.PlaceHolder = "Registration/Voting Config Address"
+	bAddrEntry := widget.NewEntry()
+	bAddrEntry.SetPlaceHolder("Bootstraps Address")
+	cidEntry := widget.NewEntry()
+	cidEntry.SetPlaceHolder("Registration/Voting Config Cid")
+	addrEntry := container.NewGridWithColumns(2, bAddrEntry,cidEntry)
 
 	onTapped := func() {
-		title, loadPage := gui.loadPage(context.Background(), addrEntry.Text)
-		addrEntry.SetText("")
+		title, loadPage := gui.loadPage(context.Background(), bAddrEntry.Text, cidEntry.Text)
+		bAddrEntry.SetText("")
+		cidEntry.SetText("")
 		if loadPage == nil {
 			return
 		}

@@ -280,7 +280,7 @@ func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, can
 	if err != nil {
 		return "", "", "", err
 	}
-	return "v/" + bAddr +"/" + vCfgCid, baseDir, manId.toString(), nil
+	return "v/" + vCfgCid, baseDir, manId.toString(), nil
 }
 
 func (cfg Config) Marshal() []byte {

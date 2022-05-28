@@ -15,26 +15,29 @@ import (
 
 func NewSetupPage(bs map[string]pv.IBootstrap) fyne.CanvasObject {
 	baddrsLabel := gutil.NewCopyButton("bootstrap list address")
+	if b, exist := bs["setup"]; exist{
+		baddrs := append(b.ConnectedPeers(), b.AddrInfo())
+		s := pv.AddrInfosToString(baddrs...)
+		baddrsLabel.SetText(s)
+	}
 
 	form := NewBootstrapsForm()
 	addrsBtn := widget.NewButtonWithIcon("", theme.NavigateNextIcon(), func() {
-		var self pv.IBootstrap
-		var err error
 		mapKey := "setup"
 		
 		baddrsLabel.SetText("processing...")
-		baddrs := form.AddrInfos()
-		if b, exist := bs[mapKey]; exist{
-			self = b
+		if _, exist := bs[mapKey]; exist{
+			bs[mapKey].Close()
+			bs[mapKey] = nil
 		}
-		self, err = pv.NewBootstrap(i2p.NewI2pHost, baddrs...)
+		self, err := pv.NewBootstrap(i2p.NewI2pHost, form.AddrInfos()...)
 		if err != nil{
 			baddrsLabel.SetText("bootstrap list address")
 			return
 		}
 		bs[mapKey] = self
-
-		baddrs = append(baddrs, self.AddrInfo())
+		
+		baddrs := append(self.ConnectedPeers(), self.AddrInfo())
 		s := pv.AddrInfosToString(baddrs...)
 		if s == "" {
 			baddrsLabel.SetText("bootstrap list address")

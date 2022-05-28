@@ -1,4 +1,4 @@
-fyne package -os linux -icon ../../Icon.png
+fyne package -os linux -icon ../../logo.svg
 tar xJvf easy-voting.tar.xz
 mkdir easy-voting
 mv Makefile easy-voting

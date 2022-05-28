@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	fyne.io/fyne/v2 v2.1.4 // indirect
-	github.com/LoCCS/bliss v0.0.0-20180223025823-07585ac9b817 // indirect
 	github.com/Stebalien/go-bitfield v0.0.1 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
@@ -14,7 +13,6 @@ require (
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cheekybits/genny v1.0.0 // indirect
-	github.com/companyzero/sntrup4591761 v0.0.0-20200131011700-2b0d299dbd22 // indirect
 	github.com/containerd/cgroups v1.0.3 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
@@ -26,13 +24,11 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/ecies/go v1.0.1 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/eyedeekay/goSam v0.32.31-0.20210122211817-f97683379f23 // indirect
 	github.com/eyedeekay/sam3 v0.32.33-0.20210718190649-31b8d62f0461 // indirect
 	github.com/floostack/transcoder v1.1.1 // indirect
 	github.com/flynn/noise v1.0.0 // indirect
-	github.com/fomichev/secp256k1 v0.0.0-20180413221153-00116ff8c62f // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/fredbi/uri v0.0.0-20181227131451-3dcfdacbaaf3 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
@@ -172,7 +168,7 @@ require (
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220522061631-2f0bb90231a6 // indirect
 	github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220420124841-af137f670078 // indirect
-	github.com/pilinsin/p2p-verse v0.0.0-20220523203931-e5c357418339 // indirect
+	github.com/pilinsin/p2p-verse v0.0.0-20220528024125-b1bd1334ab5c // indirect
 	github.com/pilinsin/util v0.0.0-20220524095113-55c47771dda7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -198,12 +194,12 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
-	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
-	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9 // indirect
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
+	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
 	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.10 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
