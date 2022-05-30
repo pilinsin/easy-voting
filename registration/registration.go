@@ -34,9 +34,10 @@ func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IReg
 		return nil, err
 	}
 	save := true
+	bootstraps := pv.AddrInfosFromString(bAddr)
 
-	ipfsDir := filepath.Join("stores", baseDir, "ipfs")
-	is, err := evutil.NewIpfs(i2p.NewI2pHost, bAddr, ipfsDir, save)
+	ipfsDir := filepath.Join(baseDir, "ipfs")
+	is, err := evutil.NewIpfs(i2p.NewI2pHost, ipfsDir, save, bootstraps)
 	if err != nil {
 		return nil, err
 	}
@@ -45,14 +46,15 @@ func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IReg
 		return nil, err
 	}
 
-	bootstraps := pv.AddrInfosFromString(bAddr)
-	storeDir := filepath.Join("stores", baseDir, "store")
-	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, save, false, bootstraps...)
+	
+	storeDir := filepath.Join(baseDir, "store")
+	stInfo := [][2]string{{rCfg.UhmAddr, "hash"}}
 	opt := &crdt.StoreOpts{Salt: rCfg.Salt2}
-	uhm, err := v.LoadStore(ctx, rCfg.UhmAddr, "hash", opt)
+	stores, err := evutil.NewStore(ctx, i2p.NewI2pHost, stInfo, storeDir, save, bootstraps, opt)
 	if err != nil {
 		return nil, err
 	}
+	uhm := stores[0]
 
 	ctx, cancel := context.WithCancel(context.Background())
 	autoSync(ctx, uhm)

@@ -11,6 +11,7 @@ import (
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
 	ipfs "github.com/pilinsin/p2p-verse/ipfs"
+	pv "github.com/pilinsin/p2p-verse"
 )
 
 type votingWithIpfs struct {
@@ -32,12 +33,13 @@ func NewVoting(ctx context.Context, vCfgAddr, baseDir string) (viface.IVoting, e
 	if err != nil {
 		return nil, err
 	}
+	bootstraps := pv.AddrInfosFromString(bAddr)
 
-	ipfsDir := filepath.Join("stores", baseDir, "ipfs")
-	storeDir := filepath.Join("stores", baseDir, "store")
+	ipfsDir := filepath.Join(baseDir, "ipfs")
+	storeDir := filepath.Join(baseDir, "store")
 	save := true
 
-	is, err := evutil.NewIpfs(i2p.NewI2pHost, bAddr, ipfsDir, save)
+	is, err := evutil.NewIpfs(i2p.NewI2pHost, ipfsDir, save, bootstraps)
 	if err != nil {
 		return nil, err
 	}
@@ -49,17 +51,17 @@ func NewVoting(ctx context.Context, vCfgAddr, baseDir string) (viface.IVoting, e
 	var v viface.ITypedVoting
 	switch vCfg.Type {
 	case vutil.Single:
-		v, err = module.NewSingleVoting(ctx, vCfg, storeDir, bAddr, save)
+		v, err = module.NewSingleVoting(ctx, vCfg, storeDir, bootstraps, save)
 	case vutil.Block:
-		v, err = module.NewBlockVoting(ctx, vCfg, storeDir, bAddr, save)
+		v, err = module.NewBlockVoting(ctx, vCfg, storeDir, bootstraps, save)
 	case vutil.Approval:
-		v, err = module.NewApprovalVoting(ctx, vCfg, storeDir, bAddr, save)
+		v, err = module.NewApprovalVoting(ctx, vCfg, storeDir, bootstraps, save)
 	case vutil.Range:
-		v, err = module.NewRangeVoting(ctx, vCfg, storeDir, bAddr, save)
+		v, err = module.NewRangeVoting(ctx, vCfg, storeDir, bootstraps, save)
 	case vutil.Preference:
-		v, err = module.NewPreferenceVoting(ctx, vCfg, storeDir, bAddr, save)
+		v, err = module.NewPreferenceVoting(ctx, vCfg, storeDir, bootstraps, save)
 	case vutil.Cumulative:
-		v, err = module.NewCumulativeVoting(ctx, vCfg, storeDir, bAddr, save)
+		v, err = module.NewCumulativeVoting(ctx, vCfg, storeDir, bootstraps, save)
 	default:
 		return nil, errors.New("invalid VType")
 	}

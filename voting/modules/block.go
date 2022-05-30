@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"fyne.io/fyne/v2/widget"
+	peer "github.com/libp2p/go-libp2p-core/peer"
 
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
@@ -16,11 +17,11 @@ type blockVoting struct {
 	total int
 }
 
-func NewBlockVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.ITypedVoting, error) {
+func NewBlockVoting(ctx context.Context, vCfg *vutil.Config, storeDir string, bs []peer.AddrInfo, save bool) (viface.ITypedVoting, error) {
 	bv := &blockVoting{
 		total: vCfg.Params.Total,
 	}
-	if err := bv.init(ctx, vCfg, storeDir, bAddr, save); err != nil {
+	if err := bv.init(ctx, vCfg, storeDir, bs, save); err != nil {
 		return nil, err
 	}
 	return bv, nil

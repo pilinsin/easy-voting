@@ -46,9 +46,9 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 	bootstraps := pv.AddrInfosFromString(bAddr)
 	baseDir := evutil.BaseDir("registration", "setup")
 	
-	storeDir := filepath.Join("stores", baseDir, "store")
+	storeDir := filepath.Join(baseDir, "store")
 	os.RemoveAll(storeDir)
-	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, false, bootstraps...)
+	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, bootstraps...)
 	ac, err := v.NewAccessController(pv.RandString(8), uhHashes)
 	if err != nil {
 		return "", "", err
@@ -61,9 +61,9 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 
 	cfg.UhmAddr = uhm.Address()
 
-	ipfsDir := filepath.Join("stores", baseDir, "ipfs")
+	ipfsDir := filepath.Join(baseDir, "ipfs")
 	os.RemoveAll(ipfsDir)
-	is, err := evutil.NewIpfs(i2p.NewI2pHost, bAddr, ipfsDir, true)
+	is, err := evutil.NewIpfs(i2p.NewI2pHost, ipfsDir, true, bootstraps)
 	if err != nil {
 		return "", "", err
 	}

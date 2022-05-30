@@ -6,11 +6,12 @@ import (
 	"time"
 
 	query "github.com/ipfs/go-datastore/query"
+	peer "github.com/libp2p/go-libp2p-core/peer"
 
+	evutil "github.com/pilinsin/easy-voting/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
-	pv "github.com/pilinsin/p2p-verse"
 	crdt "github.com/pilinsin/p2p-verse/crdt"
 	"github.com/pilinsin/util"
 	"github.com/pilinsin/util/crypto"
@@ -37,20 +38,17 @@ type voting struct {
 	idStr string
 }
 
-func (v *voting) init(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) error {
-	bootstraps := pv.AddrInfosFromString(bAddr)
-	cv := crdt.NewVerse(i2p.NewI2pHost, storeDir, save, false, bootstraps...)
-
-	hkm, err := cv.LoadStore(ctx, vCfg.HkmAddr, "signature")
-	if err != nil {
-		return err
+func (v *voting) init(ctx context.Context, vCfg *vutil.Config, storeDir string, bootstraps []peer.AddrInfo, save bool) error {
+	stInfo := [][2]string{
+		{vCfg.HkmAddr, "signature"},
+		{vCfg.IvmAddr, "updatableSignature"},
 	}
+	stores, err := evutil.NewStore(ctx, i2p.NewI2pHost, stInfo, storeDir, save, bootstraps)
+	if err != nil{return err}
+	if len(stores) >= 2{return errors.New("too few stores loaded")}
 
-	tmp, err := cv.LoadStore(ctx, vCfg.IvmAddr, "updatableSignature")
-	if err != nil {
-		return err
-	}
-	ivm := tmp.(crdt.IUpdatableSignatureStore)	
+	hkm, tmp := stores[0], stores[1]
+	ivm := tmp.(crdt.IUpdatableSignatureStore)
 
 	v.salt1 = vCfg.Salt1
 	v.salt2 = vCfg.Salt2

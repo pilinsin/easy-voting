@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	peer "github.com/libp2p/go-libp2p-core/peer"
 
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
@@ -19,9 +20,9 @@ type preferenceVoting struct {
 	voting
 }
 
-func NewPreferenceVoting(ctx context.Context, vCfg *vutil.Config, storeDir, bAddr string, save bool) (viface.ITypedVoting, error) {
+func NewPreferenceVoting(ctx context.Context, vCfg *vutil.Config, storeDir string, bs []peer.AddrInfo, save bool) (viface.ITypedVoting, error) {
 	pv := &preferenceVoting{}
-	if err := pv.init(ctx, vCfg, storeDir, bAddr, save); err != nil {
+	if err := pv.init(ctx, vCfg, storeDir, bs, save); err != nil {
 		return nil, err
 	}
 	return pv, nil

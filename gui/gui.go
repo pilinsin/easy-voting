@@ -74,20 +74,22 @@ func (gui *GUI) loadPage(ctx context.Context, bAddr, cid string) (string, fyne.C
 
 	var err error
 	if mode == "r"{
-		baseDir := evutil.BaseDir(stAddr, "registration")
+		baseDir := evutil.BaseDir("registration", stAddr)
 		r, exist := gui.rs[baseDir]
 		if !exist{
 			r, err = rgst.NewRegistration(ctx, bAddr+"/"+cid, baseDir)
 			if err != nil {return "", nil}
+			gui.rs[baseDir] = r
 		}
 		return rpage.LoadPage(ctx, bAddr, cid, r)
 	}
 	if mode == "v"{
-		baseDir := evutil.BaseDir(stAddr, "voting")
+		baseDir := evutil.BaseDir("voting", stAddr)
 		v, exist := gui.vs[baseDir]
 		if !exist{
 			v, err = vt.NewVoting(ctx, bAddr+"/"+cid, baseDir)
 			if err != nil {return "", nil}
+			gui.vs[baseDir] = v
 		}
 		return vpage.LoadPage(ctx, bAddr, cid, v)
 	}
@@ -108,7 +110,6 @@ func (gui *GUI) loadPageForm() fyne.CanvasObject {
 			return
 		}
 		page := container.NewVScroll(loadPage)
-		//page.SetMinSize(fyne,NewSize(101.1,201.2))
 		withRmvPage := gui.withRemove(page)
 		withRmvTab := pageToTabItem(title, withRmvPage)
 		gui.tabs.Append(withRmvTab)

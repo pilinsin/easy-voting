@@ -166,12 +166,13 @@ func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, can
 	if err != nil {
 		return "", "", "", err
 	}
+	bootstraps := pv.AddrInfosFromString(bAddr)
 
 	baseDir := evutil.BaseDir("voting", "setup")
 
-	ipfsDir := filepath.Join("stores", baseDir, "ipfs")
+	ipfsDir := filepath.Join(baseDir, "ipfs")
 	os.RemoveAll(ipfsDir)
-	is, err := evutil.NewIpfs(i2p.NewI2pHost, bAddr, ipfsDir, true)
+	is, err := evutil.NewIpfs(i2p.NewI2pHost, ipfsDir, true, bootstraps)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -181,10 +182,9 @@ func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, can
 		return "", "", "", err
 	}
 
-	bootstraps := pv.AddrInfosFromString(bAddr)
-	storeDir := filepath.Join("stores", baseDir, "store")
+	storeDir := filepath.Join(baseDir, "store")
 	os.RemoveAll(storeDir)
-	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, false, bootstraps...)
+	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, bootstraps...)
 
 	uhm, err := v.LoadStore(context.Background(), rCfg.UhmAddr, "hash")
 	if err != nil {
