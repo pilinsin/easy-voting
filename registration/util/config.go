@@ -2,8 +2,8 @@ package registrationutil
 
 import (
 	"errors"
-	"path/filepath"
 	"os"
+	"path/filepath"
 
 	evutil "github.com/pilinsin/easy-voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
@@ -45,7 +45,7 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 
 	bootstraps := pv.AddrInfosFromString(bAddr)
 	baseDir := evutil.BaseDir("registration", "setup")
-	
+
 	storeDir := filepath.Join(baseDir, "store")
 	os.RemoveAll(storeDir)
 	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, bootstraps...)

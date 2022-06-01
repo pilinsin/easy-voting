@@ -19,13 +19,13 @@ import (
 )
 
 type registration struct {
-	ctx       context.Context
-	cancel    func()
-	salt1     string
-	addr     string
-	is        ipfs.Ipfs
-	uhm       crdt.IStore
-	cfg       *rutil.Config
+	ctx    context.Context
+	cancel func()
+	salt1  string
+	addr   string
+	is     ipfs.Ipfs
+	uhm    crdt.IStore
+	cfg    *rutil.Config
 }
 
 func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IRegistration, error) {
@@ -46,7 +46,6 @@ func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IReg
 		return nil, err
 	}
 
-	
 	storeDir := filepath.Join(baseDir, "store")
 	stInfo := [][2]string{{rCfg.UhmAddr, "hash"}}
 	opt := &crdt.StoreOpts{Salt: rCfg.Salt2}
@@ -60,13 +59,13 @@ func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IReg
 	autoSync(ctx, uhm)
 
 	return &registration{
-		ctx:       ctx,
-		cancel:    cancel,
-		salt1:     rCfg.Salt1,
-		addr:		rCfgAddr,
-		is:        is,
-		uhm:       uhm,
-		cfg:       rCfg,
+		ctx:    ctx,
+		cancel: cancel,
+		salt1:  rCfg.Salt1,
+		addr:   rCfgAddr,
+		is:     is,
+		uhm:    uhm,
+		cfg:    rCfg,
 	}, nil
 }
 func autoSync(ctx context.Context, uhm crdt.IStore) {
@@ -92,7 +91,7 @@ func (r *registration) Close() {
 func (r *registration) Config() *rutil.Config {
 	return r.cfg
 }
-func (r *registration) Address() string{
+func (r *registration) Address() string {
 	return r.addr
 }
 

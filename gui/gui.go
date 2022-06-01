@@ -34,10 +34,10 @@ func pageToTabItem(title string, page fyne.CanvasObject) *container.TabItem {
 }
 
 type GUI struct {
-	rt *i2p.I2pRouter
-	bs map[string]pv.IBootstrap
-	rs map[string]riface.IRegistration
-	vs map[string]viface.IVoting
+	rt   *i2p.I2pRouter
+	bs   map[string]pv.IBootstrap
+	rs   map[string]riface.IRegistration
+	vs   map[string]viface.IVoting
 	w    fyne.Window
 	size fyne.Size
 	page *fyne.Container
@@ -69,26 +69,32 @@ func (gui *GUI) withRemove(page fyne.CanvasObject) fyne.CanvasObject {
 
 func (gui *GUI) loadPage(ctx context.Context, bAddr, cid string) (string, fyne.CanvasObject) {
 	addrs := strings.Split(cid, "/")
-	if len(addrs) != 2{return "", nil}
+	if len(addrs) != 2 {
+		return "", nil
+	}
 	mode, stAddr := addrs[0], addrs[1]
 
 	var err error
-	if mode == "r"{
+	if mode == "r" {
 		baseDir := evutil.BaseDir("registration", stAddr)
 		r, exist := gui.rs[baseDir]
-		if !exist{
+		if !exist {
 			r, err = rgst.NewRegistration(ctx, bAddr+"/"+cid, baseDir)
-			if err != nil {return "", nil}
+			if err != nil {
+				return "", nil
+			}
 			gui.rs[baseDir] = r
 		}
 		return rpage.LoadPage(ctx, bAddr, cid, r)
 	}
-	if mode == "v"{
+	if mode == "v" {
 		baseDir := evutil.BaseDir("voting", stAddr)
 		v, exist := gui.vs[baseDir]
-		if !exist{
+		if !exist {
 			v, err = vt.NewVoting(ctx, bAddr+"/"+cid, baseDir)
-			if err != nil {return "", nil}
+			if err != nil {
+				return "", nil
+			}
 			gui.vs[baseDir] = v
 		}
 		return vpage.LoadPage(ctx, bAddr, cid, v)
@@ -100,7 +106,7 @@ func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	bAddrEntry.SetPlaceHolder("Bootstraps Address")
 	cidEntry := widget.NewEntry()
 	cidEntry.SetPlaceHolder("Registration/Voting Config Cid")
-	addrEntry := container.NewGridWithColumns(2, bAddrEntry,cidEntry)
+	addrEntry := container.NewGridWithColumns(2, bAddrEntry, cidEntry)
 
 	onTapped := func() {
 		title, loadPage := gui.loadPage(context.Background(), bAddrEntry.Text, cidEntry.Text)
@@ -166,19 +172,18 @@ func (gui *GUI) i2pStart(i2pNote *widget.Label) {
 		}
 	}()
 }
-func (gui *GUI) Close(){
-	for _, v := range gui.vs{
+func (gui *GUI) Close() {
+	for _, v := range gui.vs {
 		v.Close()
 	}
-	for _, r := range gui.rs{
+	for _, r := range gui.rs {
 		r.Close()
 	}
-	for _, b := range gui.bs{
+	for _, b := range gui.bs {
 		b.Close()
 	}
 	gui.rt.Stop()
 }
-
 
 func (gui *GUI) Run() {
 	i2pNote := widget.NewLabel("i2p router setup...")

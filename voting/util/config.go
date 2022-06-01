@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"os"
+	"path/filepath"
 	"time"
 
 	pb "github.com/pilinsin/easy-voting/voting/util/pb"
@@ -271,9 +271,9 @@ func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, can
 		Labels:     rCfg.Labels,
 	}
 	manId := &ManIdentity{
-		Priv:     encKeyPair.Private(),
-		Sign:     signKeyPair.Sign(),
-		Verf:     signKeyPair.Verify(),
+		Priv: encKeyPair.Private(),
+		Sign: signKeyPair.Sign(),
+		Verf: signKeyPair.Verify(),
 	}
 
 	vCfgCid, err := vCfg.toCid(is)

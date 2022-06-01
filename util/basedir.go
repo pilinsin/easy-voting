@@ -1,24 +1,26 @@
 package util
 
-import(
-	"os"
-	"path/filepath"
+import (
 	"encoding/base64"
 	"golang.org/x/crypto/argon2"
+	"os"
+	"path/filepath"
 )
 
-func exeDir() string{
+func exeDir() string {
 	exe, err := os.Executable()
-	if err != nil{return "."}
+	if err != nil {
+		return "."
+	}
 	return filepath.Dir(exe)
 }
 
-func BaseDir(mode, addr string) string{
+func BaseDir(mode, addr string) string {
 	hashAddr := hashDir(addr, mode)
 	return filepath.Join(exeDir(), "stores", hashAddr)
 }
 
-func hashDir(addr, salt string) string{
+func hashDir(addr, salt string) string {
 	txt := "baseDir_hash(cid, salt+padd)"
 	b := argon2.IDKey([]byte(addr), []byte(salt+txt), 1, 64*1024, 4, 16)
 	return base64.URLEncoding.EncodeToString(b)

@@ -9,15 +9,15 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	gutil "github.com/pilinsin/easy-voting/gui/util"
-	rutil "github.com/pilinsin/easy-voting/registration/util"
-	riface "github.com/pilinsin/easy-voting/registration/interface"
 	rgst "github.com/pilinsin/easy-voting/registration"
+	riface "github.com/pilinsin/easy-voting/registration/interface"
+	rutil "github.com/pilinsin/easy-voting/registration/util"
 )
 
 func NewSetupPage(w fyne.Window, rs map[string]riface.IRegistration) fyne.CanvasObject {
 	noteLabel := widget.NewLabel("")
 	addrLabel := gutil.NewCopyButton("registration config cid")
-	if r, exist := rs["setup"]; exist{
+	if r, exist := rs["setup"]; exist {
 		noteLabel.SetText("registration config is already generated")
 		addrs := strings.Split(r.Address(), "/")
 		addr := strings.Join(addrs[1:], "/")
@@ -56,7 +56,7 @@ func NewSetupPage(w fyne.Window, rs map[string]riface.IRegistration) fyne.Canvas
 		}
 
 		mapKey := "setup"
-		if _, exist := rs[mapKey]; exist{
+		if _, exist := rs[mapKey]; exist {
 			rs[mapKey].Close()
 			rs[mapKey] = nil
 		}

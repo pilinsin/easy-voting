@@ -1,8 +1,8 @@
 package votingpage
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -10,9 +10,9 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	gutil "github.com/pilinsin/easy-voting/gui/util"
-	vutil "github.com/pilinsin/easy-voting/voting/util"
-	viface "github.com/pilinsin/easy-voting/voting/interface"
 	voting "github.com/pilinsin/easy-voting/voting"
+	viface "github.com/pilinsin/easy-voting/voting/interface"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 	"github.com/pilinsin/util"
 )
 
@@ -20,7 +20,7 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 	noteLabel := widget.NewLabel("")
 	addrLabel := gutil.NewCopyButton("voting config cid")
 	maIdLabel := gutil.NewCopyButton("voting manager address")
-	if v, exist := vs["setup"]; exist{
+	if v, exist := vs["setup"]; exist {
 		noteLabel.SetText("voting config is already generated")
 		addrs := strings.Split(v.Address(), "/")
 		addr := strings.Join(addrs[1:], "/")
@@ -58,7 +58,7 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 		noteLabel.SetText("processing...")
 		addrLabel.SetText("voting config cid")
 		maIdLabel.SetText("voting manager address")
-		
+
 		tInfo, err := util.NewTimeInfo(begin.Time(), end.Time(), loc.Selected)
 		if err != nil {
 			noteLabel.SetText(fmt.Sprintln(err))
@@ -100,13 +100,13 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 		}
 
 		mapKey := "setup"
-		if _, exist := vs[mapKey]; exist{
+		if _, exist := vs[mapKey]; exist {
 			vs[mapKey].Close()
 			vs[mapKey] = nil
 		}
 		vCfgAddr := bAddr.Text + "/" + cid
 		v, err := voting.NewVoting(context.Background(), vCfgAddr, baseDir)
-		if err != nil{
+		if err != nil {
 			noteLabel.SetText(fmt.Sprintln(err))
 			return
 		}

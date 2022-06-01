@@ -20,7 +20,7 @@ type ITypedVoting interface {
 	GetMyVote() (*vutil.VoteInt, error)
 	GetResult() (*vutil.VoteResult, int, int, error)
 }
-type IVoting interface{
+type IVoting interface {
 	ITypedVoting
 	Address() string
 }

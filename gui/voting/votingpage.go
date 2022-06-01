@@ -16,7 +16,7 @@ func LoadPage(ctx context.Context, bAddr, vCfgCid string, v viface.IVoting) (str
 
 	idEntry := widget.NewEntry()
 	idEntry.SetPlaceHolder("User/Man Indentity")
-	idEntry.OnChanged = func(s string){v.SetIdentity(s)}
+	idEntry.OnChanged = func(s string) { v.SetIdentity(s) }
 
 	bAddrLabel := gutil.NewCopyButton(bAddr)
 	cfgLabel := gutil.NewCopyButton(vCfgCid)

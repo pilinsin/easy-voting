@@ -10,9 +10,9 @@ import (
 )
 
 type ManIdentity struct {
-	Priv     crypto.IPriKey
-	Sign     crypto.ISignKey
-	Verf     crypto.IVerfKey
+	Priv crypto.IPriKey
+	Sign crypto.ISignKey
+	Verf crypto.IVerfKey
 }
 
 func (mi ManIdentity) Marshal() []byte {
@@ -20,9 +20,9 @@ func (mi ManIdentity) Marshal() []byte {
 	msig, _ := crypto.MarshalSignKey(mi.Sign)
 	mver, _ := crypto.MarshalVerfKey(mi.Verf)
 	mManId := &pb.ManIdentity{
-		Priv:     mpri,
-		Sign:     msig,
-		Verf:     mver,
+		Priv: mpri,
+		Sign: msig,
+		Verf: mver,
 	}
 	m, _ := proto.Marshal(mManId)
 	return m

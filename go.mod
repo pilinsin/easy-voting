@@ -28,7 +28,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
-	github.com/eyedeekay/i2pkeys v0.0.0-20220310052025-204d4ae6dcae // indirect
+	github.com/eyedeekay/i2pkeys v0.0.0-20220310055120-b97558c06ac8 // indirect
 	github.com/eyedeekay/sam3 v0.33.2 // indirect
 	github.com/floostack/transcoder v1.1.1 // indirect
 	github.com/flynn/noise v1.0.0 // indirect
@@ -153,7 +153,7 @@ require (
 	github.com/multiformats/go-multiaddr-dns v0.3.1 // indirect
 	github.com/multiformats/go-multiaddr-fmt v0.1.0 // indirect
 	github.com/multiformats/go-multibase v0.0.3 // indirect
-	github.com/multiformats/go-multicodec v0.4.1 // indirect
+	github.com/multiformats/go-multicodec v0.5.0 // indirect
 	github.com/multiformats/go-multihash v0.1.0 // indirect
 	github.com/multiformats/go-multistream v0.3.1 // indirect
 	github.com/multiformats/go-varint v0.0.6 // indirect
@@ -163,8 +163,8 @@ require (
 	github.com/opencontainers/runtime-spec v1.0.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
-	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220530060518-94ae0f78bb75 // indirect
-	github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220529120622-c018265695cc // indirect
+	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220531231836-cff14699ec4e // indirect
+	github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220531223145-5313be76581a // indirect
 	github.com/pilinsin/p2p-verse v0.0.0-20220530100219-7d8ba3359b5d // indirect
 	github.com/pilinsin/util v0.0.0-20220524095113-55c47771dda7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -192,7 +192,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
-	golang.org/x/net v0.0.0-20220526153639-5463443f8c37 // indirect
+	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
 	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
