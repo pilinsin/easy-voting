@@ -173,6 +173,7 @@ func (v *voting) baseVote(data vutil.VoteInt) error {
 		return err
 	}
 
+	//wait for broadcasting
 	time.Sleep(10 * time.Second)
 	return nil
 }

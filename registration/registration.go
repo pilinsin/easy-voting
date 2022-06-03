@@ -56,7 +56,6 @@ func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IReg
 	uhm := stores[0]
 
 	ctx, cancel := context.WithCancel(context.Background())
-	autoSync(ctx, uhm)
 
 	return &registration{
 		ctx:    ctx,
@@ -67,19 +66,6 @@ func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IReg
 		uhm:    uhm,
 		cfg:    rCfg,
 	}, nil
-}
-func autoSync(ctx context.Context, uhm crdt.IStore) {
-	ticker := time.NewTicker(time.Second * 10)
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				uhm.Sync()
-			}
-		}
-	}()
 }
 
 func (r *registration) Close() {
