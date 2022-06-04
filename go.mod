@@ -165,7 +165,7 @@ require (
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220531231836-cff14699ec4e // indirect
 	github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220531223145-5313be76581a // indirect
-	github.com/pilinsin/p2p-verse v0.0.0-20220603084504-ea30dcfdd3a7 // indirect
+	github.com/pilinsin/p2p-verse v0.0.0-20220604024411-ea5df0425164 // indirect
 	github.com/pilinsin/util v0.0.0-20220524095113-55c47771dda7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/polydawn/refmt v0.0.0-20201211092308-30ac6d18308e // indirect
