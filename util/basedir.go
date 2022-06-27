@@ -2,9 +2,10 @@ package util
 
 import (
 	"encoding/base64"
-	"golang.org/x/crypto/argon2"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/crypto/argon2"
 )
 
 func exeDir() string {

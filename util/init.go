@@ -2,7 +2,7 @@ package util
 
 import (
 	"errors"
-	
+
 	crdt "github.com/pilinsin/p2p-verse/crdt"
 	ipub "github.com/pilinsin/util/public"
 	ecies "github.com/pilinsin/util/public/ecies"
@@ -29,7 +29,9 @@ func genKp() (crdt.IPrivKey, crdt.IPubKey, error) {
 	return kp.Sign(), kp.Verify(), nil
 }
 func marshalPub(pub crdt.IPubKey) ([]byte, error) {
-	if pub == nil{return nil, errors.New("pub is nil")}
+	if pub == nil {
+		return nil, errors.New("pub is nil")
+	}
 	return pub.Raw()
 }
 func unmarshalPub(m []byte) (crdt.IPubKey, error) {

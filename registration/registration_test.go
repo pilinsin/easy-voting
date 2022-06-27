@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	evutil "github.com/pilinsin/easy-voting/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
+	evutil "github.com/pilinsin/easy-voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
 	pv "github.com/pilinsin/p2p-verse"
 )

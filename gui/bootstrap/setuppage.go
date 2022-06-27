@@ -59,16 +59,6 @@ func mapToSlice(m map[string]peer.AddrInfo) []peer.AddrInfo {
 	}
 	return ais
 }
-func sliceToMap(ais []peer.AddrInfo) map[string]peer.AddrInfo {
-	m := make(map[string]peer.AddrInfo)
-	for _, ai := range ais {
-		s := pv.AddrInfoToString(ai)
-		if s != "" {
-			m[s] = ai
-		}
-	}
-	return m
-}
 
 type bootstrapsForm struct {
 	*gutil.RemovableEntryForm

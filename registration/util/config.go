@@ -18,13 +18,18 @@ import (
 	proto "google.golang.org/protobuf/proto"
 )
 
-type RegistrationStores struct{
-	Is ipfs.Ipfs
+type RegistrationStores struct {
+	Is  ipfs.Ipfs
 	Uhm crdt.IStore
 }
-func (rs *RegistrationStores) Close(){
-	if rs.Is != nil{rs.Is.Close()}
-	if rs.Uhm != nil{rs.Uhm.Close()}
+
+func (rs *RegistrationStores) Close() {
+	if rs.Is != nil {
+		rs.Is.Close()
+	}
+	if rs.Uhm != nil {
+		rs.Uhm.Close()
+	}
 }
 
 type Config struct {
@@ -58,7 +63,7 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 
 	storeDir := filepath.Join(baseDir, "store")
 	os.RemoveAll(storeDir)
-	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, bootstraps...)	
+	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, bootstraps...)
 	uhm, err := v.NewStore(pv.RandString(8), "hash", &crdt.StoreOpts{Salt: salt2})
 	if err != nil {
 		return "", nil, err
@@ -84,10 +89,10 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 	}
 
 	rs := &RegistrationStores{
-		Is: is,
+		Is:  is,
 		Uhm: uhm,
 	}
-	
+
 	return "r/" + cid, rs, nil
 }
 

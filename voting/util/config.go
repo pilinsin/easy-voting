@@ -1,8 +1,8 @@
 package votingutil
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -148,17 +148,24 @@ func decodeTimeInfo(ti *pb.TimeInfo) *util.TimeInfo {
 	}
 }
 
-
-type VotingStores struct{
-	Is ipfs.Ipfs
+type VotingStores struct {
+	Is  ipfs.Ipfs
 	Hkm crdt.IStore
 	Ivm crdt.IUpdatableSignatureStore
 }
-func (vs *VotingStores) Close(){
-	if vs.Is != nil{vs.Is.Close()}
-	if vs.Hkm != nil{vs.Hkm.Close()}
-	if vs.Ivm != nil{vs.Ivm.Close()}
+
+func (vs *VotingStores) Close() {
+	if vs.Is != nil {
+		vs.Is.Close()
+	}
+	if vs.Hkm != nil {
+		vs.Hkm.Close()
+	}
+	if vs.Ivm != nil {
+		vs.Ivm.Close()
+	}
 }
+
 type Config struct {
 	Title      string
 	Time       *util.TimeInfo
@@ -211,7 +218,7 @@ func NewConfig(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate,
 	go func() {
 		defer close(ch)
 		ch <- crdt.PubKeyToStr(skp.Verify())
-	}()	
+	}()
 	hkm, err := v.NewStore(pv.RandString(8), "signature", &crdt.StoreOpts{Pub: skp.Verify(), Priv: skp.Sign()})
 	if err != nil {
 		is.Close()
@@ -285,7 +292,6 @@ func NewConfig(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate,
 		ivm.Close()
 		return "", "", nil, err
 	}
-	
 
 	vCfg := &Config{
 		Title:      title,
@@ -310,12 +316,11 @@ func NewConfig(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate,
 		Priv: encKeyPair.Private(),
 	}
 	vStores := &VotingStores{
-		Is: is,
+		Is:  is,
 		Hkm: hkm,
 		Ivm: ivm,
 	}
 
-	
 	return "v/" + vCfgCid, manId.toString(), vStores, nil
 }
 

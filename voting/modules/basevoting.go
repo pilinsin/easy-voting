@@ -2,6 +2,7 @@ package votingmodule
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	query "github.com/ipfs/go-datastore/query"
@@ -74,7 +75,7 @@ func (v *voting) SetIdentity(idStr string) {
 				id = &identity{mi.Priv, nil, nil}
 			}
 		}
-	}else{
+	} else {
 		ui := &rutil.UserIdentity{}
 		if err := ui.FromString(idStr); err == nil {
 			ukp, err := getUserKeyPair(v.hkm, ui, v.salt2)
@@ -85,9 +86,9 @@ func (v *voting) SetIdentity(idStr string) {
 	}
 
 	if id != nil {
-		if id.verf != nil{
+		if id.verf != nil {
 			v.myPid = crdt.PubKeyToStr(id.verf)
-		}else{
+		} else {
 			v.myPid = ""
 		}
 		v.ivm.ResetKeyPair(id.sign, id.verf)
@@ -159,8 +160,12 @@ func (v *voting) baseVote(data vutil.VoteInt) error {
 	if ok := v.tInfo.WithinTime(time.Now()); !ok {
 		return errors.New("invalid vote time")
 	}
-	if has, _ := v.is.Has(v.manCid, time.Second); has{
-		return errors.New("Manager PrivKey is already uploaded")
+	has, err := v.is.Has(v.manCid, time.Second)
+	if err != nil {
+		return errors.New(fmt.Sprintln("vote error:", err))
+	}
+	if has {
+		return errors.New("manPriKey is already uploaded")
 	}
 
 	m, err := v.manPubKey.Encrypt(data.Marshal())

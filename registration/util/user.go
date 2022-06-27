@@ -43,18 +43,11 @@ func (ui *UserIdentity) Unmarshal(m []byte) error {
 	if err := proto.Unmarshal(m, mui); err != nil {
 		return err
 	}
-	//ecies ver.
-	mpub := mui.GetPub()
-	if len(mpub) == 0{return errors.New("invalid IPubKey")}
-	if len(mpub) > 33{return errors.New("invalid IPubKey")}
-	pubKey, err := evutil.UnmarshalPub(mpub)
+	pubKey, err := evutil.UnmarshalPub(mui.GetPub())
 	if err != nil {
 		return err
 	}
-	mpri := mui.GetPriv()
-	if len(mpri) == 0{return errors.New("invalid IPriKey")}
-	if len(mpri) > 32{return errors.New("invalid IPriKey")}
-	privKey, err := evutil.UnmarshalPri(mpri)
+	privKey, err := evutil.UnmarshalPri(mui.GetPriv())
 	if err != nil {
 		return err
 	}

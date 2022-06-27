@@ -10,8 +10,8 @@ import (
 	rgst "github.com/pilinsin/easy-voting/registration"
 	riface "github.com/pilinsin/easy-voting/registration/interface"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
-	vutil "github.com/pilinsin/easy-voting/voting/util"
 	evutil "github.com/pilinsin/easy-voting/util"
+	vutil "github.com/pilinsin/easy-voting/voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
 	pv "github.com/pilinsin/p2p-verse"
 )
@@ -56,7 +56,7 @@ func registrate(t *testing.T, baiStr string) (riface.IRegistration, string, stri
 
 	baseDir := evutil.BaseDir("voting_test_registration", "setup")
 	rCfgAddr := baiStr + "/" + rCfgCid
-	man, err := NewRegistrationWithStores(rCfgAddr, rs.Is, rs.Uhm)
+	man, err := rgst.NewRegistrationWithStores(rCfgAddr, rs.Is, rs.Uhm)
 	checkError(t, err)
 
 	baseDir2 := "voting_test_registration"
@@ -123,13 +123,12 @@ func vote(t *testing.T, baiStr string) {
 	rMan, rcAddr, uidStr, rCloser := registrate(t, baiStr)
 
 	ttl := "test_vtitle"
-	nv := 1
 	ti := makeTimeInfo(t)
 	cands := makeCandidates()
 	vp := &vutil.VoteParams{Min: 0, Max: 1, Total: 1}
 	vt := vutil.Approval
 	baseDir := evutil.BaseDir("voting", "setup")
-	vCfgCid, manIdStr, vStores, err := vutil.NewConfig(ttl, rcAddr, nv, ti, cands, vp, vt)
+	vCfgCid, manIdStr, vStores, err := vutil.NewConfig(ttl, rcAddr, ti, cands, vp, vt)
 	checkError(t, err)
 	t.Log("vCfg generated")
 	rMan.Close()

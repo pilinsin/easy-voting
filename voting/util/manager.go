@@ -27,12 +27,7 @@ func (mi *ManIdentity) Unmarshal(m []byte) error {
 	if err := proto.Unmarshal(m, mManId); err != nil {
 		return err
 	}
-	mpri := mManId.GetPriv()
-	//ecies ver.
-	//len(mpri) > 32 -> go-ethereum/crypto/secp256k1.(*BitCurve).ScalarMult panics
-	if len(mpri) > 32{return errors.New("invalid IPriKey")}
-
-	priv, err := evutil.UnmarshalPri(mpri)
+	priv, err := evutil.UnmarshalPri(mManId.GetPriv())
 	if err != nil {
 		return err
 	}
