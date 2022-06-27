@@ -3,26 +3,21 @@ package votingutil
 import (
 	"encoding/base64"
 	"errors"
+
 	pb "github.com/pilinsin/easy-voting/voting/util/pb"
 	proto "google.golang.org/protobuf/proto"
 
-	"github.com/pilinsin/util/crypto"
+	evutil "github.com/pilinsin/easy-voting/util"
 )
 
 type ManIdentity struct {
-	Priv crypto.IPriKey
-	Sign crypto.ISignKey
-	Verf crypto.IVerfKey
+	Priv evutil.IPriKey
 }
 
 func (mi ManIdentity) Marshal() []byte {
-	mpri, _ := crypto.MarshalPriKey(mi.Priv)
-	msig, _ := crypto.MarshalSignKey(mi.Sign)
-	mver, _ := crypto.MarshalVerfKey(mi.Verf)
+	mpri, _ := mi.Priv.Raw()
 	mManId := &pb.ManIdentity{
 		Priv: mpri,
-		Sign: msig,
-		Verf: mver,
 	}
 	m, _ := proto.Marshal(mManId)
 	return m
@@ -32,23 +27,17 @@ func (mi *ManIdentity) Unmarshal(m []byte) error {
 	if err := proto.Unmarshal(m, mManId); err != nil {
 		return err
 	}
+	mpri := mManId.GetPriv()
+	//ecies ver.
+	//len(mpri) > 32 -> go-ethereum/crypto/secp256k1.(*BitCurve).ScalarMult panics
+	if len(mpri) > 32{return errors.New("invalid IPriKey")}
 
-	priv, err := crypto.UnmarshalPriKey(mManId.GetPriv())
-	if err != nil {
-		return err
-	}
-	sign, err := crypto.UnmarshalSignKey(mManId.GetSign())
-	if err != nil {
-		return err
-	}
-	verf, err := crypto.UnmarshalVerfKey(mManId.GetVerf())
+	priv, err := evutil.UnmarshalPri(mpri)
 	if err != nil {
 		return err
 	}
 
 	mi.Priv = priv
-	mi.Sign = sign
-	mi.Verf = verf
 	return nil
 }
 

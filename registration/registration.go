@@ -1,7 +1,6 @@
 package registration
 
 import (
-	"context"
 	"errors"
 	"path/filepath"
 	"time"
@@ -15,20 +14,17 @@ import (
 	pv "github.com/pilinsin/p2p-verse"
 	crdt "github.com/pilinsin/p2p-verse/crdt"
 	ipfs "github.com/pilinsin/p2p-verse/ipfs"
-	"github.com/pilinsin/util/crypto"
 )
 
 type registration struct {
-	ctx    context.Context
-	cancel func()
-	salt1  string
-	addr   string
-	is     ipfs.Ipfs
-	uhm    crdt.IStore
-	cfg    *rutil.Config
+	salt1 string
+	addr  string
+	is    ipfs.Ipfs
+	uhm   crdt.IStore
+	cfg   *rutil.Config
 }
 
-func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IRegistration, error) {
+func NewRegistration(rCfgAddr, baseDir string) (riface.IRegistration, error) {
 	bAddr, rCfgCid, err := evutil.ParseConfigAddr(rCfgAddr)
 	if err != nil {
 		return nil, err
@@ -49,27 +45,39 @@ func NewRegistration(ctx context.Context, rCfgAddr, baseDir string) (riface.IReg
 	storeDir := filepath.Join(baseDir, "store")
 	stInfo := [][2]string{{rCfg.UhmAddr, "hash"}}
 	opt := &crdt.StoreOpts{Salt: rCfg.Salt2}
-	stores, err := evutil.NewStore(ctx, i2p.NewI2pHost, stInfo, storeDir, save, bootstraps, opt)
+	stores, err := evutil.NewStore(i2p.NewI2pHost, stInfo, storeDir, save, bootstraps, opt)
 	if err != nil {
 		return nil, err
 	}
 	uhm := stores[0]
 
-	ctx, cancel := context.WithCancel(context.Background())
-
 	return &registration{
-		ctx:    ctx,
-		cancel: cancel,
-		salt1:  rCfg.Salt1,
-		addr:   rCfgAddr,
-		is:     is,
-		uhm:    uhm,
-		cfg:    rCfg,
+		salt1: rCfg.Salt1,
+		addr:  rCfgAddr,
+		is:    is,
+		uhm:   uhm,
+		cfg:   rCfg,
+	}, nil
+}
+func NewRegistrationWithStores(rCfgAddr string, is ipfs.Ipfs, uhm crdt.IStore) (riface.IRegistration, error) {
+	_, rCfgCid, err := evutil.ParseConfigAddr(rCfgAddr)
+	if err != nil {
+		return nil, err
+	}
+	rCfg := &rutil.Config{}
+	if err := rCfg.FromCid(rCfgCid, is); err != nil {
+		return nil, err
+	}
+	return &registration{
+		salt1: rCfg.Salt1,
+		addr:  rCfgAddr,
+		is:    is,
+		uhm:   uhm,
+		cfg:   rCfg,
 	}, nil
 }
 
 func (r *registration) Close() {
-	r.cancel()
 	r.is.Close()
 	r.uhm.Close()
 }
@@ -81,16 +89,16 @@ func (r *registration) Address() string {
 	return r.addr
 }
 
-func (r *registration) hasPubKey(pubKey crypto.IPubKey) bool {
+func (r *registration) hasPubKey(pubKey evutil.IPubKey) bool {
 	rs, err := r.uhm.Query()
 	if err != nil {
 		return false
 	}
-	mpub, err := crypto.MarshalPubKey(pubKey)
+	mpub, err := pubKey.Raw()
 	if err != nil {
 		return false
 	}
-	rs = query.NaiveFilter(rs, crdt.ValueMatchFilter{mpub})
+	rs = query.NaiveFilter(rs, crdt.ValueMatchFilter{Val: mpub})
 	resList, err := rs.Rest()
 	rs.Close()
 
@@ -103,12 +111,12 @@ func (r *registration) Registrate(userData ...string) (string, error) {
 		return "", errors.New("already registrated")
 	}
 
-	var userEncKeyPair crypto.IPubEncryptKeyPair
+	userEncKeyPair := evutil.NewPubKeyPair()
 	for {
-		userEncKeyPair = crypto.NewPubEncryptKeyPair()
 		if has := r.hasPubKey(userEncKeyPair.Public()); !has {
 			break
 		}
+		userEncKeyPair = evutil.NewPubKeyPair()
 	}
 
 	id := rutil.NewUserIdentity(
@@ -117,7 +125,7 @@ func (r *registration) Registrate(userData ...string) (string, error) {
 		userEncKeyPair.Private(),
 	)
 
-	mpub, err := crypto.MarshalPubKey(userEncKeyPair.Public())
+	mpub, err := userEncKeyPair.Public().Raw()
 	if err != nil {
 		return "", err
 	}

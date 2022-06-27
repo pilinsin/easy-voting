@@ -1,7 +1,6 @@
 package votingmodule
 
 import (
-	"context"
 	"errors"
 	"log"
 	"strconv"
@@ -9,10 +8,11 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	peer "github.com/libp2p/go-libp2p-core/peer"
 
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	crdt "github.com/pilinsin/p2p-verse/crdt"
+	ipfs "github.com/pilinsin/p2p-verse/ipfs"
 )
 
 type rangeVoting struct {
@@ -21,12 +21,12 @@ type rangeVoting struct {
 	max int
 }
 
-func NewRangeVoting(ctx context.Context, vCfg *vutil.Config, storeDir string, bs []peer.AddrInfo, save bool) (viface.ITypedVoting, error) {
+func NewRangeVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
 	rv := &rangeVoting{
 		min: vCfg.Params.Min,
 		max: vCfg.Params.Max,
 	}
-	if err := rv.init(ctx, vCfg, storeDir, bs, save); err != nil {
+	if err := rv.init(vCfg, is, hkm, ivm); err != nil {
 		return nil, err
 	}
 	return rv, nil

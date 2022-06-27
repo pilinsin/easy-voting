@@ -29,5 +29,9 @@ func (vpe *VParamEntry) Render() fyne.CanvasObject {
 	return form
 }
 func (vpe *VParamEntry) VoteParams() *vutil.VoteParams {
-	return &vutil.VoteParams{vpe.min.Num(), vpe.max.Num(), vpe.total.Num()}
+	return &vutil.VoteParams{
+		Min:   vpe.min.Num(),
+		Max:   vpe.max.Num(),
+		Total: vpe.total.Num(),
+	}
 }

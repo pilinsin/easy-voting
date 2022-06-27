@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"time"
 
 	evutil "github.com/pilinsin/easy-voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
@@ -11,11 +12,20 @@ import (
 	crdt "github.com/pilinsin/p2p-verse/crdt"
 	ipfs "github.com/pilinsin/p2p-verse/ipfs"
 	"github.com/pilinsin/util"
-	"github.com/pilinsin/util/crypto"
+	hash "github.com/pilinsin/util/hash"
 
 	pb "github.com/pilinsin/easy-voting/registration/util/pb"
 	proto "google.golang.org/protobuf/proto"
 )
+
+type RegistrationStores struct{
+	Is ipfs.Ipfs
+	Uhm crdt.IStore
+}
+func (rs *RegistrationStores) Close(){
+	if rs.Is != nil{rs.Is.Close()}
+	if rs.Uhm != nil{rs.Uhm.Close()}
+}
 
 type Config struct {
 	Title   string
@@ -25,8 +35,8 @@ type Config struct {
 	Labels  []string
 }
 
-func NewConfig(title string, userDataset <-chan []string, userDataLabels []string, bAddr string) (string, string, error) {
-	salt2 := crypto.HashWithSize([]byte(title), util.GenRandomBytes(30), 32)
+func NewConfig(title string, userDataset <-chan []string, userDataLabels []string, bAddr string) (string, *RegistrationStores, error) {
+	salt2 := hash.HashWithSize([]byte(title), util.GenRandomBytes(30), 32)
 	cfg := &Config{
 		Title:  title,
 		Salt1:  title + util.GenUniqueID(30, 30),
@@ -48,32 +58,37 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 
 	storeDir := filepath.Join(baseDir, "store")
 	os.RemoveAll(storeDir)
-	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, bootstraps...)
-	ac, err := v.NewAccessController(pv.RandString(8), uhHashes)
+	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, bootstraps...)	
+	uhm, err := v.NewStore(pv.RandString(8), "hash", &crdt.StoreOpts{Salt: salt2})
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
-	uhm, err := v.NewStore(pv.RandString(8), "hash", &crdt.StoreOpts{Salt: salt2, Ac: ac})
+	uhm, err = v.NewAccessStore(uhm, uhHashes)
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
-	defer uhm.Close()
-
 	cfg.UhmAddr = uhm.Address()
 
 	ipfsDir := filepath.Join(baseDir, "ipfs")
 	os.RemoveAll(ipfsDir)
 	is, err := evutil.NewIpfs(i2p.NewI2pHost, ipfsDir, true, bootstraps)
 	if err != nil {
-		return "", "", err
+		uhm.Close()
+		return "", nil, err
 	}
-	defer is.Close()
 	cid, err := cfg.toCid(is)
 	if err != nil {
-		return "", "", err
+		uhm.Close()
+		is.Close()
+		return "", nil, err
 	}
 
-	return "r/" + cid, baseDir, nil
+	rs := &RegistrationStores{
+		Is: is,
+		Uhm: uhm,
+	}
+	
+	return "r/" + cid, rs, nil
 }
 
 func (cfg Config) Marshal() []byte {
@@ -102,10 +117,10 @@ func (cfg *Config) Unmarshal(m []byte) error {
 }
 
 func (cfg *Config) toCid(is ipfs.Ipfs) (string, error) {
-	return is.Add(cfg.Marshal())
+	return is.Add(cfg.Marshal(), time.Second*10)
 }
 func (cfg *Config) FromCid(rCfgCid string, is ipfs.Ipfs) error {
-	m, err := is.Get(rCfgCid)
+	m, err := is.Get(rCfgCid, time.Second*5)
 	if err != nil {
 		return errors.New("get from rCfgCid error")
 	}

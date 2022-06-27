@@ -1,21 +1,19 @@
 package voting
 
 import (
-	"context"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/pilinsin/util"
-	"github.com/pilinsin/util/crypto"
 
 	rgst "github.com/pilinsin/easy-voting/registration"
 	riface "github.com/pilinsin/easy-voting/registration/interface"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	evutil "github.com/pilinsin/easy-voting/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
 	pv "github.com/pilinsin/p2p-verse"
-	crdt "github.com/pilinsin/p2p-verse/crdt"
-	//viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
 func checkError(t *testing.T, err error, args ...interface{}) {
@@ -51,26 +49,18 @@ func userDataset() (<-chan []string, []string) {
 	return ch, labels
 }
 
-func genKp() (crdt.IPrivKey, crdt.IPubKey, error) {
-	kp := crypto.NewSignKeyPair()
-	return kp.Sign(), kp.Verify(), nil
-}
-func marshalPub(pub crdt.IPubKey) ([]byte, error) {
-	return crypto.MarshalVerfKey(pub.(crypto.IVerfKey))
-}
-func unmarshalPub(m []byte) (crdt.IPubKey, error) {
-	return crypto.UnmarshalVerfKey(m)
-}
-
-func registrate(t *testing.T, baiStr string) (riface.IRegistration, string, string) {
+func registrate(t *testing.T, baiStr string) (riface.IRegistration, string, string, func()) {
 	users, labels := userDataset()
-	rCfgAddr, err := rutil.NewConfig("test_rTitle", users, labels, baiStr)
+	rCfgCid, rs, err := rutil.NewConfig("test_rTitle", users, labels, baiStr)
 	checkError(t, err)
 
-	man, err := rgst.NewRegistration(context.Background(), rCfgAddr)
+	baseDir := evutil.BaseDir("voting_test_registration", "setup")
+	rCfgAddr := baiStr + "/" + rCfgCid
+	man, err := NewRegistrationWithStores(rCfgAddr, rs.Is, rs.Uhm)
 	checkError(t, err)
 
-	user, err := rgst.NewRegistration(context.Background(), rCfgAddr)
+	baseDir2 := "voting_test_registration"
+	user, err := rgst.NewRegistration(rCfgAddr, baseDir2)
 	checkError(t, err)
 	defer user.Close()
 
@@ -83,7 +73,8 @@ func registrate(t *testing.T, baiStr string) (riface.IRegistration, string, stri
 	}
 	time.Sleep(time.Minute * 5)
 
-	return man, rCfgAddr, uidStr
+	os.RemoveAll(baseDir2)
+	return man, rCfgAddr, uidStr, func() { os.RemoveAll(baseDir) }
 }
 
 func makeTimeInfo(t *testing.T) *util.TimeInfo {
@@ -105,7 +96,13 @@ func makeCandidates() []*vutil.Candidate {
 
 	cands := make([]*vutil.Candidate, len(nameGroups))
 	for idx, ng := range nameGroups {
-		cands[idx] = &vutil.Candidate{ng[0], ng[1], "", nil, ""}
+		cands[idx] = &vutil.Candidate{
+			Name:    ng[0],
+			Group:   ng[1],
+			Url:     "",
+			Image:   nil,
+			ImgName: "",
+		}
 	}
 
 	return cands
@@ -123,27 +120,31 @@ func makeVote(name string, cands []*vutil.Candidate) vutil.VoteInt {
 	return vi
 }
 func vote(t *testing.T, baiStr string) {
-	rMan, rcAddr, uidStr := registrate(t, baiStr)
+	rMan, rcAddr, uidStr, rCloser := registrate(t, baiStr)
 
 	ttl := "test_vtitle"
 	nv := 1
 	ti := makeTimeInfo(t)
 	cands := makeCandidates()
-	vp := &vutil.VoteParams{0, 1, 1}
+	vp := &vutil.VoteParams{Min: 0, Max: 1, Total: 1}
 	vt := vutil.Approval
-	vCfgAddr, manIdStr, err := vutil.NewConfig(ttl, rcAddr, nv, ti, cands, vp, vt)
+	baseDir := evutil.BaseDir("voting", "setup")
+	vCfgCid, manIdStr, vStores, err := vutil.NewConfig(ttl, rcAddr, nv, ti, cands, vp, vt)
 	checkError(t, err)
 	t.Log("vCfg generated")
 	rMan.Close()
+	rCloser()
 
-	vMan, err := NewVoting(context.Background(), vCfgAddr)
+	vCfgAddr := baiStr + "/" + vCfgCid
+	vMan, err := NewVotingWithStores(vCfgAddr, vStores.Is, vStores.Hkm, vStores.Ivm)
 	checkError(t, err)
-	man.SetIdentity(manIdStr)
+	vMan.SetIdentity(manIdStr)
 	t.Log("vMan generated")
 
-	user, err := NewVoting(context.Background(), vCfgAddr)
+	baseDir2 := "voting_test_voting"
+	user, err := NewVoting(vCfgAddr, baseDir2)
 	checkError(t, err)
-	man.SetIdentity(uidStr)
+	user.SetIdentity(uidStr)
 	t.Log("vUser generated")
 
 	/*
@@ -181,12 +182,12 @@ func vote(t *testing.T, baiStr string) {
 
 	vMan.Close()
 	user.Close()
+	os.RemoveAll(baseDir)
+	os.RemoveAll(baseDir2)
 }
 
 //go test -test.v=true -timeout 1h .
 func TestVoting(t *testing.T) {
-	crdt.InitCryptoFuncs(genKp, marshalPub, unmarshalPub)
-
 	bstrp, err := pv.NewBootstrap(i2p.NewI2pHost)
 	checkError(t, err)
 	defer bstrp.Close()

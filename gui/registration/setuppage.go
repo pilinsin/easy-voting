@@ -1,7 +1,6 @@
 package registrationpage
 
 import (
-	"context"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -49,7 +48,7 @@ func NewSetupPage(w fyne.Window, rs map[string]riface.IRegistration) fyne.Canvas
 			noteLabel.SetText("load csv error: " + err.Error())
 			return
 		}
-		cid, baseDir, err := rutil.NewConfig(titleEntry.Text, dataset, labels, bAddrEntry.Text)
+		cid, rStores, err := rutil.NewConfig(titleEntry.Text, dataset, labels, bAddrEntry.Text)
 		if err != nil {
 			noteLabel.SetText("new rConfig error: " + err.Error())
 			return
@@ -61,15 +60,15 @@ func NewSetupPage(w fyne.Window, rs map[string]riface.IRegistration) fyne.Canvas
 			rs[mapKey] = nil
 		}
 		rCfgAddr := bAddrEntry.Text + "/" + cid
-		r, err := rgst.NewRegistration(context.Background(), rCfgAddr, baseDir)
+		r, err := rgst.NewRegistrationWithStores(rCfgAddr, rStores.Is, rStores.Uhm)
 		if err != nil {
+			rStores.Close()
 			noteLabel.SetText("new rConfig error: " + err.Error())
 			return
 		}
 		noteLabel.SetText("done")
 		addrLabel.SetText(cid)
 		rs[mapKey] = r
-		//form.Hide()
 	}
 	form.ExtendBaseWidget(form)
 

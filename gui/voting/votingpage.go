@@ -1,8 +1,6 @@
 package votingpage
 
 import (
-	"context"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -11,7 +9,7 @@ import (
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 )
 
-func LoadPage(ctx context.Context, bAddr, vCfgCid string, v viface.IVoting) (string, fyne.CanvasObject) {
+func LoadPage(bAddr, vCfgCid string, v viface.IVoting) (string, fyne.CanvasObject) {
 	vCfg := v.Config()
 
 	idEntry := widget.NewEntry()

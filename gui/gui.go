@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"context"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -67,7 +66,7 @@ func (gui *GUI) withRemove(page fyne.CanvasObject) fyne.CanvasObject {
 	return container.NewBorder(container.NewBorder(nil, nil, nil, rmvBtn), nil, nil, nil, page)
 }
 
-func (gui *GUI) loadPage(ctx context.Context, bAddr, cid string) (string, fyne.CanvasObject) {
+func (gui *GUI) loadPage(bAddr, cid string) (string, fyne.CanvasObject) {
 	addrs := strings.Split(cid, "/")
 	if len(addrs) != 2 {
 		return "", nil
@@ -79,25 +78,25 @@ func (gui *GUI) loadPage(ctx context.Context, bAddr, cid string) (string, fyne.C
 		baseDir := evutil.BaseDir("registration", stAddr)
 		r, exist := gui.rs[baseDir]
 		if !exist {
-			r, err = rgst.NewRegistration(ctx, bAddr+"/"+cid, baseDir)
+			r, err = rgst.NewRegistration(bAddr+"/"+cid, baseDir)
 			if err != nil {
 				return "", nil
 			}
 			gui.rs[baseDir] = r
 		}
-		return rpage.LoadPage(ctx, bAddr, cid, r)
+		return rpage.LoadPage(bAddr, cid, r)
 	}
 	if mode == "v" {
 		baseDir := evutil.BaseDir("voting", stAddr)
 		v, exist := gui.vs[baseDir]
 		if !exist {
-			v, err = vt.NewVoting(ctx, bAddr+"/"+cid, baseDir)
+			v, err = vt.NewVoting(bAddr+"/"+cid, baseDir)
 			if err != nil {
 				return "", nil
 			}
 			gui.vs[baseDir] = v
 		}
-		return vpage.LoadPage(ctx, bAddr, cid, v)
+		return vpage.LoadPage(bAddr, cid, v)
 	}
 	return "", nil
 }
@@ -109,7 +108,7 @@ func (gui *GUI) loadPageForm() fyne.CanvasObject {
 	addrEntry := container.NewGridWithColumns(2, bAddrEntry, cidEntry)
 
 	onTapped := func() {
-		title, loadPage := gui.loadPage(context.Background(), bAddrEntry.Text, cidEntry.Text)
+		title, loadPage := gui.loadPage(bAddrEntry.Text, cidEntry.Text)
 		bAddrEntry.SetText("")
 		cidEntry.SetText("")
 		if loadPage == nil {

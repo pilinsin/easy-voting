@@ -4,27 +4,27 @@ import (
 	pb "github.com/pilinsin/easy-voting/voting/util/pb"
 	proto "google.golang.org/protobuf/proto"
 
-	"github.com/pilinsin/util/crypto"
+	evutil "github.com/pilinsin/easy-voting/util"
 )
 
 type UserKeyPair struct {
-	signKey crypto.ISignKey
-	verfKey crypto.IVerfKey
+	signKey evutil.ISignKey
+	verfKey evutil.IVerfKey
 }
 
 func NewUserKeyPair() *UserKeyPair {
-	keyPair := crypto.NewSignKeyPair()
+	keyPair := evutil.NewSignKeyPair()
 	return &UserKeyPair{keyPair.Sign(), keyPair.Verify()}
 }
-func (ukp UserKeyPair) Sign() crypto.ISignKey {
+func (ukp UserKeyPair) Sign() evutil.ISignKey {
 	return ukp.signKey
 }
-func (ukp UserKeyPair) Verify() crypto.IVerfKey {
+func (ukp UserKeyPair) Verify() evutil.IVerfKey {
 	return ukp.verfKey
 }
 func (ukp UserKeyPair) Marshal() []byte {
-	msign, _ := crypto.MarshalSignKey(ukp.signKey)
-	mverf, _ := crypto.MarshalVerfKey(ukp.verfKey)
+	msign, _ := ukp.signKey.Raw()
+	mverf, _ := ukp.verfKey.Raw()
 	muk := &pb.KeyPair{
 		SignKey: msign,
 		VerfKey: mverf,
@@ -38,11 +38,11 @@ func (ukp *UserKeyPair) Unmarshal(m []byte) error {
 		return err
 	}
 
-	signKey, err := crypto.UnmarshalSignKey(muk.SignKey)
+	signKey, err := evutil.UnmarshalSign(muk.SignKey)
 	if err != nil {
 		return err
 	}
-	verfKey, err := crypto.UnmarshalVerfKey(muk.VerfKey)
+	verfKey, err := evutil.UnmarshalVerf(muk.VerfKey)
 	if err != nil {
 		return err
 	}

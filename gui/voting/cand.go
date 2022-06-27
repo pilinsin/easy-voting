@@ -139,7 +139,7 @@ func (ce *candEntry) Candidate() *vutil.Candidate {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 	select {
-	case res, _ = <-ce.thumbnail:
+	case res = <-ce.thumbnail:
 	case <-ctx.Done():
 		res = gutil.DefaultIcon()
 		close(ce.thumbnail)
@@ -168,7 +168,10 @@ func imageDialog(w fyne.Window, res chan<- fyne.Resource, hideObj fyne.CanvasObj
 			if err != nil {
 				return
 			}
-			loadRes := &fyne.StaticResource{rc.URI().Name(), data}
+			loadRes := &fyne.StaticResource{
+				StaticName:    rc.URI().Name(),
+				StaticContent: data,
+			}
 			go func() {
 				res <- loadRes
 				close(res)

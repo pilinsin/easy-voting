@@ -1,26 +1,23 @@
 package votingmodule
 
 import (
-	"context"
 	"errors"
 	"time"
 
 	query "github.com/ipfs/go-datastore/query"
-	peer "github.com/libp2p/go-libp2p-core/peer"
 
 	rutil "github.com/pilinsin/easy-voting/registration/util"
 	evutil "github.com/pilinsin/easy-voting/util"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
-	i2p "github.com/pilinsin/go-libp2p-i2p"
 	crdt "github.com/pilinsin/p2p-verse/crdt"
+	ipfs "github.com/pilinsin/p2p-verse/ipfs"
 	"github.com/pilinsin/util"
-	"github.com/pilinsin/util/crypto"
 )
 
 type identity struct {
-	manPriv crypto.IPriKey
-	sign    crypto.ISignKey
-	verf    crypto.IVerfKey
+	manPriv evutil.IPriKey
+	sign    evutil.ISignKey
+	verf    evutil.IVerfKey
 }
 
 type voting struct {
@@ -29,39 +26,26 @@ type voting struct {
 	tInfo     *util.TimeInfo
 	cands     []*vutil.Candidate
 	myPid     string
-	manPid    string
-	manPubKey crypto.IPubKey
-	manPriKey crypto.IPriKey
+	manCid    string
+	manPubKey evutil.IPubKey
+	manPriKey evutil.IPriKey
+	is        ipfs.Ipfs
 	hkm       crdt.IStore
 	ivm       crdt.IUpdatableSignatureStore
 	cfg       *vutil.Config
 	idStr     string
 }
 
-func (v *voting) init(ctx context.Context, vCfg *vutil.Config, storeDir string, bootstraps []peer.AddrInfo, save bool) error {
-	stInfo := [][2]string{
-		{vCfg.HkmAddr, "signature"},
-		{vCfg.IvmAddr, "updatableSignature"},
-	}
-	stores, err := evutil.NewStore(ctx, i2p.NewI2pHost, stInfo, storeDir, save, bootstraps)
-	if err != nil {
-		return err
-	}
-	if len(stores) >= 2 {
-		return errors.New("too few stores loaded")
-	}
-
-	hkm, tmp := stores[0], stores[1]
-	ivm := tmp.(crdt.IUpdatableSignatureStore)
-
+func (v *voting) init(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) error {
 	v.salt1 = vCfg.Salt1
 	v.salt2 = vCfg.Salt2
 	v.tInfo = vCfg.Time
 	v.cands = vCfg.Candidates
 	v.myPid = ""
-	v.manPid = vCfg.ManPid
+	v.manCid = vCfg.ManPriCid
 	v.manPubKey = vCfg.PubKey
 	v.manPriKey = nil
+	v.is = is
 	v.hkm = hkm
 	v.ivm = ivm
 	v.cfg = vCfg
@@ -69,6 +53,7 @@ func (v *voting) init(ctx context.Context, vCfg *vutil.Config, storeDir string, 
 }
 
 func (v *voting) Close() {
+	v.is.Close()
 	v.hkm.Close()
 	v.ivm.Close()
 }
@@ -81,19 +66,30 @@ func (v *voting) SetIdentity(idStr string) {
 	var id *identity
 	mi := &vutil.ManIdentity{}
 	if err := mi.FromString(idStr); err == nil {
-		id = &identity{mi.Priv, mi.Sign, mi.Verf}
-	}
-
-	ui := &rutil.UserIdentity{}
-	if err := ui.FromString(idStr); err == nil {
-		ukp, err := getUserKeyPair(v.hkm, ui, v.salt2)
+		cg, err := ipfs.NewCidGetter()
 		if err == nil {
-			id = &identity{nil, ukp.Sign(), ukp.Verify()}
+			m, _ := mi.Priv.Raw()
+			cid, err := cg.Get(m)
+			if v.manCid == cid && err == nil {
+				id = &identity{mi.Priv, nil, nil}
+			}
+		}
+	}else{
+		ui := &rutil.UserIdentity{}
+		if err := ui.FromString(idStr); err == nil {
+			ukp, err := getUserKeyPair(v.hkm, ui, v.salt2)
+			if err == nil {
+				id = &identity{nil, ukp.Sign(), ukp.Verify()}
+			}
 		}
 	}
 
 	if id != nil {
-		v.myPid = crdt.PubKeyToStr(id.verf)
+		if id.verf != nil{
+			v.myPid = crdt.PubKeyToStr(id.verf)
+		}else{
+			v.myPid = ""
+		}
 		v.ivm.ResetKeyPair(id.sign, id.verf)
 		v.manPriKey = id.manPriv
 		v.idStr = idStr
@@ -106,7 +102,7 @@ func (v *voting) GetIdentity() string {
 func getUserKeyPair(hkm crdt.IStore, ui *rutil.UserIdentity, salt2 []byte) (*vutil.UserKeyPair, error) {
 	uhHash := crdt.MakeHashKey(ui.UserHash(), salt2)
 	rs, err := hkm.Query(query.Query{
-		Filters: []query.Filter{crdt.KeyExistFilter{uhHash}},
+		Filters: []query.Filter{crdt.KeyExistFilter{Key: uhHash}},
 		Limit:   1,
 	})
 	if err != nil {
@@ -147,22 +143,24 @@ func (v *voting) candNameGroups() []string {
 }
 
 func (v *voting) baseVote(data vutil.VoteInt) error {
-	if v.myPid == "" {
-		return errors.New("no identity")
-	}
 	if v.manPriKey != nil {
-		m, err := crypto.MarshalPriKey(v.manPriKey)
+		m, err := v.manPriKey.Raw()
 		if err != nil {
 			return err
 		}
-		return v.ivm.Put(v.salt1, m)
+		_, err = v.is.Add(m, time.Second*10)
+		return err
+	}
+
+	if v.myPid == "" {
+		return errors.New("no identity")
 	}
 
 	if ok := v.tInfo.WithinTime(time.Now()); !ok {
 		return errors.New("invalid vote time")
 	}
-	if _, err := v.getDecryptKey(); err != nil {
-		return err
+	if has, _ := v.is.Has(v.manCid, time.Second); has{
+		return errors.New("Manager PrivKey is already uploaded")
 	}
 
 	m, err := v.manPubKey.Encrypt(data.Marshal())
@@ -178,17 +176,12 @@ func (v *voting) baseVote(data vutil.VoteInt) error {
 	return nil
 }
 
-func (v voting) getDecryptKey() (crypto.IPriKey, error) {
-	rs, err := v.ivm.(crdt.IUpdatableSignatureStore).QueryWithoutTc(query.Query{
-		Prefix: "/" + v.manPid + "/" + v.salt1,
-		Limit:  1,
-	})
+func (v voting) getDecryptKey() (evutil.IPriKey, error) {
+	m, err := v.is.Get(v.manCid, time.Second)
 	if err != nil {
 		return nil, err
 	}
-
-	res := <-rs.Next()
-	return crypto.UnmarshalPriKey(res.Value)
+	return evutil.UnmarshalPri(m)
 }
 
 func (v voting) baseGetMyVote() (*vutil.VoteInt, error) {
@@ -224,7 +217,7 @@ func (v voting) baseGetVotes() (<-chan *vutil.VoteInt, int, error) {
 	}
 
 	rs, err := v.ivm.Query(query.Query{
-		Filters: []query.Filter{crdt.KeyExistFilter{v.salt1}},
+		Filters: []query.Filter{crdt.KeyExistFilter{Key: v.salt1}},
 	})
 	if err != nil {
 		return nil, -1, err
@@ -248,7 +241,7 @@ func (v voting) baseGetVotes() (<-chan *vutil.VoteInt, int, error) {
 	}()
 
 	rs2, err := v.ivm.Query(query.Query{
-		Filters:  []query.Filter{crdt.KeyExistFilter{v.salt1}},
+		Filters:  []query.Filter{crdt.KeyExistFilter{Key: v.salt1}},
 		KeysOnly: true,
 	})
 	if err != nil {

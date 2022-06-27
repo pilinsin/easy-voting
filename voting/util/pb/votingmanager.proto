@@ -4,6 +4,4 @@ option go_package = ".;pb";
 
 message ManIdentity{
 	bytes	priv 	 = 1;
-	bytes	sign 	 = 2;
-	bytes 	verf 	 = 3;
 }

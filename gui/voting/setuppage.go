@@ -1,7 +1,6 @@
 package votingpage
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -36,13 +35,10 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 	bAddr.SetPlaceHolder("Bootstraps Address")
 	rCfgCid := widget.NewEntry()
 	rCfgCid.SetPlaceHolder("Registration Config Cid")
-	rCfgAddr := container.NewHBox(bAddr, rCfgCid)
-	nVerifiers := gutil.NewIntEntry()
+	rCfgAddr := container.NewGridWithColumns(2, bAddr, rCfgCid)
 	cands := NewCandForm()
 	vParam := NewVParamEntry()
 	vType := widget.NewSelect(vutil.VotingTypes(), nil)
-
-	nVerifiers.SetPlaceHolder("1~")
 
 	form := &widget.Form{}
 	form.Items = append(form.Items, widget.NewFormItem("title", title))
@@ -50,7 +46,6 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 	form.Items = append(form.Items, widget.NewFormItem("end", end.Render()))
 	form.Items = append(form.Items, widget.NewFormItem("location", loc))
 	form.Items = append(form.Items, widget.NewFormItem("rCfgAddr", rCfgAddr))
-	form.Items = append(form.Items, widget.NewFormItem("nVerifiers", nVerifiers))
 	form.Items = append(form.Items, widget.NewFormItem("candidates", cands.Render(w)))
 	form.Items = append(form.Items, widget.NewFormItem("voteParams", vParam.Render()))
 	form.Items = append(form.Items, widget.NewFormItem("voting type", vType))
@@ -74,10 +69,6 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 			noteLabel.SetText("location is empty")
 			return
 		}
-		if nVerifiers.Num() <= 0 {
-			noteLabel.SetText("nVerifiers must be positive")
-			return
-		}
 		candidates := cands.Candidates()
 		if len(candidates) == 0 {
 			noteLabel.SetText("there are no candidates")
@@ -85,10 +76,9 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 		}
 
 		rCfgAddr := bAddr.Text + "/" + rCfgCid.Text
-		cid, baseDir, mid, err := vutil.NewConfig(
+		cid, mid, vStores, err := vutil.NewConfig(
 			title.Text,
 			rCfgAddr,
-			nVerifiers.Num(),
 			tInfo,
 			candidates,
 			vParam.VoteParams(),
@@ -105,8 +95,9 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 			vs[mapKey] = nil
 		}
 		vCfgAddr := bAddr.Text + "/" + cid
-		v, err := voting.NewVoting(context.Background(), vCfgAddr, baseDir)
+		v, err := voting.NewVotingWithStores(vCfgAddr, vStores.Is, vStores.Hkm, vStores.Ivm)
 		if err != nil {
+			vStores.Close()
 			noteLabel.SetText(fmt.Sprintln(err))
 			return
 		}

@@ -62,7 +62,7 @@ func (lcb *loadCsvButton) Read() ([]string, <-chan []string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 	select {
-	case r, _ = <-lcb.reader:
+	case r = <-lcb.reader:
 		isReaderGet = true
 	case <-ctx.Done():
 		//close(ce.thumbnail)

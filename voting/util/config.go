@@ -1,9 +1,8 @@
 package votingutil
 
 import (
-	"context"
-	"errors"
 	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"time"
@@ -18,7 +17,6 @@ import (
 	crdt "github.com/pilinsin/p2p-verse/crdt"
 	ipfs "github.com/pilinsin/p2p-verse/ipfs"
 	"github.com/pilinsin/util"
-	"github.com/pilinsin/util/crypto"
 )
 
 type VotingType int
@@ -143,17 +141,32 @@ func encodeTimeInfo(ti *util.TimeInfo) *pb.TimeInfo {
 	}
 }
 func decodeTimeInfo(ti *pb.TimeInfo) *util.TimeInfo {
-	return &util.TimeInfo{ti.Begin, ti.End, ti.Loc}
+	return &util.TimeInfo{
+		Begin: ti.Begin,
+		End:   ti.End,
+		Loc:   ti.Loc,
+	}
 }
 
+
+type VotingStores struct{
+	Is ipfs.Ipfs
+	Hkm crdt.IStore
+	Ivm crdt.IUpdatableSignatureStore
+}
+func (vs *VotingStores) Close(){
+	if vs.Is != nil{vs.Is.Close()}
+	if vs.Hkm != nil{vs.Hkm.Close()}
+	if vs.Ivm != nil{vs.Ivm.Close()}
+}
 type Config struct {
 	Title      string
 	Time       *util.TimeInfo
 	Salt1      string
 	Salt2      []byte
 	Candidates []*Candidate
-	ManPid     string
-	PubKey     crypto.IPubKey
+	ManPriCid  string
+	PubKey     evutil.IPubKey
 	Params     *VoteParams
 	Type       VotingType
 	HkmAddr    string
@@ -161,10 +174,10 @@ type Config struct {
 	Labels     []string
 }
 
-func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, cands []*Candidate, vParam *VoteParams, vType VotingType) (string, string, string, error) {
+func NewConfig(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate, vParam *VoteParams, vType VotingType) (string, string, *VotingStores, error) {
 	bAddr, rCfgCid, err := evutil.ParseConfigAddr(rCfgAddr)
 	if err != nil {
-		return "", "", "", err
+		return "", "", nil, err
 	}
 	bootstraps := pv.AddrInfosFromString(bAddr)
 
@@ -174,53 +187,53 @@ func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, can
 	os.RemoveAll(ipfsDir)
 	is, err := evutil.NewIpfs(i2p.NewI2pHost, ipfsDir, true, bootstraps)
 	if err != nil {
-		return "", "", "", err
+		return "", "", nil, err
 	}
-	defer is.Close()
+
 	rCfg := &rutil.Config{}
 	if err := rCfg.FromCid(rCfgCid, is); err != nil {
-		return "", "", "", err
+		is.Close()
+		return "", "", nil, err
 	}
 
 	storeDir := filepath.Join(baseDir, "store")
 	os.RemoveAll(storeDir)
 	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, bootstraps...)
 
-	uhm, err := v.LoadStore(context.Background(), rCfg.UhmAddr, "hash")
+	uhm, err := v.NewStore(rCfg.UhmAddr, "hash")
 	if err != nil {
-		return "", "", "", err
+		is.Close()
+		return "", "", nil, err
 	}
-	defer uhm.Close()
 
-	skp := crypto.NewSignKeyPair()
+	skp := evutil.NewSignKeyPair()
 	ch := make(chan string)
 	go func() {
 		defer close(ch)
 		ch <- crdt.PubKeyToStr(skp.Verify())
-	}()
-	ac, err := v.NewAccessController(pv.RandString(8), ch)
+	}()	
+	hkm, err := v.NewStore(pv.RandString(8), "signature", &crdt.StoreOpts{Pub: skp.Verify(), Priv: skp.Sign()})
 	if err != nil {
-		return "", "", "", err
+		is.Close()
+		return "", "", nil, err
 	}
-	hkm, err := v.NewStore(pv.RandString(8), "signature", &crdt.StoreOpts{Pub: skp.Verify(), Priv: skp.Sign(), Ac: ac})
+	hkm, err = v.NewAccessStore(hkm, ch)
 	if err != nil {
-		return "", "", "", err
+		is.Close()
+		return "", "", nil, err
 	}
-	defer hkm.Close()
+	hkmAddr := hkm.Address()
 
-	signKeyPair := crypto.NewSignKeyPair()
-	manPid := crdt.PubKeyToStr(signKeyPair.Verify())
 	accesses := make(chan string)
 	go func() {
 		defer close(accesses)
-		accesses <- manPid
-
+		defer uhm.Close()
 		rs, err := uhm.Query()
 		if err != nil {
 			return
 		}
 		for res := range rs.Next() {
-			userPubKey, err := crypto.UnmarshalPubKey(res.Value)
+			userPubKey, err := evutil.UnmarshalPub(res.Value)
 			if err != nil {
 				continue
 			}
@@ -232,66 +245,89 @@ func NewConfig(title, rCfgAddr string, nVerifiers int, tInfo *util.TimeInfo, can
 			if err := hkm.Put(res.Key, enc); err != nil {
 				continue
 			}
-			fmt.Println("encUserKeyPair appended")
 			accesses <- crdt.PubKeyToStr(ukp.Verify())
+			fmt.Println(res.Key, "is appended")
 		}
+		rs.Close()
 	}()
-	ac2, err := v.NewAccessController(pv.RandString(8), accesses)
-	if err != nil {
-		return "", "", "", err
-	}
 
-	begin := tInfo.BeginTime()
 	end := tInfo.EndTime()
-	tc, err := v.NewTimeController(pv.RandString(8), begin, end, time.Minute*5, time.Second*10, nVerifiers)
+	opt := &crdt.StoreOpts{TimeLimit: end}
+	tmp, err := v.NewStore(pv.RandString(8), "updatableSignature", opt)
 	if err != nil {
-		return "", "", "", err
+		is.Close()
+		hkm.Close()
+		return "", "", nil, err
 	}
-
-	opt := &crdt.StoreOpts{Ac: ac2, Tc: tc}
-	ivm, err := v.NewStore(pv.RandString(8), "updatableSignature", opt)
+	tmp, err = v.NewAccessStore(tmp, accesses)
 	if err != nil {
-		return "", "", "", err
+		is.Close()
+		hkm.Close()
+		return "", "", nil, err
 	}
-	defer ivm.Close()
+	ivm := tmp.(crdt.IUpdatableSignatureStore)
+	ivmAddr := ivm.Address()
 
-	encKeyPair := crypto.NewPubEncryptKeyPair()
+	encKeyPair := evutil.NewPubKeyPair()
+	cg, err := ipfs.NewCidGetter()
+	if err != nil {
+		is.Close()
+		hkm.Close()
+		ivm.Close()
+		return "", "", nil, err
+	}
+	defer cg.Close()
+	m, _ := encKeyPair.Private().Raw()
+	cid, err := cg.Get(m)
+	if err != nil {
+		is.Close()
+		hkm.Close()
+		ivm.Close()
+		return "", "", nil, err
+	}
+	
+
 	vCfg := &Config{
 		Title:      title,
 		Time:       tInfo,
 		Salt1:      rCfg.Salt1,
 		Salt2:      rCfg.Salt2,
 		Candidates: cands,
-		ManPid:     manPid,
+		ManPriCid:  cid,
 		PubKey:     encKeyPair.Public(),
 		Params:     vParam,
 		Type:       vType,
-		HkmAddr:    hkm.Address(),
-		IvmAddr:    ivm.Address(),
+		HkmAddr:    hkmAddr,
+		IvmAddr:    ivmAddr,
 		Labels:     rCfg.Labels,
 	}
-	manId := &ManIdentity{
-		Priv: encKeyPair.Private(),
-		Sign: signKeyPair.Sign(),
-		Verf: signKeyPair.Verify(),
-	}
-
 	vCfgCid, err := vCfg.toCid(is)
 	if err != nil {
-		return "", "", "", err
+		return "", "", nil, err
 	}
-	return "v/" + vCfgCid, baseDir, manId.toString(), nil
+
+	manId := &ManIdentity{
+		Priv: encKeyPair.Private(),
+	}
+	vStores := &VotingStores{
+		Is: is,
+		Hkm: hkm,
+		Ivm: ivm,
+	}
+
+	
+	return "v/" + vCfgCid, manId.toString(), vStores, nil
 }
 
 func (cfg Config) Marshal() []byte {
-	mpub, _ := crypto.MarshalPubKey(cfg.PubKey)
+	mpub, _ := cfg.PubKey.Raw()
 	pbCfg := &pb.Config{
 		Title:      cfg.Title,
 		Time:       encodeTimeInfo(cfg.Time),
 		Salt1:      cfg.Salt1,
 		Salt2:      cfg.Salt2,
 		Candidates: encodeCandidates(cfg.Candidates),
-		ManPid:     cfg.ManPid,
+		ManCid:     cfg.ManPriCid,
 		PubKey:     mpub,
 		Params:     encodeVoteParams(cfg.Params),
 		Type:       int32(cfg.Type),
@@ -308,7 +344,7 @@ func (cfg *Config) Unmarshal(m []byte) error {
 		return err
 	}
 
-	pubKey, err := crypto.UnmarshalPubKey(pbCfg.GetPubKey())
+	pubKey, err := evutil.UnmarshalPub(pbCfg.GetPubKey())
 	if err != nil {
 		return err
 	}
@@ -318,7 +354,7 @@ func (cfg *Config) Unmarshal(m []byte) error {
 	cfg.Salt1 = pbCfg.Salt1
 	cfg.Salt2 = pbCfg.Salt2
 	cfg.Candidates = decodeCandidates(pbCfg.Candidates)
-	cfg.ManPid = pbCfg.ManPid
+	cfg.ManPriCid = pbCfg.ManCid
 	cfg.PubKey = pubKey
 	cfg.Params = decodeVoteParams(pbCfg.Params)
 	cfg.Type = VotingType(pbCfg.Type)
@@ -329,10 +365,10 @@ func (cfg *Config) Unmarshal(m []byte) error {
 }
 
 func (cfg *Config) toCid(is ipfs.Ipfs) (string, error) {
-	return is.Add(cfg.Marshal())
+	return is.Add(cfg.Marshal(), time.Second*10)
 }
 func (cfg *Config) FromCid(vCfgCid string, is ipfs.Ipfs) error {
-	m, err := is.Get(vCfgCid)
+	m, err := is.Get(vCfgCid, time.Second*5)
 	if err != nil {
 		return errors.New("get from vCfgCid error")
 	}

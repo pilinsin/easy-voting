@@ -8,7 +8,7 @@ message Config{
 	string		salt1 	= 3;
 	bytes		salt2 	= 4;
 	repeated Candidate candidates = 5;
-	string 		manPid	= 6;
+	string 		manCid	= 6;
 	bytes 		pubKey 	= 7;
 	Params 		params 	= 8;
 	int32 		type 	= 9;

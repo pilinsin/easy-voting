@@ -1,24 +1,24 @@
 package votingmodule
 
 import (
-	"context"
 	"errors"
 	"log"
 
 	"fyne.io/fyne/v2/widget"
-	peer "github.com/libp2p/go-libp2p-core/peer"
 
 	viface "github.com/pilinsin/easy-voting/voting/interface"
 	vutil "github.com/pilinsin/easy-voting/voting/util"
+	crdt "github.com/pilinsin/p2p-verse/crdt"
+	ipfs "github.com/pilinsin/p2p-verse/ipfs"
 )
 
 type approvalVoting struct {
 	voting
 }
 
-func NewApprovalVoting(ctx context.Context, vCfg *vutil.Config, storeDir string, bs []peer.AddrInfo, save bool) (viface.ITypedVoting, error) {
+func NewApprovalVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
 	av := &approvalVoting{}
-	if err := av.init(ctx, vCfg, storeDir, bs, save); err != nil {
+	if err := av.init(vCfg, is, hkm, ivm); err != nil {
 		return nil, err
 	}
 	return av, nil

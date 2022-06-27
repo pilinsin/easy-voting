@@ -1,8 +1,6 @@
 package registrationpage
 
 import (
-	"context"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -11,7 +9,7 @@ import (
 	riface "github.com/pilinsin/easy-voting/registration/interface"
 )
 
-func LoadPage(ctx context.Context, bAddr, rCfgCid string, r riface.IRegistration) (string, fyne.CanvasObject) {
+func LoadPage(bAddr, rCfgCid string, r riface.IRegistration) (string, fyne.CanvasObject) {
 	uidLabel := gutil.NewCopyButton("user identity address")
 
 	rCfg := r.Config()

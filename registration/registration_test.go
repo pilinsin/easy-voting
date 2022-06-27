@@ -1,14 +1,13 @@
 package registration
 
 import (
-	"context"
+	"os"
 	"testing"
 
+	evutil "github.com/pilinsin/easy-voting/util"
 	rutil "github.com/pilinsin/easy-voting/registration/util"
 	i2p "github.com/pilinsin/go-libp2p-i2p"
 	pv "github.com/pilinsin/p2p-verse"
-	crdt "github.com/pilinsin/p2p-verse/crdt"
-	"github.com/pilinsin/util/crypto"
 )
 
 func checkError(t *testing.T, err error, args ...interface{}) {
@@ -44,21 +43,8 @@ func userDataset() (<-chan []string, []string) {
 	return ch, labels
 }
 
-func genKp() (crdt.IPrivKey, crdt.IPubKey, error) {
-	kp := crypto.NewSignKeyPair()
-	return kp.Sign(), kp.Verify(), nil
-}
-func marshalPub(pub crdt.IPubKey) ([]byte, error) {
-	return crypto.MarshalVerfKey(pub.(crypto.IVerfKey))
-}
-func unmarshalPub(m []byte) (crdt.IPubKey, error) {
-	return crypto.UnmarshalVerfKey(m)
-}
-
 //go test -test.v=true -timeout 1h .
 func TestRegistration(t *testing.T) {
-	crdt.InitCryptoFuncs(genKp, marshalPub, unmarshalPub)
-
 	bstrp, err := pv.NewBootstrap(i2p.NewI2pHost)
 	checkError(t, err)
 	defer bstrp.Close()
@@ -67,15 +53,17 @@ func TestRegistration(t *testing.T) {
 	baiStr := pv.AddrInfosToString(bAddrInfo)
 
 	users, labels := userDataset()
-	rCfgAddr, err := rutil.NewConfig("test_title", users, labels, baiStr)
+	rCfgCid, rs, err := rutil.NewConfig("test_title", users, labels, baiStr)
 	checkError(t, err)
+	rCfgAddr := baiStr + "/" + rCfgCid
 	t.Log("config generated")
 
-	man, err := NewRegistration(context.Background(), rCfgAddr)
+	man, err := NewRegistrationWithStores(rCfgAddr, rs.Is, rs.Uhm)
 	checkError(t, err)
 	t.Log("man registration")
 
-	user, err := NewRegistration(context.Background(), rCfgAddr)
+	baseDir2 := "registration_test"
+	user, err := NewRegistration(rCfgAddr, baseDir2)
 	checkError(t, err)
 	t.Log("user registration")
 
@@ -88,4 +76,7 @@ func TestRegistration(t *testing.T) {
 	man.Close()
 	user.Close()
 
+	baseDir := evutil.BaseDir("registration", "setup")
+	os.RemoveAll(baseDir)
+	os.RemoveAll(baseDir2)
 }

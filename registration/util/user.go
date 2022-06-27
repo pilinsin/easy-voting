@@ -3,32 +3,33 @@ package registrationutil
 import (
 	"encoding/base64"
 	"errors"
+
 	pb "github.com/pilinsin/easy-voting/registration/util/pb"
-	"github.com/pilinsin/util/crypto"
+	evutil "github.com/pilinsin/easy-voting/util"
 	proto "google.golang.org/protobuf/proto"
 )
 
 type UserIdentity struct {
 	hash    string
-	pubKey  crypto.IPubKey
-	privKey crypto.IPriKey
+	pubKey  evutil.IPubKey
+	privKey evutil.IPriKey
 }
 
-func NewUserIdentity(userHash string, pub crypto.IPubKey, priv crypto.IPriKey) *UserIdentity {
+func NewUserIdentity(userHash string, pub evutil.IPubKey, priv evutil.IPriKey) *UserIdentity {
 	return &UserIdentity{userHash, pub, priv}
 }
 func (ui UserIdentity) UserHash() string {
 	return ui.hash
 }
-func (ui UserIdentity) Public() crypto.IPubKey {
+func (ui UserIdentity) Public() evutil.IPubKey {
 	return ui.pubKey
 }
-func (ui UserIdentity) Private() crypto.IPriKey {
+func (ui UserIdentity) Private() evutil.IPriKey {
 	return ui.privKey
 }
 func (ui UserIdentity) Marshal() []byte {
-	mpub, _ := crypto.MarshalPubKey(ui.pubKey)
-	mpri, _ := crypto.MarshalPriKey(ui.privKey)
+	mpub, _ := ui.pubKey.Raw()
+	mpri, _ := ui.privKey.Raw()
 	mui := &pb.Identity{
 		Hash: ui.hash,
 		Pub:  mpub,
@@ -42,17 +43,23 @@ func (ui *UserIdentity) Unmarshal(m []byte) error {
 	if err := proto.Unmarshal(m, mui); err != nil {
 		return err
 	}
-
-	pubKey, err := crypto.UnmarshalPubKey(mui.GetPub())
+	//ecies ver.
+	mpub := mui.GetPub()
+	if len(mpub) == 0{return errors.New("invalid IPubKey")}
+	if len(mpub) > 33{return errors.New("invalid IPubKey")}
+	pubKey, err := evutil.UnmarshalPub(mpub)
 	if err != nil {
 		return err
 	}
-	privKey, err := crypto.UnmarshalPriKey(mui.GetPriv())
+	mpri := mui.GetPriv()
+	if len(mpri) == 0{return errors.New("invalid IPriKey")}
+	if len(mpri) > 32{return errors.New("invalid IPriKey")}
+	privKey, err := evutil.UnmarshalPri(mpri)
 	if err != nil {
 		return err
 	}
 
-	ui.hash = mui.Hash
+	ui.hash = mui.GetHash()
 	ui.pubKey = pubKey
 	ui.privKey = privKey
 	return nil

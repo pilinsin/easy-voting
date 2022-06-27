@@ -1,7 +1,6 @@
 package util
 
 import (
-	"context"
 	"errors"
 	"strings"
 
@@ -24,7 +23,7 @@ func ParseConfigAddr(cfgAddr string) (string, string, error) {
 func NewIpfs(hGen pv.HostGenerator, dirName string, save bool, bootstraps []peer.AddrInfo) (ipfs.Ipfs, error) {
 	return ipfs.NewIpfsStore(hGen, dirName, save, bootstraps...)
 }
-func NewStore(ctx context.Context, hGen pv.HostGenerator, stInfo [][2]string, dirName string, save bool, bootstraps []peer.AddrInfo, opts ...*crdt.StoreOpts) ([]crdt.IStore, error) {
+func NewStore(hGen pv.HostGenerator, stInfo [][2]string, dirName string, save bool, bootstraps []peer.AddrInfo, opts ...*crdt.StoreOpts) ([]crdt.IStore, error) {
 	v := crdt.NewVerse(hGen, dirName, save, bootstraps...)
 
 	opt := &crdt.StoreOpts{}
@@ -35,7 +34,7 @@ func NewStore(ctx context.Context, hGen pv.HostGenerator, stInfo [][2]string, di
 	for idx := range stInfo {
 		name := stInfo[idx][0]
 		tp := stInfo[idx][1]
-		st, err := v.LoadStore(ctx, name, tp, opt)
+		st, err := v.NewStore(name, tp, opt)
 		if err != nil {
 			return nil, err
 		}
