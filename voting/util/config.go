@@ -192,7 +192,7 @@ func NewConfig(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate,
 
 	ipfsDir := filepath.Join(baseDir, "ipfs")
 	os.RemoveAll(ipfsDir)
-	is, err := evutil.NewIpfs(i2p.NewI2pHost, ipfsDir, true, bootstraps)
+	is, err := evutil.NewIpfs(i2p.NewI2pHost, ipfsDir, false, bootstraps)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -205,7 +205,7 @@ func NewConfig(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate,
 
 	storeDir := filepath.Join(baseDir, "store")
 	os.RemoveAll(storeDir)
-	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, bootstraps...)
+	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, false, bootstraps...)
 
 	uhm, err := v.NewStore(rCfg.UhmAddr, "hash")
 	if err != nil {

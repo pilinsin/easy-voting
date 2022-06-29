@@ -43,14 +43,9 @@ func NewSetupPage(w fyne.Window, rs map[string]riface.IRegistration) fyne.Canvas
 
 		noteLabel.SetText("processing...")
 		addrLabel.SetText("registration config cid")
-		labels, dataset, err := csvBtn.Read()
+		labels, dataset, err := csvBtn.Csv()
 		if err != nil {
 			noteLabel.SetText("load csv error: " + err.Error())
-			return
-		}
-		cid, rStores, err := rutil.NewConfig(titleEntry.Text, dataset, labels, bAddrEntry.Text)
-		if err != nil {
-			noteLabel.SetText("new rConfig error: " + err.Error())
 			return
 		}
 
@@ -59,6 +54,12 @@ func NewSetupPage(w fyne.Window, rs map[string]riface.IRegistration) fyne.Canvas
 			rs[mapKey].Close()
 			rs[mapKey] = nil
 		}
+		cid, rStores, err := rutil.NewConfig(titleEntry.Text, dataset, labels, bAddrEntry.Text)
+		if err != nil {
+			noteLabel.SetText("new rConfig error: " + err.Error())
+			return
+		}
+
 		rCfgAddr := bAddrEntry.Text + "/" + cid
 		r, err := rgst.NewRegistrationWithStores(rCfgAddr, rStores.Is, rStores.Uhm)
 		if err != nil {

@@ -63,7 +63,7 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 
 	storeDir := filepath.Join(baseDir, "store")
 	os.RemoveAll(storeDir)
-	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, true, bootstraps...)
+	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, false, bootstraps...)
 	uhm, err := v.NewStore(pv.RandString(8), "hash", &crdt.StoreOpts{Salt: salt2})
 	if err != nil {
 		return "", nil, err
@@ -76,7 +76,7 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 
 	ipfsDir := filepath.Join(baseDir, "ipfs")
 	os.RemoveAll(ipfsDir)
-	is, err := evutil.NewIpfs(i2p.NewI2pHost, ipfsDir, true, bootstraps)
+	is, err := evutil.NewIpfs(i2p.NewI2pHost, ipfsDir, false, bootstraps)
 	if err != nil {
 		uhm.Close()
 		return "", nil, err

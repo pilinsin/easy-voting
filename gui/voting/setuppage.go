@@ -75,6 +75,11 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 			return
 		}
 
+		mapKey := "setup"
+		if _, exist := vs[mapKey]; exist {
+			vs[mapKey].Close()
+			vs[mapKey] = nil
+		}
 		rCfgAddr := bAddr.Text + "/" + rCfgCid.Text
 		cid, mid, vStores, err := vutil.NewConfig(
 			title.Text,
@@ -89,11 +94,6 @@ func NewSetupPage(w fyne.Window, vs map[string]viface.IVoting) fyne.CanvasObject
 			return
 		}
 
-		mapKey := "setup"
-		if _, exist := vs[mapKey]; exist {
-			vs[mapKey].Close()
-			vs[mapKey] = nil
-		}
 		vCfgAddr := bAddr.Text + "/" + cid
 		v, err := voting.NewVotingWithStores(vCfgAddr, vStores.Is, vStores.Hkm, vStores.Ivm)
 		if err != nil {

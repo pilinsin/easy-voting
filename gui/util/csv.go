@@ -1,11 +1,9 @@
 package guiutil
 
 import (
-	"context"
+	"bytes"
 	"encoding/csv"
-	"errors"
 	"io"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
@@ -13,7 +11,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func CsvDialog(w fyne.Window, rc0 chan *csv.Reader, noteLabel *widget.Label) func() {
+func CsvDialog(w fyne.Window, lcb *loadCsvButton, noteLabel *widget.Label) func() {
 	return func() {
 		onSelected := func(rc fyne.URIReadCloser, err error) {
 			if rc == nil || err != nil {
@@ -25,10 +23,9 @@ func CsvDialog(w fyne.Window, rc0 chan *csv.Reader, noteLabel *widget.Label) fun
 				return
 			}
 
-			go func() {
-				rc0 <- csv.NewReader(rc)
-				noteLabel.SetText("csv file uploaded")
-			}()
+			lcb.reader = csv.NewReader(rc)
+			noteLabel.SetText("csv file uploaded")
+
 		}
 		dialog.ShowFileOpen(onSelected, w)
 	}
@@ -36,16 +33,14 @@ func CsvDialog(w fyne.Window, rc0 chan *csv.Reader, noteLabel *widget.Label) fun
 
 type loadCsvButton struct {
 	*widget.Button
-	reader chan *csv.Reader
+	reader *csv.Reader
 }
 
 func NewLoadCsvButton(w fyne.Window, noteLabel *widget.Label) *loadCsvButton {
-	r := make(chan *csv.Reader, 1)
+	lcb := &loadCsvButton{}
 
-	onTapped := CsvDialog(w, r, noteLabel)
-	btn := widget.NewButtonWithIcon("upload csv", theme.UploadIcon(), onTapped)
-
-	lcb := &loadCsvButton{btn, r}
+	onTapped := CsvDialog(w, lcb, noteLabel)
+	lcb.Button = widget.NewButtonWithIcon("upload csv", theme.UploadIcon(), onTapped)
 	lcb.ExtendBaseWidget(lcb)
 	return lcb
 }
@@ -56,26 +51,15 @@ func NewLoadCsvButton(w fyne.Window, noteLabel *widget.Label) *loadCsvButton {
 	...
 	{"data N1, data N2, ..., data NM"}
 */
-func (lcb *loadCsvButton) Read() ([]string, <-chan []string, error) {
-	var r *csv.Reader
-	var isReaderGet bool
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-	select {
-	case r = <-lcb.reader:
-		isReaderGet = true
-	case <-ctx.Done():
-		//close(ce.thumbnail)
-	}
-	if !isReaderGet {
-		return nil, nil, errors.New("reader is nil")
-	}
+func (lcb *loadCsvButton) Csv() ([]string, <-chan []string, error) {
+	buf := &bytes.Buffer{}
+	w := csv.NewWriter(buf)
 
-	labels, err := r.Read()
-	if err == io.EOF {
-		return labels, nil, nil
-	}
+	labels, err := lcb.reader.Read()
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := w.Write(labels); err != nil {
 		return nil, nil, err
 	}
 
@@ -83,14 +67,20 @@ func (lcb *loadCsvButton) Read() ([]string, <-chan []string, error) {
 	go func() {
 		defer close(ch)
 		for {
-			data, err := r.Read()
+			data, err := lcb.reader.Read()
 			if err == io.EOF {
+				w.Flush()
+				lcb.reader = csv.NewReader(buf)
 				return
 			}
 			if err == nil {
 				ch <- data
+				if err := w.Write(data); err != nil {
+					return
+				}
 			}
 		}
 	}()
+
 	return labels, ch, nil
 }

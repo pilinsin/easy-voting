@@ -1,9 +1,7 @@
 package votingpage
 
 import (
-	"context"
 	"io"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -99,19 +97,18 @@ type candEntry struct {
 	url       *widget.Entry
 	imgBtn    *widget.Button
 	imgCanvas *imageCanvas
-	thumbnail chan fyne.Resource
+	thumbnail fyne.Resource
 }
 
 func newCandEntry(w fyne.Window) *candEntry {
+	cand := &candEntry{}
+
 	imgCanvas := newImageCanvas(gutil.DefaultIcon())
 	imgCanvas.Hide()
 
-	thumb := make(chan fyne.Resource)
 	imgBtn := &widget.Button{Icon: theme.ContentAddIcon()}
 	imgBtn.OnTapped = func() {
-		imageDialog(w, thumb, imgBtn, imgCanvas)()
-		//fmt.Println(thumb.Name())
-		//fmt.Println(resourceEqual(thumb, theme.ContentAddIcon()))
+		imageDialog(w, cand, imgBtn, imgCanvas)()
 	}
 	imgBtn.ExtendBaseWidget(imgBtn)
 
@@ -121,40 +118,28 @@ func newCandEntry(w fyne.Window) *candEntry {
 	groupEntry.SetPlaceHolder("Group")
 	urlEntry := widget.NewEntry()
 	urlEntry.SetPlaceHolder("URL")
-	cand := &candEntry{
-		name:      nameEntry,
-		group:     groupEntry,
-		url:       urlEntry,
-		imgBtn:    imgBtn,
-		imgCanvas: imgCanvas,
-		thumbnail: thumb,
-	}
+	cand.name = nameEntry
+	cand.group = groupEntry
+	cand.url = urlEntry
+	cand.imgBtn = imgBtn
+	cand.imgCanvas = imgCanvas
+
 	return cand
 }
 func (ce *candEntry) Render() fyne.CanvasObject {
 	return container.NewVBox(ce.imgCanvas.Render(), ce.imgBtn, ce.name, ce.group, ce.url)
 }
 func (ce *candEntry) Candidate() *vutil.Candidate {
-	var res fyne.Resource
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-	defer cancel()
-	select {
-	case res = <-ce.thumbnail:
-	case <-ctx.Done():
-		res = gutil.DefaultIcon()
-		close(ce.thumbnail)
-	}
-
 	return &vutil.Candidate{
 		Name:    ce.name.Text,
 		Group:   ce.group.Text,
 		Url:     ce.url.Text,
-		Image:   res.Content(),
-		ImgName: res.Name(),
+		Image:   ce.thumbnail.Content(),
+		ImgName: ce.thumbnail.Name(),
 	}
 }
 
-func imageDialog(w fyne.Window, res chan<- fyne.Resource, hideObj fyne.CanvasObject, resCanvas *imageCanvas) func() {
+func imageDialog(w fyne.Window, ce *candEntry, hideObj fyne.CanvasObject, resCanvas *imageCanvas) func() {
 	return func() {
 		onSelected := func(rc fyne.URIReadCloser, err error) {
 			if rc == nil || err != nil {
@@ -172,10 +157,8 @@ func imageDialog(w fyne.Window, res chan<- fyne.Resource, hideObj fyne.CanvasObj
 				StaticName:    rc.URI().Name(),
 				StaticContent: data,
 			}
-			go func() {
-				res <- loadRes
-				close(res)
-			}()
+			ce.thumbnail = loadRes
+
 			hideObj.Hide()
 			resCanvas.Show()
 			resCanvas.SetImage(loadRes)
