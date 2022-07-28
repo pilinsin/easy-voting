@@ -21,7 +21,7 @@ type rangeVoting struct {
 	max int
 }
 
-func NewRangeVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
+func NewRangeVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.ISignatureStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
 	rv := &rangeVoting{
 		min: vCfg.Params.Min,
 		max: vCfg.Params.Max,

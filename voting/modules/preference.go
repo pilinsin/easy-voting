@@ -20,7 +20,7 @@ type preferenceVoting struct {
 	voting
 }
 
-func NewPreferenceVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
+func NewPreferenceVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.ISignatureStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
 	pv := &preferenceVoting{}
 	if err := pv.init(vCfg, is, hkm, ivm); err != nil {
 		return nil, err

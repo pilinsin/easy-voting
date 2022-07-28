@@ -21,7 +21,7 @@ type cumulativeVoting struct {
 	total int
 }
 
-func NewCumulativeVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
+func NewCumulativeVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.ISignatureStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
 	cv := &cumulativeVoting{
 		min:   vCfg.Params.Min,
 		total: vCfg.Params.Total,

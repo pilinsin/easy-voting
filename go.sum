@@ -1451,6 +1451,8 @@ github.com/pilinsin/go-libp2p-i2p-transport v0.0.0-20220620062609-426a5940ab1f/g
 github.com/pilinsin/p2p-verse v0.0.0-20220626105858-c5c33ae1c724/go.mod h1:lddHYzQL5oMOCOvdzWuUJPHNEhA15zXQPkqBSvpC344=
 github.com/pilinsin/p2p-verse v0.0.0-20220627044626-f2cbba2a45cf h1:4WDvuxNRUidSRwFZAvbCioT/D5a9Ent337CXXaJKUyM=
 github.com/pilinsin/p2p-verse v0.0.0-20220627044626-f2cbba2a45cf/go.mod h1:lddHYzQL5oMOCOvdzWuUJPHNEhA15zXQPkqBSvpC344=
+github.com/pilinsin/p2p-verse v0.0.0-20220728023441-457732cd9aca h1:sHsctWa4/XQD+cbX++1TEOkiJA7pyNFJ9cJMdJS2/Ho=
+github.com/pilinsin/p2p-verse v0.0.0-20220728023441-457732cd9aca/go.mod h1:Ppc8Gk8+LwHHeTzIvN0qiZmw1zJ9mfyoNFQQ24YnCpU=
 github.com/pilinsin/util v0.0.0-20220627041715-e9dd2fa27b8d h1:rsB34YBky/r9bMzYVELEFFH3OTO2dhUo7/1Fy+0OwRs=
 github.com/pilinsin/util v0.0.0-20220627041715-e9dd2fa27b8d/go.mod h1:bw+UlN6Y307OjKAmyRBiPGTcb46OZK1fgxMHn8EPfSc=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

@@ -150,8 +150,8 @@ func decodeTimeInfo(ti *pb.TimeInfo) *util.TimeInfo {
 
 type VotingStores struct {
 	Is  ipfs.Ipfs
-	Hkm crdt.IStore
-	Ivm crdt.IUpdatableSignatureStore
+	Hkm crdt.ISignatureStore          //with access
+	Ivm crdt.IUpdatableSignatureStore //with access
 }
 
 func (vs *VotingStores) Close() {
@@ -207,11 +207,12 @@ func NewConfig(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate,
 	os.RemoveAll(storeDir)
 	v := crdt.NewVerse(i2p.NewI2pHost, storeDir, false, bootstraps...)
 
-	uhm, err := v.NewStore(rCfg.UhmAddr, "hash")
+	tmpUhm, err := v.NewStore(rCfg.UhmAddr, "hash")
 	if err != nil {
 		is.Close()
 		return "", "", nil, err
 	}
+	uhm := tmpUhm.(crdt.IHashStore)
 
 	skp := evutil.NewSignKeyPair()
 	ch := make(chan string)
@@ -219,16 +220,17 @@ func NewConfig(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate,
 		defer close(ch)
 		ch <- crdt.PubKeyToStr(skp.Verify())
 	}()
-	hkm, err := v.NewStore(pv.RandString(8), "signature", &crdt.StoreOpts{Pub: skp.Verify(), Priv: skp.Sign()})
+	tmpHkm, err := v.NewStore(pv.RandString(8), "signature", &crdt.StoreOpts{Pub: skp.Verify(), Priv: skp.Sign()})
 	if err != nil {
 		is.Close()
 		return "", "", nil, err
 	}
-	hkm, err = v.NewAccessStore(hkm, ch)
+	tmpHkm, err = v.NewAccessStore(tmpHkm, ch)
 	if err != nil {
 		is.Close()
 		return "", "", nil, err
 	}
+	hkm := tmpHkm.(crdt.ISignatureStore)
 	hkmAddr := hkm.Address()
 
 	accesses := make(chan string)
@@ -249,7 +251,7 @@ func NewConfig(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate,
 			if err != nil {
 				continue
 			}
-			if err := hkm.Put(res.Key, enc); err != nil {
+			if err := hkm.Put(uhm.MakeHashKey(res.Key), enc); err != nil {
 				continue
 			}
 			accesses <- crdt.PubKeyToStr(ukp.Verify())
@@ -260,19 +262,19 @@ func NewConfig(title, rCfgAddr string, tInfo *util.TimeInfo, cands []*Candidate,
 
 	end := tInfo.EndTime()
 	opt := &crdt.StoreOpts{TimeLimit: end}
-	tmp, err := v.NewStore(pv.RandString(8), "updatableSignature", opt)
+	tmpIvm, err := v.NewStore(pv.RandString(8), "updatableSignature", opt)
 	if err != nil {
 		is.Close()
 		hkm.Close()
 		return "", "", nil, err
 	}
-	tmp, err = v.NewAccessStore(tmp, accesses)
+	tmpIvm, err = v.NewAccessStore(tmpIvm, accesses)
 	if err != nil {
 		is.Close()
 		hkm.Close()
 		return "", "", nil, err
 	}
-	ivm := tmp.(crdt.IUpdatableSignatureStore)
+	ivm := tmpIvm.(crdt.IUpdatableSignatureStore)
 	ivmAddr := ivm.Address()
 
 	encKeyPair := evutil.NewPubKeyPair()

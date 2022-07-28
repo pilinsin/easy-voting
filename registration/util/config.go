@@ -20,7 +20,7 @@ import (
 
 type RegistrationStores struct {
 	Is  ipfs.Ipfs
-	Uhm crdt.IStore
+	Uhm crdt.IHashStore
 }
 
 func (rs *RegistrationStores) Close() {
@@ -90,7 +90,7 @@ func NewConfig(title string, userDataset <-chan []string, userDataLabels []strin
 
 	rs := &RegistrationStores{
 		Is:  is,
-		Uhm: uhm,
+		Uhm: uhm.(crdt.IHashStore),
 	}
 
 	return "r/" + cid, rs, nil

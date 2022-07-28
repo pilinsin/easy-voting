@@ -8,7 +8,7 @@ require (
 	github.com/ipfs/go-datastore v0.5.1
 	github.com/libp2p/go-libp2p-core v0.17.0
 	github.com/pilinsin/go-libp2p-i2p v0.0.0-20220627041842-00f36e3b1aef
-	github.com/pilinsin/p2p-verse v0.0.0-20220627044626-f2cbba2a45cf
+	github.com/pilinsin/p2p-verse v0.0.0-20220728023441-457732cd9aca
 	github.com/pilinsin/util v0.0.0-20220627041715-e9dd2fa27b8d
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	google.golang.org/protobuf v1.28.0

@@ -31,13 +31,13 @@ type voting struct {
 	manPubKey evutil.IPubKey
 	manPriKey evutil.IPriKey
 	is        ipfs.Ipfs
-	hkm       crdt.IStore
-	ivm       crdt.IUpdatableSignatureStore
+	hkm       crdt.ISignatureStore          //with access
+	ivm       crdt.IUpdatableSignatureStore //with access
 	cfg       *vutil.Config
 	idStr     string
 }
 
-func (v *voting) init(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) error {
+func (v *voting) init(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.ISignatureStore, ivm crdt.IUpdatableSignatureStore) error {
 	v.salt1 = vCfg.Salt1
 	v.salt2 = vCfg.Salt2
 	v.tInfo = vCfg.Time

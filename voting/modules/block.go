@@ -17,7 +17,7 @@ type blockVoting struct {
 	total int
 }
 
-func NewBlockVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
+func NewBlockVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.ISignatureStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
 	bv := &blockVoting{
 		total: vCfg.Params.Total,
 	}

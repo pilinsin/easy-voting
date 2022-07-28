@@ -20,7 +20,7 @@ type registration struct {
 	salt1 string
 	addr  string
 	is    ipfs.Ipfs
-	uhm   crdt.IStore
+	uhm   crdt.IHashStore //with access
 	cfg   *rutil.Config
 }
 
@@ -49,7 +49,7 @@ func NewRegistration(rCfgAddr, baseDir string) (riface.IRegistration, error) {
 	if err != nil {
 		return nil, err
 	}
-	uhm := stores[0]
+	uhm := stores[0].(crdt.IHashStore)
 
 	return &registration{
 		salt1: rCfg.Salt1,
@@ -59,7 +59,7 @@ func NewRegistration(rCfgAddr, baseDir string) (riface.IRegistration, error) {
 		cfg:   rCfg,
 	}, nil
 }
-func NewRegistrationWithStores(rCfgAddr string, is ipfs.Ipfs, uhm crdt.IStore) (riface.IRegistration, error) {
+func NewRegistrationWithStores(rCfgAddr string, is ipfs.Ipfs, uhm crdt.IHashStore) (riface.IRegistration, error) {
 	_, rCfgCid, err := evutil.ParseConfigAddr(rCfgAddr)
 	if err != nil {
 		return nil, err
@@ -68,6 +68,7 @@ func NewRegistrationWithStores(rCfgAddr string, is ipfs.Ipfs, uhm crdt.IStore) (
 	if err := rCfg.FromCid(rCfgCid, is); err != nil {
 		return nil, err
 	}
+
 	return &registration{
 		salt1: rCfg.Salt1,
 		addr:  rCfgAddr,
@@ -90,15 +91,19 @@ func (r *registration) Address() string {
 }
 
 func (r *registration) hasPubKey(pubKey evutil.IPubKey) bool {
-	rs, err := r.uhm.Query()
-	if err != nil {
-		return false
-	}
 	mpub, err := pubKey.Raw()
 	if err != nil {
 		return false
 	}
-	rs = query.NaiveFilter(rs, crdt.ValueMatchFilter{Val: mpub})
+
+	rs, err := r.uhm.Query(query.Query{
+		Filters:  []query.Filter{crdt.ValueMatchFilter{Val: mpub}},
+		Limit:    1,
+		KeysOnly: true,
+	})
+	if err != nil {
+		return false
+	}
 	resList, err := rs.Rest()
 	rs.Close()
 

@@ -16,7 +16,7 @@ type approvalVoting struct {
 	voting
 }
 
-func NewApprovalVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
+func NewApprovalVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.ISignatureStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
 	av := &approvalVoting{}
 	if err := av.init(vCfg, is, hkm, ivm); err != nil {
 		return nil, err

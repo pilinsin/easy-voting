@@ -64,8 +64,9 @@ func NewVoting(vCfgAddr, baseDir string) (viface.IVoting, error) {
 		}
 		return nil, errors.New("too few stores loaded")
 	}
-	hkm, tmp := stores[0], stores[1]
-	ivm := tmp.(crdt.IUpdatableSignatureStore)
+	tmpH, tmpI := stores[0], stores[1]
+	hkm := tmpH.(crdt.ISignatureStore)
+	ivm := tmpI.(crdt.IUpdatableSignatureStore)
 
 	var v viface.ITypedVoting
 	switch vCfg.Type {
@@ -94,7 +95,7 @@ func NewVoting(vCfgAddr, baseDir string) (viface.IVoting, error) {
 	return &votingWithAddress{v, vCfgAddr}, nil
 }
 
-func NewVotingWithStores(vCfgAddr string, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) (viface.IVoting, error) {
+func NewVotingWithStores(vCfgAddr string, is ipfs.Ipfs, hkm crdt.ISignatureStore, ivm crdt.IUpdatableSignatureStore) (viface.IVoting, error) {
 	_, vCfgCid, err := evutil.ParseConfigAddr(vCfgAddr)
 	if err != nil {
 		return nil, err

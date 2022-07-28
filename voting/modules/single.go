@@ -16,7 +16,7 @@ type singleVoting struct {
 	voting
 }
 
-func NewSingleVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.IStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
+func NewSingleVoting(vCfg *vutil.Config, is ipfs.Ipfs, hkm crdt.ISignatureStore, ivm crdt.IUpdatableSignatureStore) (viface.ITypedVoting, error) {
 	sv := &singleVoting{}
 	if err := sv.init(vCfg, is, hkm, ivm); err != nil {
 		return nil, err
