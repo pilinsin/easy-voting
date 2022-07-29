@@ -21,7 +21,7 @@
 - Voting Type
 
 2. Press the "+" button to add a candidate, each "x" button to remove the corresponding candidate.
-3. 
+
 ![setup_voting3](images/ev_setup_voting3.webp)
 
 1. Voting Parameters may be ignored for some kinds of Voting Type.
