@@ -5,7 +5,7 @@ Blockchain is not used.<br>
 ## Feature
 * Anonymous voting  
 * Revote  
-* Counting by anyone  
+* Counting by anyone (**who is accessing the voting page at the time the polls close**)  
 
 ## Dependency
 Download and install [I2P](https://geti2p.net/en/download).  
