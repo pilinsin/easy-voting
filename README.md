@@ -10,66 +10,8 @@ Blockchain is not used.<br>
 ## Dependency
 Download and install [I2P](https://geti2p.net/en/download).  
 
-
 ## Usage
-### Bootstrap
-##### Manager  
-On the Setup page, you can obtain the address of the bootstrap list. It is also possible to add the addresses of other bootstrap lists.  
-In this section, the address is "baddrs".
-### Registration
-##### Manager  
-On the setup page, enter the following information:
-- Title of the registration page
-- User Data Set
-- baddrs
-
-The user data set is a csv file containing the data required for user registration.
-
-| label 0 | label 1 | ... | label M |
-| --- | --- | --- | --- |
-| user 00 | user 01 | ... | user 0M |
-| user 10 | user 11 | ... | user 1M |
-| ... | ... | ... | ... |
-| user N0 | user N1 | ... | user NM |
-
-After entering the information, press the Submit button to output rCfgAddr and manIdentity, which are then entered into the load page form to move to the registration page.  
-Publish rCfgAddr and wait until registration is complete.
-
-##### User  
-Enter rCfgAddr to go to the registration page.  
-Enter the data necessary for registration.   
-The userIdentity will be output, so copy and keep it.  
-
-### Voting
-##### Manager  
-On the setup page, enter the following information:
-- Voting Page Title
-- Start Time
-- End Time
-- Time Zone (Location)
-- rCfgAddr
-- Number of Verificators(number needed to verify voting time)
-- Candidate Information
-  - Image
-  - Name
-  - Group
-  - URL
-- Voting Parameters
-  - Minimum Number of Votes
-  - Maximum Number of Votes
-  - Total Votes
-- Voting Type
-
-After entering the information, press the Submit button to generate the vCfgAddr and manIdentity, which will be entered into the load page form to move to the voting page.  
-Publish vCfgAddr and wait until voting close.  
-After voting is completed, press the Vote button to release the decryption key for the voting data.
-
-##### User  
-Enter vCfgAddr and userIdentity to go to the voting page.  
-If you do not enter userIdentity, you can only tally the voting results.  
-
-Voting is done via the voting form.  
-If the voting manager has published the decryption key for your voting data, you can check your voting data and tally the results of all votes.
+Please see [docs](https://github.com/pilinsin/easy-voting/blob/main/docs/docs.md)
 
 ## Voting Type
 This supports the following types:  
